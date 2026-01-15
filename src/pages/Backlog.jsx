@@ -19,7 +19,8 @@ import {
     Clock,
     Filter,
     Play,
-    CheckCircle2
+    CheckCircle2,
+    User
 } from 'lucide-react'
 
 const typeIcons = {
@@ -64,7 +65,8 @@ export default function Backlog() {
         completeSprint,
         addIssue,
         updateIssue,
-        deleteIssue
+        deleteIssue,
+        addSprint
     } = useProjectStore()
 
     // Filter state
@@ -74,6 +76,10 @@ export default function Backlog() {
     const [collapsedSprints, setCollapsedSprints] = useState(new Set())
     const [creatingInSection, setCreatingInSection] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
+    const [newIssueType, setNewIssueType] = useState('story')
+    const [newIssueAssignee, setNewIssueAssignee] = useState(null)
+    const [showTypeDropdown, setShowTypeDropdown] = useState(false)
+    const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false)
     const [epicMenuOpen, setEpicMenuOpen] = useState(null)
     const [showAllEpicsModal, setShowAllEpicsModal] = useState(false)
     const [epicDropdownOpen, setEpicDropdownOpen] = useState(false)
@@ -173,7 +179,7 @@ export default function Backlog() {
         if (!newIssueSummary.trim()) return
 
         addIssue({
-            type: 'task',
+            type: newIssueType,
             status: 'todo',
             priority: 'medium',
             summary: newIssueSummary.trim(),
@@ -181,12 +187,29 @@ export default function Backlog() {
             sprintId: sprintId || null,
             storyPoints: null,
             labels: [],
-            assigneeId: null,
+            assigneeId: newIssueAssignee,
             reporterId: 'user-1'
         })
 
         setNewIssueSummary('')
+        setNewIssueType('story')
+        setNewIssueAssignee(null)
         setCreatingInSection(null)
+    }
+
+    // Handle create new sprint
+    const handleCreateSprint = () => {
+        const sprintNumber = sprints.length + 1
+        const startDate = new Date()
+        const endDate = new Date()
+        endDate.setDate(endDate.getDate() + 14) // 2-week sprint
+
+        addSprint({
+            name: `Sprint ${sprintNumber}`,
+            goal: '',
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+        })
     }
 
     // Issue Row Component
@@ -354,7 +377,36 @@ export default function Backlog() {
 
                         {/* Inline Create */}
                         {creatingInSection === sectionId ? (
-                            <div className="inline-create">
+                            <div className="inline-create enhanced">
+                                {/* Type Dropdown */}
+                                <div className="inline-type-dropdown">
+                                    <button
+                                        className={`issue-type-icon ${newIssueType}`}
+                                        onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                                    >
+                                        {newIssueType === 'story' && <BookOpen size={10} />}
+                                        {newIssueType === 'bug' && <Bug size={10} />}
+                                        {newIssueType === 'task' && <CheckSquare size={10} />}
+                                        <ChevronDown size={10} />
+                                    </button>
+                                    {showTypeDropdown && (
+                                        <div className="type-dropdown-menu">
+                                            <button onClick={() => { setNewIssueType('story'); setShowTypeDropdown(false) }}>
+                                                <span className="issue-type-icon story"><BookOpen size={10} /></span>
+                                                Story
+                                            </button>
+                                            <button onClick={() => { setNewIssueType('bug'); setShowTypeDropdown(false) }}>
+                                                <span className="issue-type-icon bug"><Bug size={10} /></span>
+                                                Bug
+                                            </button>
+                                            <button onClick={() => { setNewIssueType('task'); setShowTypeDropdown(false) }}>
+                                                <span className="issue-type-icon task"><CheckSquare size={10} /></span>
+                                                Task
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <input
                                     type="text"
                                     className="input"
@@ -366,24 +418,58 @@ export default function Backlog() {
                                         if (e.key === 'Escape') {
                                             setCreatingInSection(null)
                                             setNewIssueSummary('')
+                                            setNewIssueType('story')
+                                            setNewIssueAssignee(null)
                                         }
                                     }}
                                     autoFocus
                                 />
+
+                                {/* Calendar Icon */}
+                                <button className="inline-icon-btn" title="Set due date">
+                                    <Calendar size={16} />
+                                </button>
+
+                                {/* Assignee Dropdown */}
+                                <div className="inline-assignee-dropdown">
+                                    <button
+                                        className="inline-icon-btn"
+                                        onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                                        title="Assign to"
+                                    >
+                                        {newIssueAssignee ? (
+                                            <span className="avatar xs">
+                                                {getUserById(newIssueAssignee)?.name.charAt(0)}
+                                            </span>
+                                        ) : (
+                                            <User size={16} />
+                                        )}
+                                    </button>
+                                    {showAssigneeDropdown && (
+                                        <div className="assignee-dropdown-menu">
+                                            <button onClick={() => { setNewIssueAssignee(null); setShowAssigneeDropdown(false) }}>
+                                                <span className="avatar xs">?</span>
+                                                Unassigned
+                                            </button>
+                                            {users.map(user => (
+                                                <button
+                                                    key={user.id}
+                                                    onClick={() => { setNewIssueAssignee(user.id); setShowAssigneeDropdown(false) }}
+                                                >
+                                                    <span className="avatar xs">{user.name.charAt(0)}</span>
+                                                    {user.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Create Button */}
                                 <button
                                     className="btn btn-sm btn-primary"
                                     onClick={() => handleCreateIssue(sprint?.id)}
                                 >
-                                    Create
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-ghost"
-                                    onClick={() => {
-                                        setCreatingInSection(null)
-                                        setNewIssueSummary('')
-                                    }}
-                                >
-                                    Cancel
+                                    Create ↵
                                 </button>
                             </div>
                         ) : (
@@ -709,6 +795,16 @@ export default function Backlog() {
                             Clear filters
                         </button>
                     )}
+
+                    {/* Create Sprint Button */}
+                    <div className="toolbar-spacer" />
+                    <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={handleCreateSprint}
+                    >
+                        <Plus size={14} />
+                        Create Sprint
+                    </button>
                 </div>
 
                 {/* Sprint Sections */}

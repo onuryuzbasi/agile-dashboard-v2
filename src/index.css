@@ -1372,3 +1372,391 @@ h4 {
 .text-xs {
   font-size: var(--font-size-xs);
 }
+
+/* ===== Backlog Page ===== */
+.backlog-page {
+  display: flex;
+  gap: var(--space-4);
+  height: calc(100vh - var(--header-height) - var(--space-12));
+}
+
+/* Epic Sidebar */
+.epic-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.epic-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-primary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.epic-list {
+  padding: var(--space-2);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.epic-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.epic-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.epic-item.active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.epic-color {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* Backlog Content */
+.backlog-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+/* Backlog Toolbar */
+.backlog-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  flex-wrap: wrap;
+}
+
+.backlog-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  min-width: 200px;
+}
+
+.backlog-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.backlog-search input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.backlog-search button {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.backlog-search button:hover {
+  color: var(--text-primary);
+}
+
+.assignee-filters {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.assignee-filters .avatar {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  opacity: 0.6;
+}
+
+.assignee-filters .avatar:hover {
+  opacity: 1;
+}
+
+.assignee-filters .avatar.selected {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Sprint List */
+.sprint-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Sprint Section */
+.sprint-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.sprint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-primary);
+  gap: var(--space-3);
+}
+
+.sprint-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.sprint-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.sprint-dates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sprint-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.sprint-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sprint-points {
+  display: flex;
+  gap: 2px;
+}
+
+.sprint-points span {
+  padding: 2px 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.sprint-points .points-done {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.sprint-points .points-progress {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.sprint-points .points-todo {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.sprint-estimate {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sprint-body {
+  padding: var(--space-2);
+}
+
+.sprint-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* Issue Row */
+.backlog-issue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.backlog-issue-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.backlog-issue-row .drag-handle {
+  color: var(--text-tertiary);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.backlog-issue-row:hover .drag-handle {
+  opacity: 1;
+}
+
+.backlog-issue-row .issue-key {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-weight: 500;
+  min-width: 70px;
+}
+
+.backlog-issue-row .issue-summary {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.issue-labels {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.issue-label {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.issue-status-badge {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.issue-status-badge.todo {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.issue-status-badge.progress {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.issue-status-badge.review {
+  background: #f3e8ff;
+  color: var(--epic);
+}
+
+.issue-status-badge.done {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.issue-due-date {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.issue-estimate {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  min-width: 30px;
+  text-align: right;
+}
+
+.issue-priority {
+  display: flex;
+  align-items: center;
+}
+
+.avatar.unassigned {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+/* Inline Create */
+.inline-create {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.inline-create .input {
+  flex: 1;
+}
+
+.create-issue-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.create-issue-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}

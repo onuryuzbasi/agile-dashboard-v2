@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import {
     Plus,
@@ -9,7 +10,16 @@ import {
     ListTree,
     ArrowUp,
     ArrowDown,
-    Minus
+    Minus,
+    Search,
+    X,
+    ChevronDown,
+    ChevronRight,
+    Calendar,
+    Clock,
+    Filter,
+    Play,
+    CheckCircle2
 } from 'lucide-react'
 
 const typeIcons = {
@@ -28,13 +38,122 @@ const priorityConfig = {
     lowest: { icon: ArrowDown, color: 'var(--priority-lowest)' }
 }
 
+// Format date for display
+const formatDate = (dateString) => {
+    if (!dateString) return null
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+}
+
+// Format date range
+const formatDateRange = (startDate, endDate) => {
+    if (!startDate || !endDate) return 'Add dates'
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`
+}
+
 export default function Backlog() {
-    const { getBacklogIssues, getSprintIssues, sprints, currentSprintId, setSelectedIssue, getUserById } = useProjectStore()
+    const {
+        issues,
+        getBacklogIssues,
+        getSprintIssues,
+        sprints,
+        setSelectedIssue,
+        getUserById,
+        users,
+        startSprint,
+        completeSprint,
+        addIssue,
+        updateIssue
+    } = useProjectStore()
 
-    const backlogIssues = getBacklogIssues()
+    // Filter state
+    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedEpic, setSelectedEpic] = useState(null)
+    const [selectedAssignees, setSelectedAssignees] = useState([])
+    const [collapsedSprints, setCollapsedSprints] = useState(new Set())
+    const [creatingInSection, setCreatingInSection] = useState(null)
+    const [newIssueSummary, setNewIssueSummary] = useState('')
+
+    // Get all epics for filter
+    const epics = issues.filter(i => i.type === 'epic')
+
+    // Filter issues
+    const filterIssues = (issueList) => {
+        return issueList.filter(issue => {
+            // Search filter
+            if (searchQuery && !issue.summary.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                !issue.key.toLowerCase().includes(searchQuery.toLowerCase())) {
+                return false
+            }
+            // Epic filter
+            if (selectedEpic && issue.type !== 'epic' && issue.epicId !== selectedEpic) {
+                return false
+            }
+            // Assignee filter
+            if (selectedAssignees.length > 0 && !selectedAssignees.includes(issue.assigneeId)) {
+                return false
+            }
+            return true
+        })
+    }
+
+    const backlogIssues = filterIssues(getBacklogIssues())
     const activeSprint = sprints.find(s => s.state === 'active')
-    const sprintIssues = activeSprint ? getSprintIssues(activeSprint.id) : []
+    const futureSprints = sprints.filter(s => s.state === 'future')
 
+    // Toggle sprint collapse
+    const toggleSprintCollapse = (sprintId) => {
+        setCollapsedSprints(prev => {
+            const next = new Set(prev)
+            if (next.has(sprintId)) {
+                next.delete(sprintId)
+            } else {
+                next.add(sprintId)
+            }
+            return next
+        })
+    }
+
+    // Toggle assignee filter
+    const toggleAssignee = (userId) => {
+        setSelectedAssignees(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        )
+    }
+
+    // Clear all filters
+    const clearFilters = () => {
+        setSearchQuery('')
+        setSelectedEpic(null)
+        setSelectedAssignees([])
+    }
+
+    const hasFilters = searchQuery || selectedEpic || selectedAssignees.length > 0
+
+    // Handle inline issue creation
+    const handleCreateIssue = (sprintId) => {
+        if (!newIssueSummary.trim()) return
+
+        addIssue({
+            type: 'task',
+            status: 'todo',
+            priority: 'medium',
+            summary: newIssueSummary.trim(),
+            description: '',
+            sprintId: sprintId || null,
+            storyPoints: null,
+            labels: [],
+            assigneeId: null,
+            reporterId: 'user-1'
+        })
+
+        setNewIssueSummary('')
+        setCreatingInSection(null)
+    }
+
+    // Issue Row Component
     const IssueRow = ({ issue }) => {
         const TypeIcon = typeIcons[issue.type] || CheckSquare
         const PriorityIcon = priorityConfig[issue.priority]?.icon || Minus
@@ -43,133 +162,329 @@ export default function Backlog() {
 
         return (
             <div
-                className="card"
-                style={{
-                    padding: 'var(--space-3)',
-                    marginBottom: 'var(--space-2)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-3)'
-                }}
+                className="backlog-issue-row"
                 onClick={() => setSelectedIssue(issue)}
             >
-                <GripVertical size={16} style={{ color: 'var(--text-tertiary)', cursor: 'grab' }} />
+                <GripVertical size={14} className="drag-handle" />
 
                 <div className={`issue-type-icon ${issue.type}`}>
                     <TypeIcon size={10} />
                 </div>
 
-                <span className="text-xs text-tertiary font-medium" style={{ minWidth: 80 }}>
-                    {issue.key}
+                <span className="issue-key">{issue.key}</span>
+
+                <span className="issue-summary">{issue.summary}</span>
+
+                {/* Labels */}
+                {issue.labels && issue.labels.length > 0 && (
+                    <div className="issue-labels">
+                        {issue.labels.slice(0, 2).map(label => (
+                            <span key={label} className="issue-label">{label}</span>
+                        ))}
+                        {issue.labels.length > 2 && (
+                            <span className="issue-label">+{issue.labels.length - 2}</span>
+                        )}
+                    </div>
+                )}
+
+                {/* Status badge */}
+                <span className={`issue-status-badge ${issue.status}`}>
+                    {issue.status === 'todo' ? 'TO DO' :
+                        issue.status === 'progress' ? 'IN PROGRESS' :
+                            issue.status === 'review' ? 'IN REVIEW' : 'DONE'}
                 </span>
 
-                <span className="flex-1 text-sm truncate">{issue.summary}</span>
+                {/* Due date */}
+                {issue.dueDate && (
+                    <span className="issue-due-date">
+                        <Calendar size={12} />
+                        {formatDate(issue.dueDate)}
+                    </span>
+                )}
 
-                <span style={{ color: priorityColor }}>
+                {/* Time estimate */}
+                <span className="issue-estimate">
+                    {issue.storyPoints ? `${issue.storyPoints}pt` : '0m'}
+                </span>
+
+                {/* Priority */}
+                <span className="issue-priority" style={{ color: priorityColor }}>
                     <PriorityIcon size={14} />
                 </span>
 
-                {issue.storyPoints && (
-                    <span className="story-points">{issue.storyPoints}</span>
-                )}
-
-                {assignee && (
+                {/* Assignee */}
+                {assignee ? (
                     <div className="avatar sm" title={assignee.name}>
                         {assignee.name.charAt(0)}
+                    </div>
+                ) : (
+                    <div className="avatar sm unassigned" title="Unassigned">?</div>
+                )}
+            </div>
+        )
+    }
+
+    // Sprint Section Component
+    const SprintSection = ({ sprint, issues: sprintIssues, isBacklog = false }) => {
+        const isCollapsed = collapsedSprints.has(sprint?.id || 'backlog')
+        const sectionId = sprint?.id || 'backlog'
+        const filteredIssues = filterIssues(sprintIssues)
+        const totalIssues = sprintIssues.length
+        const visibleIssues = filteredIssues.length
+        const totalPoints = sprintIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+        const visiblePoints = filteredIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+
+        return (
+            <div className="sprint-section">
+                {/* Sprint Header */}
+                <div className="sprint-header">
+                    <div className="sprint-header-left">
+                        <button
+                            className="btn btn-icon btn-ghost sm"
+                            onClick={() => toggleSprintCollapse(sectionId)}
+                        >
+                            {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                        </button>
+
+                        <span className="sprint-name">
+                            {isBacklog ? 'Backlog' : sprint.name}
+                        </span>
+
+                        {!isBacklog && (
+                            <span className="sprint-dates">
+                                <Calendar size={12} />
+                                {formatDateRange(sprint.startDate, sprint.endDate)}
+                            </span>
+                        )}
+
+                        <span className="sprint-count">
+                            ({visibleIssues} of {totalIssues} work items visible)
+                        </span>
+                    </div>
+
+                    <div className="sprint-header-right">
+                        {/* Points summary */}
+                        <div className="sprint-points">
+                            <span className="points-done">0h</span>
+                            <span className="points-progress">0h</span>
+                            <span className="points-todo">0h</span>
+                        </div>
+
+                        {!isBacklog && (
+                            <>
+                                <span className="sprint-estimate">
+                                    Estimate: {visiblePoints}pt of {totalPoints}pt
+                                </span>
+
+                                {sprint.state === 'active' ? (
+                                    <button
+                                        className="btn btn-sm btn-secondary"
+                                        onClick={() => completeSprint(sprint.id)}
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        Complete sprint
+                                    </button>
+                                ) : sprint.state === 'future' && (
+                                    <button
+                                        className="btn btn-sm btn-secondary"
+                                        onClick={() => startSprint(sprint.id)}
+                                    >
+                                        <Play size={14} />
+                                        Start sprint
+                                    </button>
+                                )}
+                            </>
+                        )}
+
+                        <button className="btn btn-icon btn-ghost sm">⋯</button>
+                    </div>
+                </div>
+
+                {/* Sprint Body */}
+                {!isCollapsed && (
+                    <div className="sprint-body">
+                        {filteredIssues.length > 0 ? (
+                            filteredIssues.map(issue => (
+                                <IssueRow key={issue.id} issue={issue} />
+                            ))
+                        ) : (
+                            <div className="sprint-empty">
+                                {hasFilters
+                                    ? "There's nothing that matches this filter"
+                                    : "Plan a sprint by dragging work items into it, or by dragging the sprint footer."
+                                }
+                            </div>
+                        )}
+
+                        {/* Inline Create */}
+                        {creatingInSection === sectionId ? (
+                            <div className="inline-create">
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="What needs to be done?"
+                                    value={newIssueSummary}
+                                    onChange={(e) => setNewIssueSummary(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleCreateIssue(sprint?.id)
+                                        if (e.key === 'Escape') {
+                                            setCreatingInSection(null)
+                                            setNewIssueSummary('')
+                                        }
+                                    }}
+                                    autoFocus
+                                />
+                                <button
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() => handleCreateIssue(sprint?.id)}
+                                >
+                                    Create
+                                </button>
+                                <button
+                                    className="btn btn-sm btn-ghost"
+                                    onClick={() => {
+                                        setCreatingInSection(null)
+                                        setNewIssueSummary('')
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="create-issue-btn"
+                                onClick={() => setCreatingInSection(sectionId)}
+                            >
+                                <Plus size={14} />
+                                Create
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
         )
     }
 
-    const IssueSection = ({ title, issues, badge, badgeClass }) => (
-        <div className="mb-6">
-            <div
-                className="flex items-center justify-between mb-3"
-                style={{
-                    padding: 'var(--space-2) var(--space-3)',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: 'var(--radius-md)'
-                }}
-            >
-                <div className="flex items-center gap-3">
-                    <h3 className="font-semibold">{title}</h3>
-                    {badge && (
-                        <span className={`badge ${badgeClass}`}>{badge}</span>
-                    )}
-                    <span className="text-sm text-tertiary">
-                        {issues.length} issues · {issues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)} points
-                    </span>
-                </div>
-                <button className="btn btn-sm btn-ghost">
-                    <Plus size={14} />
-                    Add Issue
-                </button>
-            </div>
-
-            {issues.length > 0 ? (
-                issues.map(issue => <IssueRow key={issue.id} issue={issue} />)
-            ) : (
-                <div
-                    style={{
-                        padding: 'var(--space-6)',
-                        textAlign: 'center',
-                        color: 'var(--text-tertiary)',
-                        background: 'var(--bg-secondary)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '2px dashed var(--border-primary)'
-                    }}
-                >
-                    No issues. Drag issues here or create new ones.
-                </div>
-            )}
-        </div>
-    )
-
     return (
-        <div className="animate-fade-in">
-            {/* Page Header */}
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Backlog</h1>
-                    <p className="text-secondary">
-                        Plan and prioritize your work
-                    </p>
+        <div className="backlog-page animate-fade-in">
+            {/* Epic Filter Sidebar */}
+            <div className="epic-sidebar">
+                <div className="epic-sidebar-header">
+                    <span>Epic</span>
+                    <button
+                        className="btn btn-icon btn-ghost sm"
+                        onClick={() => setSelectedEpic(null)}
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
 
-                <button className="btn btn-primary">
-                    <Plus size={18} />
-                    Create Issue
-                </button>
+                <div className="epic-list">
+                    <button
+                        className={`epic-item ${selectedEpic === null ? 'active' : ''}`}
+                        onClick={() => setSelectedEpic(null)}
+                    >
+                        <span className="epic-color" style={{ background: 'var(--text-tertiary)' }} />
+                        No epic
+                    </button>
+
+                    {epics.map(epic => (
+                        <button
+                            key={epic.id}
+                            className={`epic-item ${selectedEpic === epic.id ? 'active' : ''}`}
+                            onClick={() => setSelectedEpic(selectedEpic === epic.id ? null : epic.id)}
+                        >
+                            <span className="epic-color" style={{ background: 'var(--epic)' }} />
+                            {epic.summary}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Active Sprint */}
-            {activeSprint && (
-                <IssueSection
-                    title={activeSprint.name}
-                    issues={sprintIssues}
-                    badge="Active"
-                    badgeClass="badge-task"
-                />
-            )}
+            {/* Main Content */}
+            <div className="backlog-content">
+                {/* Toolbar */}
+                <div className="backlog-toolbar">
+                    {/* Search */}
+                    <div className="backlog-search">
+                        <Search size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search backlog"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')}>
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
 
-            {/* Future Sprints */}
-            {sprints.filter(s => s.state === 'future').map(sprint => (
-                <IssueSection
-                    key={sprint.id}
-                    title={sprint.name}
-                    issues={getSprintIssues(sprint.id)}
-                    badge="Future"
-                    badgeClass="badge-subtask"
-                />
-            ))}
+                    {/* Assignee Filters */}
+                    <div className="assignee-filters">
+                        {users.map(user => (
+                            <button
+                                key={user.id}
+                                className={`avatar sm ${selectedAssignees.includes(user.id) ? 'selected' : ''}`}
+                                onClick={() => toggleAssignee(user.id)}
+                                title={user.name}
+                            >
+                                {user.name.charAt(0)}
+                            </button>
+                        ))}
+                    </div>
 
-            {/* Backlog */}
-            <IssueSection
-                title="Backlog"
-                issues={backlogIssues}
-            />
+                    {/* Quick Filters */}
+                    <div className="toolbar-divider" />
+
+                    <button className="btn btn-sm btn-secondary">
+                        Epic
+                        <ChevronDown size={14} />
+                    </button>
+
+                    <button className="btn btn-sm btn-secondary">
+                        <Filter size={14} />
+                        Quick filters
+                        <ChevronDown size={14} />
+                    </button>
+
+                    {hasFilters && (
+                        <button
+                            className="btn btn-sm btn-ghost"
+                            onClick={clearFilters}
+                        >
+                            Clear filters
+                        </button>
+                    )}
+                </div>
+
+                {/* Sprint Sections */}
+                <div className="sprint-list">
+                    {/* Active Sprint */}
+                    {activeSprint && (
+                        <SprintSection
+                            sprint={activeSprint}
+                            issues={getSprintIssues(activeSprint.id)}
+                        />
+                    )}
+
+                    {/* Future Sprints */}
+                    {futureSprints.map(sprint => (
+                        <SprintSection
+                            key={sprint.id}
+                            sprint={sprint}
+                            issues={getSprintIssues(sprint.id)}
+                        />
+                    ))}
+
+                    {/* Backlog */}
+                    <SprintSection
+                        isBacklog
+                        issues={backlogIssues}
+                    />
+                </div>
+            </div>
         </div>
     )
 }

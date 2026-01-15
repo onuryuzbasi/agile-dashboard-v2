@@ -20,7 +20,10 @@ import {
     Filter,
     Play,
     CheckCircle2,
-    User
+    User,
+    Edit,
+    Trash2,
+    MoreHorizontal
 } from 'lucide-react'
 
 const typeIcons = {
@@ -63,6 +66,7 @@ export default function Backlog() {
         users,
         startSprint,
         completeSprint,
+        deleteSprint,
         addIssue,
         updateIssue,
         deleteIssue,
@@ -85,6 +89,8 @@ export default function Backlog() {
     const [epicDropdownOpen, setEpicDropdownOpen] = useState(false)
     const [epicSearchQuery, setEpicSearchQuery] = useState('')
     const [allEpicsSearchQuery, setAllEpicsSearchQuery] = useState('')
+    const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('')
+    const [sprintMenuOpen, setSprintMenuOpen] = useState(null)
 
     // Refs for click-outside detection
     const typeDropdownRef = useRef(null)
@@ -374,7 +380,46 @@ export default function Backlog() {
                             </>
                         )}
 
-                        <button className="btn btn-icon btn-ghost sm">⋯</button>
+                        {/* Sprint Menu */}
+                        {!isBacklog && (
+                            <div className="sprint-menu-container">
+                                <button
+                                    className="btn btn-icon btn-ghost sm"
+                                    onClick={() => setSprintMenuOpen(sprintMenuOpen === sprint.id ? null : sprint.id)}
+                                >
+                                    <MoreHorizontal size={16} />
+                                </button>
+                                {sprintMenuOpen === sprint.id && (
+                                    <div className="sprint-menu">
+                                        <button onClick={() => {
+                                            setSelectedIssue({ ...sprint, type: 'sprint' })
+                                            setSprintMenuOpen(null)
+                                        }}>
+                                            <Edit size={14} />
+                                            Edit Sprint
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => {
+                                                if (window.confirm(`Delete "${sprint.name}"? Issues will be moved to backlog.`)) {
+                                                    deleteSprint(sprint.id)
+                                                }
+                                                setSprintMenuOpen(null)
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                            Delete Sprint
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {isBacklog && (
+                            <button className="btn btn-icon btn-ghost sm">
+                                <MoreHorizontal size={16} />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -466,19 +511,33 @@ export default function Backlog() {
                                     </button>
                                     {showAssigneeDropdown && (
                                         <div className="assignee-dropdown-menu">
-                                            <button onClick={() => { setNewIssueAssignee(null); setShowAssigneeDropdown(false) }}>
-                                                <span className="avatar xs">?</span>
-                                                Unassigned
-                                            </button>
-                                            {users.map(user => (
-                                                <button
-                                                    key={user.id}
-                                                    onClick={() => { setNewIssueAssignee(user.id); setShowAssigneeDropdown(false) }}
-                                                >
-                                                    <span className="avatar xs">{user.name.charAt(0)}</span>
-                                                    {user.name}
+                                            <div className="assignee-search">
+                                                <Search size={14} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search..."
+                                                    value={assigneeSearchQuery}
+                                                    onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            </div>
+                                            <div className="assignee-list">
+                                                <button onClick={() => { setNewIssueAssignee(null); setShowAssigneeDropdown(false); setAssigneeSearchQuery('') }}>
+                                                    <span className="avatar xs">?</span>
+                                                    Unassigned
                                                 </button>
-                                            ))}
+                                                {users
+                                                    .filter(user => user.name.toLowerCase().includes(assigneeSearchQuery.toLowerCase()))
+                                                    .map(user => (
+                                                        <button
+                                                            key={user.id}
+                                                            onClick={() => { setNewIssueAssignee(user.id); setShowAssigneeDropdown(false); setAssigneeSearchQuery('') }}
+                                                        >
+                                                            <span className="avatar xs">{user.name.charAt(0)}</span>
+                                                            {user.name}
+                                                        </button>
+                                                    ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

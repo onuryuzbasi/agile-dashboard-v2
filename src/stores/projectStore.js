@@ -268,6 +268,24 @@ export const useProjectStore = create(
                 )
             })),
 
+            deleteSprint: (sprintId) => set((state) => ({
+                sprints: state.sprints.filter(sprint => sprint.id !== sprintId),
+                // Move issues from deleted sprint to backlog
+                issues: state.issues.map(issue =>
+                    issue.sprintId === sprintId
+                        ? { ...issue, sprintId: null }
+                        : issue
+                )
+            })),
+
+            updateSprint: (sprintId, updates) => set((state) => ({
+                sprints: state.sprints.map(sprint =>
+                    sprint.id === sprintId
+                        ? { ...sprint, ...updates }
+                        : sprint
+                )
+            })),
+
             // Theme actions
             toggleTheme: () => set((state) => {
                 const newTheme = state.theme === 'light' ? 'dark' : 'light'

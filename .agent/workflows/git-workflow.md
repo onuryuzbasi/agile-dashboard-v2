@@ -9,7 +9,7 @@ description: Git branching workflow for feature development
 - `fix/<name>` - Bug fixes
 - `refactor/<name>` - Code refactoring
 
-## Process
+## Process (Auto-managed)
 // turbo-all
 
 1. Create feature branch from main:
@@ -26,12 +26,27 @@ description: Git branching workflow for feature development
    gh pr create --title "<title>" --body "<description>"
    ```
 
-4. **ALWAYS ASK USER**: "Do you want me to merge this PR to main?"
-   - Wait for explicit approval before merging
-
-5. After user approval, merge via GitHub or:
+4. Auto-merge after verification:
    ```bash
    gh pr merge --squash
    ```
 
-6. Delete the feature branch after merge
+5. Delete the feature branch after merge
+
+## Rollback Commands
+
+If user asks to revert to a previous state:
+
+```bash
+# View commit history
+git log --oneline -20
+
+# Revert to specific commit
+git revert <commit-hash>
+
+# Or reset to previous state (destructive)
+git reset --hard <commit-hash>
+git push --force
+```
+
+**All commits are preserved in git history for easy rollback.**

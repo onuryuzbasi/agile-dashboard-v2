@@ -1860,7 +1860,7 @@ h4 {
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sprint-header {
@@ -1943,6 +1943,7 @@ h4 {
 
 .sprint-body {
   padding: var(--space-2);
+  overflow: visible;
 }
 
 .sprint-empty {
@@ -2109,6 +2110,8 @@ h4 {
   border: 2px solid var(--accent);
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
+  position: relative;
+  overflow: visible;
 }
 
 .inline-create.enhanced .input {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import {
     Plus,
@@ -85,6 +85,25 @@ export default function Backlog() {
     const [epicDropdownOpen, setEpicDropdownOpen] = useState(false)
     const [epicSearchQuery, setEpicSearchQuery] = useState('')
     const [allEpicsSearchQuery, setAllEpicsSearchQuery] = useState('')
+
+    // Refs for click-outside detection
+    const typeDropdownRef = useRef(null)
+    const assigneeDropdownRef = useRef(null)
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target)) {
+                setShowTypeDropdown(false)
+            }
+            if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target)) {
+                setShowAssigneeDropdown(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     // Get all epics for filter
     const epics = issues.filter(i => i.type === 'epic')
@@ -379,7 +398,7 @@ export default function Backlog() {
                         {creatingInSection === sectionId ? (
                             <div className="inline-create enhanced">
                                 {/* Type Dropdown */}
-                                <div className="inline-type-dropdown">
+                                <div className="inline-type-dropdown" ref={typeDropdownRef}>
                                     <button
                                         className={`issue-type-icon ${newIssueType}`}
                                         onClick={() => setShowTypeDropdown(!showTypeDropdown)}
@@ -431,7 +450,7 @@ export default function Backlog() {
                                 </button>
 
                                 {/* Assignee Dropdown */}
-                                <div className="inline-assignee-dropdown">
+                                <div className="inline-assignee-dropdown" ref={assigneeDropdownRef}>
                                     <button
                                         className="inline-icon-btn"
                                         onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}

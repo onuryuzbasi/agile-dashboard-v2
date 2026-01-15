@@ -2146,9 +2146,9 @@ h4 {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 100;
+  z-index: 1000;
   min-width: 120px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .type-dropdown-menu button {
@@ -2203,9 +2203,9 @@ h4 {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 100;
+  z-index: 1000;
   min-width: 160px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .assignee-dropdown-menu button {

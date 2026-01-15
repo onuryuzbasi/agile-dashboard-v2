@@ -73,6 +73,9 @@ export default function Backlog() {
     const [collapsedSprints, setCollapsedSprints] = useState(new Set())
     const [creatingInSection, setCreatingInSection] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
+    const [expandedEpics, setExpandedEpics] = useState(new Set())
+    const [editingEpicId, setEditingEpicId] = useState(null)
+    const [editingEpicName, setEditingEpicName] = useState('')
 
     // Get all epics for filter
     const epics = issues.filter(i => i.type === 'epic')
@@ -128,6 +131,46 @@ export default function Backlog() {
         setSearchQuery('')
         setSelectedEpic(null)
         setSelectedAssignees([])
+    }
+
+    // Toggle epic expand
+    const toggleEpicExpand = (epicId) => {
+        setExpandedEpics(prev => {
+            const next = new Set(prev)
+            if (next.has(epicId)) {
+                next.delete(epicId)
+            } else {
+                next.add(epicId)
+            }
+            return next
+        })
+    }
+
+    // Start editing epic name
+    const startEditingEpic = (epic) => {
+        setEditingEpicId(epic.id)
+        setEditingEpicName(epic.summary)
+    }
+
+    // Save epic name
+    const saveEpicName = () => {
+        if (editingEpicId && editingEpicName.trim()) {
+            updateIssue(editingEpicId, { summary: editingEpicName.trim() })
+        }
+        setEditingEpicId(null)
+        setEditingEpicName('')
+    }
+
+    // Get epic stats
+    const getEpicStats = (epicId) => {
+        const epicIssues = issues.filter(i => i.epicId === epicId)
+        const completed = epicIssues.filter(i => i.status === 'done').length
+        const totalPoints = epicIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+        return {
+            workItems: epicIssues.length,
+            completed,
+            estimate: totalPoints
+        }
     }
 
     const hasFilters = searchQuery || selectedEpic || selectedAssignees.length > 0
@@ -388,16 +431,108 @@ export default function Backlog() {
                         No epic
                     </button>
 
-                    {epics.map(epic => (
-                        <button
-                            key={epic.id}
-                            className={`epic-item ${selectedEpic === epic.id ? 'active' : ''}`}
-                            onClick={() => setSelectedEpic(selectedEpic === epic.id ? null : epic.id)}
-                        >
-                            <span className="epic-color" style={{ background: 'var(--epic)' }} />
-                            {epic.summary}
-                        </button>
-                    ))}
+                    {epics.map(epic => {
+                        const isExpanded = expandedEpics.has(epic.id)
+                        const isEditing = editingEpicId === epic.id
+                        const stats = getEpicStats(epic.id)
+
+                        return (
+                            <div key={epic.id} className="epic-expandable">
+                                <div className={`epic-item-row ${selectedEpic === epic.id ? 'active' : ''}`}>
+                                    <button
+                                        className="epic-expand-btn"
+                                        onClick={() => toggleEpicExpand(epic.id)}
+                                    >
+                                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                    </button>
+
+                                    <span className="epic-color" style={{ background: 'var(--epic)' }} />
+
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            className="epic-name-input"
+                                            value={editingEpicName}
+                                            onChange={(e) => setEditingEpicName(e.target.value)}
+                                            onBlur={saveEpicName}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') saveEpicName()
+                                                if (e.key === 'Escape') {
+                                                    setEditingEpicId(null)
+                                                    setEditingEpicName('')
+                                                }
+                                            }}
+                                            autoFocus
+                                        />
+                                    ) : (
+                                        <span
+                                            className="epic-name"
+                                            onClick={() => startEditingEpic(epic)}
+                                            title="Click to edit"
+                                        >
+                                            {epic.summary}
+                                        </span>
+                                    )}
+
+                                    <button
+                                        className="epic-menu-btn"
+                                        onClick={() => setSelectedIssue(epic)}
+                                    >
+                                        ⋯
+                                    </button>
+                                </div>
+
+                                {isExpanded && (
+                                    <div className="epic-details">
+                                        <div className="epic-detail-row">
+                                            <span>Key</span>
+                                            <span>{epic.key}</span>
+                                        </div>
+                                        <div className="epic-detail-row">
+                                            <span>Work items</span>
+                                            <span>{stats.workItems}</span>
+                                        </div>
+                                        <div className="epic-detail-row">
+                                            <span>Completed</span>
+                                            <span>{stats.completed}</span>
+                                        </div>
+                                        <div className="epic-detail-row">
+                                            <span>Estimate</span>
+                                            <span>{stats.estimate}pt</span>
+                                        </div>
+
+                                        <button
+                                            className="btn btn-sm btn-secondary epic-detail-btn"
+                                            onClick={() => setSelectedIssue(epic)}
+                                        >
+                                            View details
+                                        </button>
+                                        <button
+                                            className="btn btn-sm btn-secondary epic-detail-btn"
+                                            onClick={() => {
+                                                const newIssue = addIssue({
+                                                    type: 'task',
+                                                    status: 'todo',
+                                                    priority: 'medium',
+                                                    summary: 'New work item',
+                                                    description: '',
+                                                    epicId: epic.id,
+                                                    sprintId: null,
+                                                    storyPoints: null,
+                                                    labels: [],
+                                                    assigneeId: null,
+                                                    reporterId: 'user-1'
+                                                })
+                                                setSelectedIssue(newIssue)
+                                            }}
+                                        >
+                                            Create work item
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })}
                 </div>
 
                 {/* Create Epic Button */}

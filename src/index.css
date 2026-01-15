@@ -1464,6 +1464,127 @@ h4 {
   color: var(--text-primary);
 }
 
+/* Expandable Epic Items */
+.epic-expandable {
+  margin-bottom: var(--space-1);
+}
+
+.epic-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.epic-item-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.epic-item-row.active {
+  background: var(--accent-light);
+}
+
+.epic-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.epic-expand-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.epic-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.epic-name:hover {
+  text-decoration: underline;
+}
+
+.epic-name-input {
+  flex: 1;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.epic-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.epic-item-row:hover .epic-menu-btn {
+  opacity: 1;
+}
+
+.epic-menu-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.epic-details {
+  margin-left: 32px;
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-1);
+}
+
+.epic-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.epic-detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.epic-detail-row span:last-child {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.epic-detail-btn {
+  width: 100%;
+  margin-top: var(--space-2);
+  justify-content: center;
+}
+
 /* Backlog Content */
 .backlog-content {
   flex: 1;

@@ -399,6 +399,32 @@ export default function Backlog() {
                         </button>
                     ))}
                 </div>
+
+                {/* Create Epic Button */}
+                <div className="epic-sidebar-footer">
+                    <button
+                        className="create-epic-btn"
+                        onClick={() => {
+                            const newEpic = addIssue({
+                                type: 'epic',
+                                status: 'todo',
+                                priority: 'medium',
+                                summary: 'New Epic',
+                                description: '',
+                                sprintId: null,
+                                storyPoints: null,
+                                labels: [],
+                                assigneeId: null,
+                                reporterId: 'user-1'
+                            })
+                            // Open the issue modal to edit
+                            setSelectedIssue(newEpic)
+                        }}
+                    >
+                        <Plus size={14} />
+                        Create epic
+                    </button>
+                </div>
             </div>
 
             {/* Main Content */}

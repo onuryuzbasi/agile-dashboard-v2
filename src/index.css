@@ -1439,6 +1439,31 @@ h4 {
   flex-shrink: 0;
 }
 
+.epic-sidebar-footer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-primary);
+}
+
+.create-epic-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.create-epic-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 /* Backlog Content */
 .backlog-content {
   flex: 1;

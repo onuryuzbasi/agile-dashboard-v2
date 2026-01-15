@@ -63,7 +63,8 @@ export default function Backlog() {
         startSprint,
         completeSprint,
         addIssue,
-        updateIssue
+        updateIssue,
+        deleteIssue
     } = useProjectStore()
 
     // Filter state
@@ -73,20 +74,26 @@ export default function Backlog() {
     const [collapsedSprints, setCollapsedSprints] = useState(new Set())
     const [creatingInSection, setCreatingInSection] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
+    const [epicMenuOpen, setEpicMenuOpen] = useState(null)
+    const [showAllEpicsModal, setShowAllEpicsModal] = useState(false)
 
     // Get all epics for filter
     const epics = issues.filter(i => i.type === 'epic')
 
-    // Filter issues
+    // Filter issues (exclude epics from backlog list)
     const filterIssues = (issueList) => {
         return issueList.filter(issue => {
+            // Hide epics from the backlog list
+            if (issue.type === 'epic') {
+                return false
+            }
             // Search filter
             if (searchQuery && !issue.summary.toLowerCase().includes(searchQuery.toLowerCase()) &&
                 !issue.key.toLowerCase().includes(searchQuery.toLowerCase())) {
                 return false
             }
             // Epic filter
-            if (selectedEpic && issue.type !== 'epic' && issue.epicId !== selectedEpic) {
+            if (selectedEpic && issue.epicId !== selectedEpic) {
                 return false
             }
             // Assignee filter
@@ -389,18 +396,52 @@ export default function Backlog() {
                     </button>
 
                     {epics.map(epic => (
-                        <button
-                            key={epic.id}
-                            className={`epic-item ${selectedEpic === epic.id ? 'active' : ''}`}
-                            onClick={() => setSelectedEpic(selectedEpic === epic.id ? null : epic.id)}
-                        >
-                            <span className="epic-color" style={{ background: 'var(--epic)' }} />
-                            {epic.summary}
-                        </button>
+                        <div key={epic.id} className="epic-item-wrapper">
+                            <button
+                                className={`epic-item ${selectedEpic === epic.id ? 'active' : ''}`}
+                                onClick={() => setSelectedEpic(selectedEpic === epic.id ? null : epic.id)}
+                            >
+                                <span className="epic-color" style={{ background: 'var(--epic)' }} />
+                                <span className="epic-name-text">{epic.summary}</span>
+                            </button>
+                            <div className="epic-menu-container">
+                                <button
+                                    className="epic-dots-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEpicMenuOpen(epicMenuOpen === epic.id ? null : epic.id)
+                                    }}
+                                >
+                                    ⋯
+                                </button>
+                                {epicMenuOpen === epic.id && (
+                                    <div className="epic-dropdown-menu">
+                                        <button onClick={() => {
+                                            setSelectedIssue(epic)
+                                            setEpicMenuOpen(null)
+                                        }}>
+                                            Edit Epic
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => {
+                                                deleteIssue(epic.id)
+                                                setEpicMenuOpen(null)
+                                                if (selectedEpic === epic.id) {
+                                                    setSelectedEpic(null)
+                                                }
+                                            }}
+                                        >
+                                            Delete Epic
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     ))}
                 </div>
 
-                {/* Create Epic Button */}
+                {/* Epic Sidebar Footer */}
                 <div className="epic-sidebar-footer">
                     <button
                         className="create-epic-btn"
@@ -417,15 +458,85 @@ export default function Backlog() {
                                 assigneeId: null,
                                 reporterId: 'user-1'
                             })
-                            // Open the issue modal to edit
                             setSelectedIssue(newEpic)
                         }}
                     >
                         <Plus size={14} />
                         Create epic
                     </button>
+                    <button
+                        className="show-all-epics-btn"
+                        onClick={() => setShowAllEpicsModal(true)}
+                    >
+                        <Layers size={14} />
+                        Show all Epics
+                    </button>
                 </div>
             </div>
+
+            {/* Show All Epics Modal */}
+            {showAllEpicsModal && (
+                <div className="modal-overlay" onClick={() => setShowAllEpicsModal(false)}>
+                    <div className="modal epic-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>All Epics</h2>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowAllEpicsModal(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            {epics.length === 0 ? (
+                                <p className="text-secondary text-center">No epics yet. Create one to get started.</p>
+                            ) : (
+                                <div className="epic-list-modal">
+                                    {epics.map(epic => {
+                                        const epicIssues = issues.filter(i => i.epicId === epic.id)
+                                        const completedCount = epicIssues.filter(i => i.status === 'done').length
+                                        const totalCount = epicIssues.length
+                                        const isDone = epic.status === 'done'
+
+                                        return (
+                                            <div key={epic.id} className={`epic-card ${isDone ? 'done' : ''}`}>
+                                                <div className="epic-card-header">
+                                                    <span className="epic-color lg" style={{ background: 'var(--epic)' }} />
+                                                    <div className="epic-card-info">
+                                                        <span className="epic-key">{epic.key}</span>
+                                                        <h3>{epic.summary}</h3>
+                                                    </div>
+                                                    <span className={`badge ${isDone ? 'badge-success' : 'badge-secondary'}`}>
+                                                        {isDone ? 'Done' : 'In Progress'}
+                                                    </span>
+                                                </div>
+                                                <div className="epic-card-stats">
+                                                    <span>Work items: {totalCount}</span>
+                                                    <span>Completed: {completedCount}/{totalCount}</span>
+                                                </div>
+                                                {totalCount > 0 && (
+                                                    <div className="epic-progress-bar">
+                                                        <div
+                                                            className="epic-progress-fill"
+                                                            style={{ width: `${(completedCount / totalCount) * 100}%` }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <button
+                                                    className="btn btn-sm btn-secondary"
+                                                    onClick={() => {
+                                                        setSelectedIssue(epic)
+                                                        setShowAllEpicsModal(false)
+                                                    }}
+                                                >
+                                                    View Details
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <div className="backlog-content">

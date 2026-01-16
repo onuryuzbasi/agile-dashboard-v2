@@ -238,6 +238,68 @@ export const useProjectStore = create(
 
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),
 
+            // Soft delete issues (move to trash)
+            softDeleteIssues: (issueIds) => set((state) => ({
+                issues: state.issues.map(issue =>
+                    issueIds.includes(issue.id)
+                        ? { ...issue, isDeleted: true, deletedAt: new Date().toISOString() }
+                        : issue
+                )
+            })),
+
+            // Restore issue from trash
+            restoreIssue: (issueId) => set((state) => ({
+                issues: state.issues.map(issue =>
+                    issue.id === issueId
+                        ? { ...issue, isDeleted: false, deletedAt: null }
+                        : issue
+                )
+            })),
+
+            // Permanently delete issue
+            permanentlyDeleteIssue: (issueId) => set((state) => ({
+                issues: state.issues.filter(issue => issue.id !== issueId)
+            })),
+
+            // Get deleted issues
+            getDeletedIssues: () => {
+                const state = get()
+                return state.issues.filter(i => i.isDeleted)
+            },
+
+            // Add work log to an issue
+            addWorkLog: (issueId, workLog) => set((state) => ({
+                issues: state.issues.map(issue =>
+                    issue.id === issueId
+                        ? {
+                            ...issue,
+                            workLogs: [
+                                ...(issue.workLogs || []),
+                                {
+                                    id: `log-${Date.now()}`,
+                                    ...workLog,
+                                    createdAt: new Date().toISOString()
+                                }
+                            ],
+                            updatedAt: new Date().toISOString()
+                        }
+                        : issue
+                )
+            })),
+
+            // Remove work log from an issue
+            removeWorkLog: (issueId, workLogId) => set((state) => ({
+                issues: state.issues.map(issue =>
+                    issue.id === issueId
+                        ? {
+                            ...issue,
+                            workLogs: (issue.workLogs || []).filter(log => log.id !== workLogId),
+                            updatedAt: new Date().toISOString()
+                        }
+                        : issue
+                )
+            })),
+
             // Sprint actions
             setCurrentSprint: (sprintId) => set({ currentSprintId: sprintId }),
 

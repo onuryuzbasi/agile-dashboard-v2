@@ -10,7 +10,8 @@ import {
     ChevronRight,
     Moon,
     Sun,
-    PenTool
+    PenTool,
+    List
 } from 'lucide-react'
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
     { path: '/board', icon: Kanban, label: 'Board' },
     { path: '/backlog', icon: ListTodo, label: 'Backlog' },
     { path: '/sprints', icon: Zap, label: 'Sprints' },
+    { path: '/list', icon: List, label: 'List' },
     { path: '/whiteboard', icon: PenTool, label: 'Whiteboard' },
 ]
 

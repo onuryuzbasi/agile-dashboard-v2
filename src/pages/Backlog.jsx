@@ -23,7 +23,8 @@ import {
     User,
     Edit,
     Trash2,
-    MoreHorizontal
+    MoreHorizontal,
+    Eye
 } from 'lucide-react'
 
 const typeIcons = {
@@ -70,7 +71,8 @@ export default function Backlog() {
         addIssue,
         updateIssue,
         deleteIssue,
-        addSprint
+        addSprint,
+        softDeleteIssues
     } = useProjectStore()
 
     // Filter state
@@ -91,6 +93,10 @@ export default function Backlog() {
     const [allEpicsSearchQuery, setAllEpicsSearchQuery] = useState('')
     const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('')
     const [sprintMenuOpen, setSprintMenuOpen] = useState(null)
+
+    // Multi-select state
+    const [selectedIssues, setSelectedIssues] = useState(new Set())
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     // Refs for click-outside detection
     const typeDropdownRef = useRef(null)
@@ -243,12 +249,35 @@ export default function Backlog() {
         const PriorityIcon = priorityConfig[issue.priority]?.icon || Minus
         const priorityColor = priorityConfig[issue.priority]?.color
         const assignee = issue.assigneeId ? getUserById(issue.assigneeId) : null
+        const isSelected = selectedIssues.has(issue.id)
+
+        const toggleSelection = (e) => {
+            e.stopPropagation()
+            setSelectedIssues(prev => {
+                const next = new Set(prev)
+                if (next.has(issue.id)) {
+                    next.delete(issue.id)
+                } else {
+                    next.add(issue.id)
+                }
+                return next
+            })
+        }
 
         return (
             <div
-                className="backlog-issue-row"
+                className={`backlog-issue-row ${isSelected ? 'selected' : ''}`}
                 onClick={() => setSelectedIssue(issue)}
             >
+                {/* Checkbox for multi-select */}
+                <input
+                    type="checkbox"
+                    className="issue-checkbox"
+                    checked={isSelected}
+                    onChange={toggleSelection}
+                    onClick={(e) => e.stopPropagation()}
+                />
+
                 <GripVertical size={14} className="drag-handle" />
 
                 <div className={`issue-type-icon ${issue.type}`}>
@@ -579,57 +608,84 @@ export default function Backlog() {
                     </button>
                 </div>
 
+                {/* Epic Search */}
+                <div className="epic-sidebar-search">
+                    <Search size={14} />
+                    <input
+                        type="text"
+                        placeholder="Search epics..."
+                        value={epicSearchQuery}
+                        onChange={(e) => setEpicSearchQuery(e.target.value)}
+                    />
+                </div>
+
                 <div className="epic-list">
                     <button
                         className={`epic-item ${selectedEpics.includes('no-epic') ? 'active' : ''}`}
                         onClick={(e) => toggleEpic('no-epic', e.ctrlKey || e.metaKey)}
                     >
                         <span className="epic-color" style={{ background: 'var(--text-tertiary)' }} />
-                        No epic
+                        <span className="epic-name-text">No epic</span>
                     </button>
 
-                    {epics.map(epic => (
-                        <div key={epic.id} className="epic-item-wrapper">
-                            <button
-                                className={`epic-item ${selectedEpics.includes(epic.id) ? 'active' : ''}`}
-                                onClick={(e) => toggleEpic(epic.id, e.ctrlKey || e.metaKey)}
-                            >
-                                <span className="epic-color" style={{ background: 'var(--epic)' }} />
-                                <span className="epic-name-text">{epic.summary}</span>
-                            </button>
-                            <div className="epic-menu-container">
+                    {epics
+                        .filter(epic => epic.summary.toLowerCase().includes(epicSearchQuery.toLowerCase()))
+                        .map(epic => (
+                            <div key={epic.id} className="epic-item-wrapper" title={epic.summary}>
+                                {/* Styled tooltip - shows on hover with full name */}
+                                <div className="epic-name-tooltip">
+                                    <span className="epic-tooltip-color" style={{ background: 'var(--epic)' }} />
+                                    <span>{epic.summary}</span>
+                                </div>
                                 <button
-                                    className="epic-dots-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setEpicMenuOpen(epicMenuOpen === epic.id ? null : epic.id)
-                                    }}
+                                    className={`epic-item ${selectedEpics.includes(epic.id) ? 'active' : ''}`}
+                                    onClick={(e) => toggleEpic(epic.id, e.ctrlKey || e.metaKey)}
                                 >
-                                    ⋯
+                                    <span className="epic-color" style={{ background: 'var(--epic)' }} />
+                                    <span className="epic-name-text">{epic.summary}</span>
                                 </button>
-                                {epicMenuOpen === epic.id && (
-                                    <div className="epic-dropdown-menu">
-                                        <button onClick={() => {
-                                            setSelectedIssue(epic)
-                                            setEpicMenuOpen(null)
-                                        }}>
-                                            Edit Epic
-                                        </button>
-                                        <button
-                                            className="delete-btn"
-                                            onClick={() => {
-                                                deleteIssue(epic.id)
+                                <div className="epic-menu-container">
+                                    <button
+                                        className="epic-dots-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEpicMenuOpen(epicMenuOpen === epic.id ? null : epic.id)
+                                        }}
+                                    >
+                                        ⋯
+                                    </button>
+                                    {epicMenuOpen === epic.id && (
+                                        <div className="epic-dropdown-menu">
+                                            <button onClick={() => {
+                                                setSelectedIssue(epic)
                                                 setEpicMenuOpen(null)
-                                                setSelectedEpics(prev => prev.filter(id => id !== epic.id))
-                                            }}
-                                        >
-                                            Delete Epic
-                                        </button>
-                                    </div>
-                                )}
+                                            }}>
+                                                <Eye size={14} />
+                                                View Details
+                                            </button>
+                                            <button onClick={() => {
+                                                setSelectedIssue(epic)
+                                                setEpicMenuOpen(null)
+                                            }}>
+                                                <Edit size={14} />
+                                                Edit Epic
+                                            </button>
+                                            <button
+                                                className="delete-btn"
+                                                onClick={() => {
+                                                    deleteIssue(epic.id)
+                                                    setEpicMenuOpen(null)
+                                                    setSelectedEpics(prev => prev.filter(id => id !== epic.id))
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                                Delete Epic
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
 
                 {/* Epic Sidebar Footer */}
@@ -911,6 +967,59 @@ export default function Backlog() {
                     />
                 </div>
             </div>
+
+            {/* Bulk Action Bar */}
+            {selectedIssues.size > 0 && (
+                <div className="bulk-action-bar">
+                    <button className="bulk-action-close" onClick={() => setSelectedIssues(new Set())}>
+                        <X size={16} />
+                    </button>
+                    <span className="bulk-action-count">{selectedIssues.size} selected</span>
+                    <div className="bulk-action-buttons">
+                        <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => setShowDeleteConfirm(true)}
+                        >
+                            <Trash2 size={14} />
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+                    <div className="modal delete-confirm-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Delete Issues</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowDeleteConfirm(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>Are you sure you want to delete {selectedIssues.size} selected issue{selectedIssues.size > 1 ? 's' : ''}?</p>
+                            <p className="text-secondary text-sm">This action will move the issues to trash. You can restore them from Settings &gt; Trash.</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={() => {
+                                    softDeleteIssues(Array.from(selectedIssues))
+                                    setSelectedIssues(new Set())
+                                    setShowDeleteConfirm(false)
+                                }}
+                            >
+                                <Trash2 size={14} />
+                                Delete Issues
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

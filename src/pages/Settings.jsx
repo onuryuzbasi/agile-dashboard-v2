@@ -10,17 +10,47 @@ import {
     Download,
     Upload,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    RotateCcw,
+    BookOpen,
+    Bug,
+    CheckSquare,
+    Layers,
+    ListTree,
+    Calendar,
+    X
 } from 'lucide-react'
 
+const typeIcons = {
+    story: { icon: BookOpen, color: 'var(--story)' },
+    bug: { icon: Bug, color: 'var(--bug)' },
+    task: { icon: CheckSquare, color: 'var(--task)' },
+    epic: { icon: Layers, color: 'var(--epic)' },
+    subtask: { icon: ListTree, color: 'var(--subtask)' }
+}
+
 export default function Settings() {
-    const { theme, toggleTheme, projects, issues, sprints, users } = useProjectStore()
+    const {
+        theme,
+        toggleTheme,
+        projects,
+        issues,
+        sprints,
+        users,
+        restoreIssue,
+        permanentlyDeleteIssue
+    } = useProjectStore()
+
+    const [activeTab, setActiveTab] = useState('general')
     const [jiraConfig, setJiraConfig] = useState({
         domain: '',
         email: '',
         apiToken: ''
     })
     const [importStatus, setImportStatus] = useState(null)
+
+    // Get deleted issues
+    const deletedIssues = issues.filter(i => i.isDeleted)
 
     const handleJiraConnect = async () => {
         if (!jiraConfig.domain || !jiraConfig.email || !jiraConfig.apiToken) {
@@ -64,6 +94,12 @@ export default function Settings() {
         }
     }
 
+    const formatDate = (dateString) => {
+        if (!dateString) return ''
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    }
+
     const SettingSection = ({ icon: Icon, title, description, children }) => (
         <div className="card mb-4 animate-fade-in">
             <div className="card-header mb-4">
@@ -104,138 +140,252 @@ export default function Settings() {
                 </div>
             </div>
 
-            {/* Appearance */}
-            <SettingSection
-                icon={theme === 'dark' ? Moon : Sun}
-                title="Appearance"
-                description="Customize how the dashboard looks"
-            >
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-medium">Dark Mode</div>
-                        <div className="text-sm text-secondary">Switch between light and dark themes</div>
-                    </div>
-                    <button
-                        className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={toggleTheme}
-                    >
-                        {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-                        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                    </button>
-                </div>
-            </SettingSection>
-
-            {/* Jira Integration */}
-            <SettingSection
-                icon={Link}
-                title="Jira Integration"
-                description="Connect to Jira for one-time import of your projects"
-            >
-                <div className="flex flex-col gap-4">
-                    <div className="input-group">
-                        <label className="input-label">Jira Domain</label>
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="your-domain.atlassian.net"
-                            value={jiraConfig.domain}
-                            onChange={(e) => setJiraConfig({ ...jiraConfig, domain: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <label className="input-label">Email</label>
-                        <input
-                            type="email"
-                            className="input"
-                            placeholder="your-email@example.com"
-                            value={jiraConfig.email}
-                            onChange={(e) => setJiraConfig({ ...jiraConfig, email: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <label className="input-label">API Token</label>
-                        <input
-                            type="password"
-                            className="input"
-                            placeholder="Your Jira API token"
-                            value={jiraConfig.apiToken}
-                            onChange={(e) => setJiraConfig({ ...jiraConfig, apiToken: e.target.value })}
-                        />
-                        <p className="text-xs text-tertiary mt-1">
-                            Generate an API token from your Atlassian account settings
-                        </p>
-                    </div>
-
-                    {importStatus && (
-                        <div
-                            className={`flex items-center gap-2 p-3 rounded-md ${importStatus.type === 'success' ? 'bg-success-light text-success' :
-                                    importStatus.type === 'error' ? 'bg-danger-light text-danger' :
-                                        'bg-info-light text-info'
-                                }`}
-                            style={{
-                                background: importStatus.type === 'success' ? 'var(--success-light)' :
-                                    importStatus.type === 'error' ? 'var(--danger-light)' :
-                                        'var(--info-light)',
-                                color: importStatus.type === 'success' ? 'var(--success)' :
-                                    importStatus.type === 'error' ? 'var(--danger)' :
-                                        'var(--info)'
-                            }}
-                        >
-                            {importStatus.type === 'success' ? <CheckCircle2 size={16} /> :
-                                importStatus.type === 'error' ? <AlertCircle size={16} /> :
-                                    <div className="animate-pulse">●</div>}
-                            {importStatus.message}
-                        </div>
+            {/* Tabs */}
+            <div className="settings-tabs">
+                <button
+                    className={`settings-tab ${activeTab === 'general' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('general')}
+                >
+                    <SettingsIcon size={16} />
+                    General
+                </button>
+                <button
+                    className={`settings-tab ${activeTab === 'trash' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('trash')}
+                >
+                    <Trash2 size={16} />
+                    Trash
+                    {deletedIssues.length > 0 && (
+                        <span className="settings-tab-badge">{deletedIssues.length}</span>
                     )}
+                </button>
+            </div>
 
-                    <button
-                        className="btn btn-primary w-full"
-                        onClick={handleJiraConnect}
+            {activeTab === 'general' && (
+                <>
+                    {/* Appearance */}
+                    <SettingSection
+                        icon={theme === 'dark' ? Moon : Sun}
+                        title="Appearance"
+                        description="Customize how the dashboard looks"
                     >
-                        <Link size={16} />
-                        Connect to Jira
-                    </button>
-                </div>
-            </SettingSection>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="font-medium">Dark Mode</div>
+                                <div className="text-sm text-secondary">Switch between light and dark themes</div>
+                            </div>
+                            <button
+                                className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={toggleTheme}
+                            >
+                                {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                                {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                            </button>
+                        </div>
+                    </SettingSection>
 
-            {/* Data Management */}
-            <SettingSection
-                icon={Database}
-                title="Data Management"
-                description="Export or clear your dashboard data"
-            >
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between p-3" style={{ background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                        <div>
-                            <div className="font-medium">Current Data</div>
-                            <div className="text-sm text-secondary">
-                                {projects.length} projects · {issues.length} issues · {sprints.length} sprints
+                    {/* Jira Integration */}
+                    <SettingSection
+                        icon={Link}
+                        title="Jira Integration"
+                        description="Connect to Jira for one-time import of your projects"
+                    >
+                        <div className="flex flex-col gap-4">
+                            <div className="input-group">
+                                <label className="input-label">Jira Domain</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="your-domain.atlassian.net"
+                                    value={jiraConfig.domain}
+                                    onChange={(e) => setJiraConfig({ ...jiraConfig, domain: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-label">Email</label>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    placeholder="your-email@example.com"
+                                    value={jiraConfig.email}
+                                    onChange={(e) => setJiraConfig({ ...jiraConfig, email: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-label">API Token</label>
+                                <input
+                                    type="password"
+                                    className="input"
+                                    placeholder="Your Jira API token"
+                                    value={jiraConfig.apiToken}
+                                    onChange={(e) => setJiraConfig({ ...jiraConfig, apiToken: e.target.value })}
+                                />
+                                <p className="text-xs text-tertiary mt-1">
+                                    Generate an API token from your Atlassian account settings
+                                </p>
+                            </div>
+
+                            {importStatus && (
+                                <div
+                                    className={`flex items-center gap-2 p-3 rounded-md ${importStatus.type === 'success' ? 'bg-success-light text-success' :
+                                        importStatus.type === 'error' ? 'bg-danger-light text-danger' :
+                                            'bg-info-light text-info'
+                                        }`}
+                                    style={{
+                                        background: importStatus.type === 'success' ? 'var(--success-light)' :
+                                            importStatus.type === 'error' ? 'var(--danger-light)' :
+                                                'var(--info-light)',
+                                        color: importStatus.type === 'success' ? 'var(--success)' :
+                                            importStatus.type === 'error' ? 'var(--danger)' :
+                                                'var(--info)'
+                                    }}
+                                >
+                                    {importStatus.type === 'success' ? <CheckCircle2 size={16} /> :
+                                        importStatus.type === 'error' ? <AlertCircle size={16} /> :
+                                            <div className="animate-pulse">●</div>}
+                                    {importStatus.message}
+                                </div>
+                            )}
+
+                            <button
+                                className="btn btn-primary w-full"
+                                onClick={handleJiraConnect}
+                            >
+                                <Link size={16} />
+                                Connect to Jira
+                            </button>
+                        </div>
+                    </SettingSection>
+
+                    {/* Data Management */}
+                    <SettingSection
+                        icon={Database}
+                        title="Data Management"
+                        description="Export or clear your dashboard data"
+                    >
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between p-3" style={{ background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                                <div>
+                                    <div className="font-medium">Current Data</div>
+                                    <div className="text-sm text-secondary">
+                                        {projects.length} projects · {issues.length} issues · {sprints.length} sprints
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button className="btn btn-secondary flex-1" onClick={handleExportData}>
+                                    <Download size={16} />
+                                    Export Data
+                                </button>
+                                <button className="btn btn-secondary flex-1">
+                                    <Upload size={16} />
+                                    Import Data
+                                </button>
+                            </div>
+
+                            <button
+                                className="btn btn-danger w-full"
+                                onClick={handleClearData}
+                            >
+                                <Trash2 size={16} />
+                                Clear All Data
+                            </button>
+                        </div>
+                    </SettingSection>
+                </>
+            )}
+
+            {activeTab === 'trash' && (
+                <div className="card animate-fade-in">
+                    <div className="card-header mb-4">
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'var(--danger-light)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--danger)'
+                                }}
+                            >
+                                <Trash2 size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Trash</h3>
+                                <p className="text-sm text-secondary">
+                                    {deletedIssues.length} deleted item{deletedIssues.length !== 1 ? 's' : ''}
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-3">
-                        <button className="btn btn-secondary flex-1" onClick={handleExportData}>
-                            <Download size={16} />
-                            Export Data
-                        </button>
-                        <button className="btn btn-secondary flex-1">
-                            <Upload size={16} />
-                            Import Data
-                        </button>
-                    </div>
+                    {deletedIssues.length === 0 ? (
+                        <div className="trash-empty">
+                            <Trash2 size={48} />
+                            <h4>Trash is empty</h4>
+                            <p>Deleted issues will appear here</p>
+                        </div>
+                    ) : (
+                        <div className="trash-list">
+                            {deletedIssues.map(issue => {
+                                const TypeIcon = typeIcons[issue.type]?.icon || CheckSquare
+                                const typeColor = typeIcons[issue.type]?.color || 'var(--text-secondary)'
 
-                    <button
-                        className="btn btn-danger w-full"
-                        onClick={handleClearData}
-                    >
-                        <Trash2 size={16} />
-                        Clear All Data
-                    </button>
+                                return (
+                                    <div key={issue.id} className="trash-item">
+                                        <div className="trash-item-info">
+                                            <div
+                                                className="trash-item-type"
+                                                style={{ backgroundColor: typeColor }}
+                                            >
+                                                <TypeIcon size={12} />
+                                            </div>
+                                            <div className="trash-item-details">
+                                                <span className="trash-item-key">{issue.key}</span>
+                                                <span className="trash-item-summary">{issue.summary}</span>
+                                            </div>
+                                            {issue.deletedAt && (
+                                                <span className="trash-item-date">
+                                                    <Calendar size={12} />
+                                                    Deleted {formatDate(issue.deletedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="trash-item-actions">
+                                            <button
+                                                className="btn btn-sm btn-ghost"
+                                                onClick={() => restoreIssue(issue.id)}
+                                                title="Restore"
+                                            >
+                                                <RotateCcw size={14} />
+                                                Restore
+                                            </button>
+                                            <button
+                                                className="btn btn-sm btn-ghost btn-danger-text"
+                                                onClick={() => {
+                                                    if (confirm('Permanently delete this issue? This cannot be undone.')) {
+                                                        permanentlyDeleteIssue(issue.id)
+                                                    }
+                                                }}
+                                                title="Delete permanently"
+                                            >
+                                                <X size={14} />
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
-            </SettingSection>
+            )}
         </div>
     )
 }

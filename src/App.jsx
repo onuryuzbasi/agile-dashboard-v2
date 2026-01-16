@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
 import Backlog from './pages/Backlog'
 import Sprints from './pages/Sprints'
+import List from './pages/List'
 import Settings from './pages/Settings'
 import Whiteboard from './pages/Whiteboard'
 import IssueModal from './components/board/IssueModal'
@@ -32,6 +33,7 @@ function App() {
                             <Route path="/board" element={<Board />} />
                             <Route path="/backlog" element={<Backlog />} />
                             <Route path="/sprints" element={<Sprints />} />
+                            <Route path="/list" element={<List />} />
                             <Route path="/whiteboard" element={<Whiteboard />} />
                             <Route path="/settings" element={<Settings />} />
                         </Routes>

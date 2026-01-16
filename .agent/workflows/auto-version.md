@@ -1,50 +1,50 @@
 ---
-description: Git workflow for auto-versioning and pushing completed tasks to GitHub
+description: Auto-push workflow using browser-based GitHub API (workaround for terminal issues)
 ---
 
-# Git Auto-Version Workflow
+# Auto-Version and Push Workflow
 
-This workflow runs automatically after completing each task to create a versioned branch and push changes to GitHub.
+This workflow triggers at the end of each completed task to commit and push changes to GitHub.
 
-## Remote Repository
-- **URL**: https://github.com/onuryuzbasi/agile-dashboard.git
+## When to Trigger
+- After completing a feature implementation
+- After fixing a bug
+- After significant code changes
+- At the end of each task before notifying user
 
-## Version Naming Convention
-- Format: `feature/v{YYYYMMDD}-{feature-name-kebab-case}`
-- Example: `feature/v20260116-editable-columns`
+## Repository Details
+- **Repo**: `agile-dashboard-v2`
+- **Owner**: `onuryuzbasi`
+- **Token**: Configured in `.git/config`
+- **URL**: https://github.com/onuryuzbasi/agile-dashboard-v2
 
-## Automatic Steps After Each Completed Task
+## Push Method (Browser-based)
 
-// turbo-all
+Since terminal commands may not execute properly, use the browser subagent to push via GitHub API:
 
-1. Create a new branch from current state:
+### Step 1: Commit locally (via file edit)
+Edit `.git/COMMIT_EDITMSG` with the commit message, then use `git commit --file=.git/COMMIT_EDITMSG`
+
+### Step 2: Ask user to push
+Provide this command for user to run:
 ```bash
-git checkout -b feature/v$(date +%Y%m%d)-{feature-name-kebab-case}
+cd ~/Desktop/Agile\ Dashboard && git add -A && git commit -m "feat: description" && git push
 ```
 
-2. Stage all changes:
-```bash
-git add -A
-```
-
-3. Commit with descriptive message:
-```bash
-git commit -m "feat: {feature description}"
-```
-
-4. Push branch to GitHub:
-```bash
-git push -u origin HEAD
-```
+### Step 3: Verify via browser
+Use browser_subagent to navigate to the repository and verify the push succeeded.
 
 ## Commit Message Format
-- `feat:` - New feature or enhancement
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `style:` - CSS/styling changes
-- `refactor:` - Code refactoring
+- `feat(vYYYYMMDD): description` - New feature
+- `fix(vYYYYMMDD): description` - Bug fix
+- `refactor: description` - Code cleanup
+- `style: description` - CSS/styling changes
 
-## Notes
-- Each task gets its own feature branch for easy tracking
-- Branches are pushed to GitHub automatically
-- No manual intervention required
+## Checkpoints for Auto-Push
+1. Feature implementation complete
+2. Bug fix verified working
+3. UI enhancement tested
+4. Before notifying user of task completion
+
+## Fallback
+If push fails, ask user to run the git push command manually - it only takes 2 seconds.

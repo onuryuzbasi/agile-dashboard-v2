@@ -950,6 +950,7 @@ export default function List() {
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             e.preventDefault()
+                                            setActiveDatePicker(null)
                                             setActiveDropdown({ issueId: issue.id, field: 'parent' })
                                         }}
                                         title="Change parent Epic"
@@ -973,6 +974,7 @@ export default function List() {
                                     className="list-cell-empty-text"
                                     onClick={(e) => {
                                         e.stopPropagation()
+                                        setActiveDatePicker(null)
                                         setActiveDropdown({ issueId: issue.id, field: 'parent' })
                                     }}
                                 >
@@ -1004,6 +1006,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'assignee' })
                             }}
                         >
@@ -1023,6 +1026,7 @@ export default function List() {
                             className="list-cell-editable list-cell-empty"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'assignee' })
                             }}
                         >
@@ -1043,6 +1047,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'status' })
                             }}
                         >
@@ -1065,6 +1070,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'sprint' })
                             }}
                         >
@@ -1085,6 +1091,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDropdown(null)
                                 setActiveDatePicker({ issueId: issue.id, field: 'startDate' })
                             }}
                         >
@@ -1104,6 +1111,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDropdown(null)
                                 setActiveDatePicker({ issueId: issue.id, field: 'dueDate' })
                             }}
                         >
@@ -1123,6 +1131,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'priority' })
                             }}
                         >
@@ -1146,6 +1155,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'storyPoints' })
                             }}
                         >
@@ -1184,6 +1194,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'reporter' })
                             }}
                         >
@@ -1210,6 +1221,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'department' })
                             }}
                         >
@@ -1237,6 +1249,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'originalEstimate' })
                             }}
                         >
@@ -1275,6 +1288,7 @@ export default function List() {
                             className="list-cell-editable"
                             onClick={(e) => {
                                 e.stopPropagation()
+                                setActiveDatePicker(null)
                                 setActiveDropdown({ issueId: issue.id, field: 'labels' })
                             }}
                         >

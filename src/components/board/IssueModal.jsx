@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import {
     X,
@@ -21,8 +21,7 @@ import {
     Clock,
     Building2,
     Gamepad2,
-    Link2,
-    Search
+    Link2
 } from 'lucide-react'
 
 const typeIcons = {
@@ -31,14 +30,6 @@ const typeIcons = {
     task: CheckSquare,
     epic: Layers,
     subtask: ListTree
-}
-
-const priorityIcons = {
-    highest: ArrowUp,
-    high: ArrowUp,
-    medium: Minus,
-    low: ArrowDown,
-    lowest: ArrowDown
 }
 
 const typeOptions = [
@@ -58,10 +49,10 @@ const priorityOptions = [
 ]
 
 const statusOptions = [
-    { value: 'todo', label: 'To Do', color: 'var(--status-todo)' },
-    { value: 'progress', label: 'In Progress', color: 'var(--status-progress)' },
-    { value: 'review', label: 'In Review', color: 'var(--status-review)' },
-    { value: 'done', label: 'Done', color: 'var(--status-done)' }
+    { value: 'todo', label: 'To Do' },
+    { value: 'progress', label: 'In Progress' },
+    { value: 'review', label: 'In Review' },
+    { value: 'done', label: 'Done' }
 ]
 
 const departmentOptions = [
@@ -69,245 +60,6 @@ const departmentOptions = [
     { value: 'development', label: 'Development' },
     { value: 'design', label: 'Design' }
 ]
-
-// SearchableDropdown Component
-function SearchableDropdown({
-    options,
-    value,
-    onChange,
-    placeholder = 'Select...',
-    searchPlaceholder = 'Search...',
-    renderOption,
-    renderSelected,
-    showSearch = true,
-    createButton,
-    emptyText = 'No options found'
-}) {
-    const [isOpen, setIsOpen] = useState(false)
-    const [search, setSearch] = useState('')
-    const dropdownRef = useRef(null)
-    const searchInputRef = useRef(null)
-
-    // Filter options based on search
-    const filteredOptions = options.filter(opt =>
-        opt.label.toLowerCase().includes(search.toLowerCase())
-    )
-
-    // Find selected option
-    const selectedOption = options.find(opt => opt.value === value)
-
-    // Close on click outside
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                setIsOpen(false)
-                setSearch('')
-            }
-        }
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [isOpen])
-
-    // Focus search input when opened
-    useEffect(() => {
-        if (isOpen && showSearch && searchInputRef.current) {
-            searchInputRef.current.focus()
-        }
-    }, [isOpen, showSearch])
-
-    const handleSelect = (opt) => {
-        onChange(opt.value)
-        setIsOpen(false)
-        setSearch('')
-    }
-
-    return (
-        <div className="searchable-dropdown" ref={dropdownRef}>
-            <button
-                type="button"
-                className={`searchable-dropdown-trigger ${isOpen ? 'open' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                {renderSelected ? (
-                    renderSelected(selectedOption)
-                ) : (
-                    <span className={selectedOption ? '' : 'placeholder'}>
-                        {selectedOption?.label || placeholder}
-                    </span>
-                )}
-                <ChevronDown size={14} className={`dropdown-chevron ${isOpen ? 'rotated' : ''}`} />
-            </button>
-
-            {isOpen && (
-                <div className="searchable-dropdown-menu" onClick={e => e.stopPropagation()}>
-                    {showSearch && (
-                        <div className="searchable-dropdown-search">
-                            <Search size={14} />
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder={searchPlaceholder}
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-                    )}
-                    <div className="searchable-dropdown-options">
-                        {filteredOptions.length > 0 ? (
-                            filteredOptions.map(opt => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    className={`searchable-dropdown-option ${value === opt.value ? 'selected' : ''}`}
-                                    onClick={() => handleSelect(opt)}
-                                >
-                                    {renderOption ? renderOption(opt) : opt.label}
-                                </button>
-                            ))
-                        ) : (
-                            <div className="searchable-dropdown-empty">{emptyText}</div>
-                        )}
-                    </div>
-                    {createButton && (
-                        <>
-                            <div className="searchable-dropdown-divider" />
-                            {createButton}
-                        </>
-                    )}
-                </div>
-            )}
-        </div>
-    )
-}
-
-// DatePicker Component with Calendar
-function DatePickerField({ value, onChange, label }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const [viewDate, setViewDate] = useState(value ? new Date(value) : new Date())
-    const dropdownRef = useRef(null)
-
-    const selectedDate = value ? new Date(value) : null
-
-    // Close on click outside
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                setIsOpen(false)
-            }
-        }
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [isOpen])
-
-    const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()
-    const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay()
-
-    const days = []
-    for (let i = 0; i < firstDayOfMonth; i++) {
-        days.push(null)
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-        days.push(i)
-    }
-
-    const handleDateSelect = (day) => {
-        if (day) {
-            const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day)
-            onChange(newDate.toISOString().split('T')[0])
-            setIsOpen(false)
-        }
-    }
-
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December']
-
-    const formatDisplayDate = (dateStr) => {
-        if (!dateStr) return 'Select date'
-        const d = new Date(dateStr)
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    }
-
-    return (
-        <div className="searchable-dropdown date-picker" ref={dropdownRef}>
-            <button
-                type="button"
-                className={`searchable-dropdown-trigger ${isOpen ? 'open' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <Calendar size={14} />
-                <span className={value ? '' : 'placeholder'}>{formatDisplayDate(value)}</span>
-                <ChevronDown size={14} className={`dropdown-chevron ${isOpen ? 'rotated' : ''}`} />
-            </button>
-
-            {isOpen && (
-                <div className="searchable-dropdown-menu calendar-menu" onClick={e => e.stopPropagation()}>
-                    <div className="calendar-header">
-                        <button
-                            type="button"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))}
-                        >
-                            ‹
-                        </button>
-                        <span>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span>
-                        <button
-                            type="button"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))}
-                        >
-                            ›
-                        </button>
-                    </div>
-                    <div className="calendar-weekdays">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                            <span key={day}>{day}</span>
-                        ))}
-                    </div>
-                    <div className="calendar-days">
-                        {days.map((day, idx) => {
-                            const isSelected = selectedDate &&
-                                day === selectedDate.getDate() &&
-                                viewDate.getMonth() === selectedDate.getMonth() &&
-                                viewDate.getFullYear() === selectedDate.getFullYear()
-                            const isToday = day &&
-                                day === new Date().getDate() &&
-                                viewDate.getMonth() === new Date().getMonth() &&
-                                viewDate.getFullYear() === new Date().getFullYear()
-                            return (
-                                <button
-                                    key={idx}
-                                    type="button"
-                                    className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${!day ? 'empty' : ''}`}
-                                    onClick={() => handleDateSelect(day)}
-                                    disabled={!day}
-                                >
-                                    {day}
-                                </button>
-                            )
-                        })}
-                    </div>
-                    <div className="calendar-footer">
-                        <button type="button" onClick={() => {
-                            onChange('')
-                            setIsOpen(false)
-                        }}>
-                            Clear
-                        </button>
-                        <button type="button" onClick={() => {
-                            const today = new Date().toISOString().split('T')[0]
-                            onChange(today)
-                            setIsOpen(false)
-                        }}>
-                            Today
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
 
 export default function IssueModal({ issue, onClose }) {
     const { updateIssue, deleteIssue, addIssue, addWorkLog, removeWorkLog, users, sprints, issues, getUserById } = useProjectStore()
@@ -452,185 +204,88 @@ export default function IssueModal({ issue, onClose }) {
                         {/* Type */}
                         <div className="input-group">
                             <label className="input-label">Type</label>
-                            <SearchableDropdown
-                                options={typeOptions}
+                            <select
+                                className="input select"
                                 value={formData.type}
-                                onChange={(val) => handleChange('type', val)}
-                                placeholder="Select type"
-                                searchPlaceholder="Search types..."
-                                renderOption={(opt) => {
-                                    const Icon = typeIcons[opt.value] || CheckSquare
-                                    return (
-                                        <div className="dropdown-option-with-icon">
-                                            <span className={`issue-type-icon ${opt.value}`} style={{ width: 18, height: 18 }}>
-                                                <Icon size={11} />
-                                            </span>
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                                renderSelected={(opt) => {
-                                    if (!opt) return <span className="placeholder">Select type</span>
-                                    const Icon = typeIcons[opt.value] || CheckSquare
-                                    return (
-                                        <div className="dropdown-option-with-icon">
-                                            <span className={`issue-type-icon ${opt.value}`} style={{ width: 18, height: 18 }}>
-                                                <Icon size={11} />
-                                            </span>
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                            />
+                                onChange={(e) => handleChange('type', e.target.value)}
+                            >
+                                {typeOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Status */}
                         <div className="input-group">
                             <label className="input-label">Status</label>
-                            <SearchableDropdown
-                                options={statusOptions}
+                            <select
+                                className="input select"
                                 value={formData.status}
-                                onChange={(val) => handleChange('status', val)}
-                                placeholder="Select status"
-                                searchPlaceholder="Search status..."
-                                renderOption={(opt) => (
-                                    <div className="dropdown-option-with-badge">
-                                        <span className={`status-badge ${opt.value}`}>
-                                            {opt.label.toUpperCase()}
-                                        </span>
-                                    </div>
-                                )}
-                                renderSelected={(opt) => {
-                                    if (!opt) return <span className="placeholder">Select status</span>
-                                    return (
-                                        <span className={`status-badge ${opt.value}`}>
-                                            {opt.label.toUpperCase()}
-                                        </span>
-                                    )
-                                }}
-                            />
+                                onChange={(e) => handleChange('status', e.target.value)}
+                            >
+                                {statusOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Priority */}
                         <div className="input-group">
                             <label className="input-label">Priority</label>
-                            <SearchableDropdown
-                                options={priorityOptions}
+                            <select
+                                className="input select"
                                 value={formData.priority}
-                                onChange={(val) => handleChange('priority', val)}
-                                placeholder="Select priority"
-                                searchPlaceholder="Search priority..."
-                                renderOption={(opt) => {
-                                    const Icon = priorityIcons[opt.value] || Minus
-                                    return (
-                                        <div className="dropdown-option-with-icon">
-                                            <Icon size={14} style={{ color: opt.color }} />
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                                renderSelected={(opt) => {
-                                    if (!opt) return <span className="placeholder">Select priority</span>
-                                    const Icon = priorityIcons[opt.value] || Minus
-                                    return (
-                                        <div className="dropdown-option-with-icon">
-                                            <Icon size={14} style={{ color: opt.color }} />
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                            />
+                                onChange={(e) => handleChange('priority', e.target.value)}
+                            >
+                                {priorityOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Reporter */}
                         <div className="input-group">
                             <label className="input-label">Reporter</label>
-                            <SearchableDropdown
-                                options={[
-                                    { value: '', label: 'Unassigned' },
-                                    ...users.map(u => ({ value: u.id, label: u.name, avatar: u.avatar }))
-                                ]}
+                            <select
+                                className="input select"
                                 value={formData.reporterId}
-                                onChange={(val) => handleChange('reporterId', val)}
-                                placeholder="Select reporter"
-                                searchPlaceholder="Search users..."
-                                renderOption={(opt) => (
-                                    <div className="dropdown-option-with-avatar">
-                                        {opt.value ? (
-                                            <span className="avatar xs">{opt.label.charAt(0)}</span>
-                                        ) : (
-                                            <span className="avatar xs unassigned">?</span>
-                                        )}
-                                        {opt.label}
-                                    </div>
-                                )}
-                                renderSelected={(opt) => {
-                                    if (!opt) return <span className="placeholder">Select reporter</span>
-                                    return (
-                                        <div className="dropdown-option-with-avatar">
-                                            {opt.value ? (
-                                                <span className="avatar xs">{opt.label.charAt(0)}</span>
-                                            ) : (
-                                                <span className="avatar xs unassigned">?</span>
-                                            )}
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                            />
+                                onChange={(e) => handleChange('reporterId', e.target.value)}
+                            >
+                                <option value="">Unassigned</option>
+                                {users.map(user => (
+                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Assignee */}
                         <div className="input-group">
                             <label className="input-label">Assignee</label>
-                            <SearchableDropdown
-                                options={[
-                                    { value: '', label: 'Unassigned' },
-                                    ...users.map(u => ({ value: u.id, label: u.name, avatar: u.avatar }))
-                                ]}
+                            <select
+                                className="input select"
                                 value={formData.assigneeId}
-                                onChange={(val) => handleChange('assigneeId', val)}
-                                placeholder="Select assignee"
-                                searchPlaceholder="Search users..."
-                                renderOption={(opt) => (
-                                    <div className="dropdown-option-with-avatar">
-                                        {opt.value ? (
-                                            <span className="avatar xs">{opt.label.charAt(0)}</span>
-                                        ) : (
-                                            <span className="avatar xs unassigned">?</span>
-                                        )}
-                                        {opt.label}
-                                    </div>
-                                )}
-                                renderSelected={(opt) => {
-                                    if (!opt) return <span className="placeholder">Select assignee</span>
-                                    return (
-                                        <div className="dropdown-option-with-avatar">
-                                            {opt.value ? (
-                                                <span className="avatar xs">{opt.label.charAt(0)}</span>
-                                            ) : (
-                                                <span className="avatar xs unassigned">?</span>
-                                            )}
-                                            {opt.label}
-                                        </div>
-                                    )
-                                }}
-                            />
+                                onChange={(e) => handleChange('assigneeId', e.target.value)}
+                            >
+                                <option value="">Unassigned</option>
+                                {users.map(user => (
+                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Sprint */}
                         <div className="input-group">
                             <label className="input-label">Sprint</label>
-                            <SearchableDropdown
-                                options={[
-                                    { value: '', label: 'Backlog' },
-                                    ...sprints.map(s => ({ value: s.id, label: s.name }))
-                                ]}
+                            <select
+                                className="input select"
                                 value={formData.sprintId}
-                                onChange={(val) => handleChange('sprintId', val)}
-                                placeholder="Select sprint"
-                                searchPlaceholder="Search sprints..."
-                            />
+                                onChange={(e) => handleChange('sprintId', e.target.value)}
+                            >
+                                <option value="">Backlog</option>
+                                {sprints.map(sprint => (
+                                    <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Original Estimate */}
@@ -662,141 +317,148 @@ export default function IssueModal({ issue, onClose }) {
                         {formData.type !== 'epic' && (
                             <div className="input-group">
                                 <label className="input-label">Parent (Epic)</label>
-                                <SearchableDropdown
-                                    options={[
-                                        { value: '', label: 'None' },
-                                        ...availableEpics.map(e => ({
-                                            value: e.id,
-                                            label: `${e.key} - ${e.summary.length > 30 ? e.summary.substring(0, 30) + '...' : e.summary}`,
-                                            key: e.key,
-                                            summary: e.summary
-                                        }))
-                                    ]}
-                                    value={formData.parentId}
-                                    onChange={(val) => handleChange('parentId', val)}
-                                    placeholder="Select epic"
-                                    searchPlaceholder="Search epics..."
-                                    emptyText="No epics found"
-                                    renderOption={(opt) => (
-                                        <div className="dropdown-option-epic">
-                                            {opt.key && (
-                                                <span className="epic-key">{opt.key}</span>
-                                            )}
-                                            <span className="epic-summary">{opt.summary || opt.label}</span>
-                                        </div>
-                                    )}
-                                    renderSelected={(opt) => {
-                                        if (!opt || !opt.value) return <span>None</span>
-                                        return (
-                                            <div className="dropdown-option-epic">
-                                                <span className="epic-key">{opt.key}</span>
-                                                <span className="epic-summary">{opt.summary?.substring(0, 20) || opt.label}</span>
-                                            </div>
-                                        )
-                                    }}
-                                    createButton={
-                                        showCreateEpic ? (
-                                            <div className="create-epic-form">
-                                                <input
-                                                    type="text"
-                                                    className="input"
-                                                    placeholder="Enter epic name..."
-                                                    value={newEpicName}
-                                                    onChange={(e) => setNewEpicName(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && newEpicName.trim()) {
-                                                            const newEpic = addIssue({
-                                                                type: 'epic',
-                                                                status: 'todo',
-                                                                priority: 'medium',
-                                                                summary: newEpicName.trim(),
-                                                                description: '',
-                                                                sprintId: null,
-                                                                storyPoints: null,
-                                                                labels: [],
-                                                                reporterId: issue.reporterId
-                                                            })
-                                                            handleChange('parentId', newEpic.id)
-                                                            setNewEpicName('')
-                                                            setShowCreateEpic(false)
-                                                        }
-                                                        if (e.key === 'Escape') {
-                                                            setShowCreateEpic(false)
-                                                            setNewEpicName('')
-                                                        }
-                                                    }}
-                                                    autoFocus
-                                                    onClick={e => e.stopPropagation()}
-                                                />
-                                                <button
-                                                    className="btn btn-sm btn-primary"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        if (newEpicName.trim()) {
-                                                            const newEpic = addIssue({
-                                                                type: 'epic',
-                                                                status: 'todo',
-                                                                priority: 'medium',
-                                                                summary: newEpicName.trim(),
-                                                                description: '',
-                                                                sprintId: null,
-                                                                storyPoints: null,
-                                                                labels: [],
-                                                                reporterId: issue.reporterId
-                                                            })
-                                                            handleChange('parentId', newEpic.id)
-                                                            setNewEpicName('')
-                                                            setShowCreateEpic(false)
-                                                        }
-                                                    }}
-                                                >
-                                                    Create
-                                                </button>
-                                            </div>
-                                        ) : (
+                                <div className="parent-dropdown-container">
+                                    <button
+                                        type="button"
+                                        className="input select parent-dropdown-btn"
+                                        onClick={() => setShowParentDropdown(!showParentDropdown)}
+                                    >
+                                        {formData.parentId
+                                            ? availableEpics.find(e => e.id === formData.parentId)?.summary || 'Select Epic'
+                                            : 'None'
+                                        }
+                                        <ChevronDown size={14} />
+                                    </button>
+                                    {showParentDropdown && (
+                                        <div className="parent-dropdown-menu" onClick={e => e.stopPropagation()}>
                                             <button
-                                                className="searchable-dropdown-option create-epic-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setShowCreateEpic(true)
+                                                className={`parent-dropdown-item ${!formData.parentId ? 'selected' : ''}`}
+                                                onClick={() => {
+                                                    handleChange('parentId', '')
+                                                    setShowParentDropdown(false)
                                                 }}
                                             >
-                                                <Plus size={14} />
-                                                Create Epic
+                                                ✓ None
                                             </button>
-                                        )
-                                    }
-                                />
+                                            {availableEpics.map(epic => (
+                                                <button
+                                                    key={epic.id}
+                                                    className={`parent-dropdown-item ${formData.parentId === epic.id ? 'selected' : ''}`}
+                                                    onClick={() => {
+                                                        handleChange('parentId', epic.id)
+                                                        setShowParentDropdown(false)
+                                                    }}
+                                                >
+                                                    {epic.key} - {epic.summary.length > 40 ? epic.summary.substring(0, 40) + '...' : epic.summary}
+                                                </button>
+                                            ))}
+                                            <div className="parent-dropdown-divider" />
+                                            {showCreateEpic ? (
+                                                <div className="create-epic-form">
+                                                    <input
+                                                        type="text"
+                                                        className="input"
+                                                        placeholder="Enter epic name..."
+                                                        value={newEpicName}
+                                                        onChange={(e) => setNewEpicName(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && newEpicName.trim()) {
+                                                                const newEpic = addIssue({
+                                                                    type: 'epic',
+                                                                    status: 'todo',
+                                                                    priority: 'medium',
+                                                                    summary: newEpicName.trim(),
+                                                                    description: '',
+                                                                    sprintId: null,
+                                                                    storyPoints: null,
+                                                                    labels: [],
+                                                                    reporterId: issue.reporterId
+                                                                })
+                                                                handleChange('parentId', newEpic.id)
+                                                                setNewEpicName('')
+                                                                setShowCreateEpic(false)
+                                                                setShowParentDropdown(false)
+                                                            }
+                                                            if (e.key === 'Escape') {
+                                                                setShowCreateEpic(false)
+                                                                setNewEpicName('')
+                                                            }
+                                                        }}
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        className="btn btn-sm btn-primary"
+                                                        onClick={() => {
+                                                            if (newEpicName.trim()) {
+                                                                const newEpic = addIssue({
+                                                                    type: 'epic',
+                                                                    status: 'todo',
+                                                                    priority: 'medium',
+                                                                    summary: newEpicName.trim(),
+                                                                    description: '',
+                                                                    sprintId: null,
+                                                                    storyPoints: null,
+                                                                    labels: [],
+                                                                    reporterId: issue.reporterId
+                                                                })
+                                                                handleChange('parentId', newEpic.id)
+                                                                setNewEpicName('')
+                                                                setShowCreateEpic(false)
+                                                                setShowParentDropdown(false)
+                                                            }
+                                                        }}
+                                                    >
+                                                        Create
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    className="parent-dropdown-item create-epic-btn"
+                                                    onClick={() => setShowCreateEpic(true)}
+                                                >
+                                                    <Plus size={14} />
+                                                    Create Epic
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* Department */}
                         <div className="input-group">
                             <label className="input-label">Department</label>
-                            <SearchableDropdown
-                                options={departmentOptions}
+                            <select
+                                className="input select"
                                 value={formData.department}
-                                onChange={(val) => handleChange('department', val)}
-                                placeholder="Select department"
-                                searchPlaceholder="Search departments..."
-                            />
+                                onChange={(e) => handleChange('department', e.target.value)}
+                            >
+                                {departmentOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Start Date */}
                         <div className="input-group">
                             <label className="input-label">Start Date</label>
-                            <DatePickerField
+                            <input
+                                type="date"
+                                className="input"
                                 value={formData.startDate}
-                                onChange={(val) => handleChange('startDate', val)}
+                                onChange={(e) => handleChange('startDate', e.target.value)}
                             />
                         </div>
 
                         {/* Due Date */}
                         <div className="input-group">
                             <label className="input-label">Due Date</label>
-                            <DatePickerField
+                            <input
+                                type="date"
+                                className="input"
                                 value={formData.dueDate}
-                                onChange={(val) => handleChange('dueDate', val)}
+                                onChange={(e) => handleChange('dueDate', e.target.value)}
                             />
                         </div>
                     </div>

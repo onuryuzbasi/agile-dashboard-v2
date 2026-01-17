@@ -343,10 +343,9 @@ export default function ListTemplate() {
     const [creatingInGroup, setCreatingInGroup] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
 
-    // Column configuration
+    // Column configuration (scrollable columns - excludes pinned Type, Key, Summary)
     const columns = [
         { id: 'parent', label: 'Parent', width: 120 },
-        { id: 'summary', label: 'Summary', width: 200, flex: true },
         { id: 'assignee', label: 'Assignee', width: 140 },
         { id: 'project', label: 'Project Name', width: 120 },
         { id: 'estimate', label: 'Original estimate', width: 120 },
@@ -355,7 +354,7 @@ export default function ListTemplate() {
         { id: 'startDate', label: 'Start date', width: 130 },
         { id: 'dueDate', label: 'Due date', width: 130 },
         { id: 'priority', label: 'Priority', width: 80 },
-        { id: 'comments', label: 'Comments', width: 120 },
+        { id: 'comments', label: 'Comments', width: 100 },
         { id: 'reporter', label: 'Reporter', width: 140 },
         { id: 'department', label: 'Department', width: 120 },
         { id: 'affectsVersions', label: 'Affects versions', width: 130 }
@@ -625,8 +624,9 @@ export default function ListTemplate() {
                                 Key
                                 <ChevronDown size={14} className="sort-icon" />
                             </div>
-                            <div className="header-cell menu">
-                                <MoreHorizontal size={16} />
+                            <div className="header-cell summary">
+                                Summary
+                                <ChevronDown size={14} className="sort-icon" />
                             </div>
                         </div>
                         <div className="scrollable-columns">
@@ -711,10 +711,13 @@ export default function ListTemplate() {
                                                             <span className="key-link">{issue.key}</span>
                                                         </div>
                                                     </div>
-                                                    <div className="cell menu">
-                                                        <button className="row-menu-btn">
-                                                            <MoreHorizontal size={16} />
-                                                        </button>
+                                                    <div className="cell summary">
+                                                        <span
+                                                            className="summary-text"
+                                                            onClick={() => setSelectedIssue(issue)}
+                                                        >
+                                                            {issue.summary}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <div className="scrollable-columns">
@@ -723,15 +726,6 @@ export default function ListTemplate() {
                                                         {parentIssue ? (
                                                             <span className="parent-link">{parentIssue.key}</span>
                                                         ) : '—'}
-                                                    </div>
-                                                    {/* Summary */}
-                                                    <div className="cell summary" style={{ flex: 1 }}>
-                                                        <span
-                                                            className="summary-text"
-                                                            onClick={() => setSelectedIssue(issue)}
-                                                        >
-                                                            {issue.summary}
-                                                        </span>
                                                     </div>
                                                     {/* Assignee */}
                                                     <div
@@ -884,11 +878,7 @@ export default function ListTemplate() {
                                                 <div className="cell key">
                                                     <span className="new-key">NEW</span>
                                                 </div>
-                                                <div className="cell menu" />
-                                            </div>
-                                            <div className="scrollable-columns">
-                                                <div className="cell" style={{ width: 120 }} />
-                                                <div className="cell summary" style={{ flex: 1 }}>
+                                                <div className="cell summary">
                                                     <input
                                                         type="text"
                                                         className="inline-create-input"
@@ -902,6 +892,9 @@ export default function ListTemplate() {
                                                         autoFocus
                                                     />
                                                 </div>
+                                            </div>
+                                            <div className="scrollable-columns">
+                                                <div className="cell" style={{ width: 120 }} />
                                             </div>
                                         </div>
                                     )}

@@ -5137,13 +5137,12 @@ h4 {
 }
 
 .list-template-header .header-cell.key {
-  width: 120px;
+  width: 100px;
 }
 
-.list-template-header .header-cell.menu {
-  width: 40px;
-  padding: 8px;
-  justify-content: center;
+.list-template-header .header-cell.summary {
+  width: 300px;
+  min-width: 200px;
 }
 
 .list-template-header .header-cell.add-column {
@@ -5352,6 +5351,7 @@ h4 {
   min-height: 40px;
   position: relative;
   border-right: 1px solid #EBECF0;
+  overflow: hidden;
 }
 
 .list-template-row .cell:last-child {
@@ -5367,25 +5367,45 @@ h4 {
   width: 40px;
   padding: 8px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .list-template-row .cell.type {
   width: 60px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .list-template-row .cell.key {
-  width: 120px;
+  width: 100px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
+  flex-shrink: 0;
 }
 
-.list-template-row .cell.menu {
-  width: 40px;
-  padding: 8px;
-  justify-content: center;
+.list-template-row .cell.summary {
+  width: 300px;
+  min-width: 200px;
+  flex-shrink: 0;
+}
+
+.list-template-row .cell.summary .summary-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+.list-template-row .cell.summary .summary-text:hover {
+  color: #0052CC;
+}
+
+[data-theme="dark"] .list-template-row .cell.summary .summary-text:hover {
+  color: var(--accent-primary);
 }
 
 .row-menu-btn {

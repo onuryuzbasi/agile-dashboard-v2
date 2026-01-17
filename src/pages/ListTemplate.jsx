@@ -361,24 +361,16 @@ export default function ListTemplate() {
     const allFields = [
         { id: 'parent', label: 'Parent', width: 120, defaultVisible: true },
         { id: 'assignee', label: 'Assignee', width: 140, defaultVisible: true },
-        { id: 'project', label: 'Project Name', width: 120, defaultVisible: true },
+        { id: 'game', label: 'Game', width: 120, defaultVisible: true },
         { id: 'estimate', label: 'Original estimate', width: 120, defaultVisible: true },
         { id: 'status', label: 'Status', width: 100, defaultVisible: true },
         { id: 'sprint', label: 'Sprint', width: 100, defaultVisible: true },
         { id: 'startDate', label: 'Start date', width: 130, defaultVisible: true },
         { id: 'dueDate', label: 'Due date', width: 130, defaultVisible: true },
-        { id: 'priority', label: 'Priority', width: 80, defaultVisible: true },
-        { id: 'comments', label: 'Comments', width: 100, defaultVisible: true },
+        { id: 'priority', label: 'Priority', width: 100, defaultVisible: true },
         { id: 'reporter', label: 'Reporter', width: 140, defaultVisible: true },
         { id: 'department', label: 'Department', width: 120, defaultVisible: true },
-        { id: 'affectsVersions', label: 'Affects versions', width: 130, defaultVisible: true },
-        { id: 'labels', label: 'Labels', width: 120, defaultVisible: false },
-        { id: 'epic', label: 'Epic', width: 150, defaultVisible: false },
-        { id: 'storyPoints', label: 'Story Points', width: 100, defaultVisible: false },
-        { id: 'created', label: 'Created', width: 130, defaultVisible: false },
-        { id: 'updated', label: 'Updated', width: 130, defaultVisible: false },
-        { id: 'resolution', label: 'Resolution', width: 120, defaultVisible: false },
-        { id: 'fixVersions', label: 'Fix versions', width: 130, defaultVisible: false }
+        { id: 'labels', label: 'Labels', width: 120, defaultVisible: true }
     ]
 
     // Column state (visible columns in order)
@@ -717,16 +709,32 @@ export default function ListTemplate() {
                         )}
                     </div>
                 )
-            case 'project':
+            case 'game':
                 return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.projectName || 'Zen Master'}</span>
+                    <div
+                        key={columnId}
+                        className="cell game"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'game' })
+                        }}
+                    >
+                        <span>{issue.game || 'Zen Master'}</span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'game' && (
+                            <SearchableDropdown
+                                options={getGameOptions()}
+                                value={issue.game}
+                                onChange={val => handleFieldUpdate(issue.id, 'game', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
                     </div>
                 )
             case 'estimate':
                 return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.originalEstimate || issue.storyPoints ? `${issue.storyPoints || issue.originalEstimate}h` : '—'}</span>
+                    <div key={columnId} className="cell estimate" style={cellStyle}>
+                        <span>{issue.originalEstimate ? `${issue.originalEstimate}h` : '—'}</span>
                     </div>
                 )
             case 'status':
@@ -821,81 +829,94 @@ export default function ListTemplate() {
                 )
             case 'priority':
                 return (
-                    <div key={columnId} className="cell priority" style={cellStyle}>
+                    <div
+                        key={columnId}
+                        className="cell priority"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'priority' })
+                        }}
+                    >
                         <PriorityIcon priority={issue.priority} />
                         <span className="priority-label">
                             {priorityConfig[issue.priority]?.label || 'Medium'}
                         </span>
-                    </div>
-                )
-            case 'comments':
-                return (
-                    <div key={columnId} className="cell comments" style={cellStyle}>
-                        <MessageSquare size={14} />
-                        <span>
-                            {issue.comments?.length ? `${issue.comments.length} comment${issue.comments.length > 1 ? 's' : ''}` : 'Add comment'}
-                        </span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'priority' && (
+                            <SearchableDropdown
+                                options={getPriorityOptions()}
+                                value={issue.priority}
+                                onChange={val => handleFieldUpdate(issue.id, 'priority', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
                     </div>
                 )
             case 'reporter':
                 return (
-                    <div key={columnId} className="cell reporter" style={cellStyle}>
+                    <div
+                        key={columnId}
+                        className="cell reporter"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'reporter' })
+                        }}
+                    >
                         <Avatar user={reporter} size={24} />
                         <span>{reporter?.name || 'Unknown'}</span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'reporter' && (
+                            <SearchableDropdown
+                                options={getAssigneeOptions()}
+                                value={issue.reporterId}
+                                onChange={val => handleFieldUpdate(issue.id, 'reporterId', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
                     </div>
                 )
             case 'department':
                 return (
-                    <div key={columnId} className="cell" style={cellStyle}>
+                    <div
+                        key={columnId}
+                        className="cell department"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'department' })
+                        }}
+                    >
                         <span>{issue.department || 'Development'}</span>
-                    </div>
-                )
-            case 'affectsVersions':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>—</span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'department' && (
+                            <SearchableDropdown
+                                options={getDepartmentOptions()}
+                                value={issue.department}
+                                onChange={val => handleFieldUpdate(issue.id, 'department', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
                     </div>
                 )
             case 'labels':
                 return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.labels?.join(', ') || '—'}</span>
-                    </div>
-                )
-            case 'epic':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{parentIssue?.summary || '—'}</span>
-                    </div>
-                )
-            case 'storyPoints':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.storyPoints || '—'}</span>
-                    </div>
-                )
-            case 'created':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.createdAt ? formatDate(issue.createdAt) : '—'}</span>
-                    </div>
-                )
-            case 'updated':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.updatedAt ? formatDate(issue.updatedAt) : '—'}</span>
-                    </div>
-                )
-            case 'resolution':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>{issue.resolution || '—'}</span>
-                    </div>
-                )
-            case 'fixVersions':
-                return (
-                    <div key={columnId} className="cell" style={cellStyle}>
-                        <span>—</span>
+                    <div
+                        key={columnId}
+                        className="cell labels"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'labels' })
+                        }}
+                    >
+                        <span>{issue.labels?.length ? issue.labels.join(', ') : '—'}</span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'labels' && (
+                            <SearchableDropdown
+                                options={getLabelOptions()}
+                                value={issue.labels?.[0] || null}
+                                onChange={val => handleFieldUpdate(issue.id, 'labels', val ? [val] : [])}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
                     </div>
                 )
             default:
@@ -962,6 +983,51 @@ export default function ListTemplate() {
         setNewEpicName('')
         setShowEpicCreate(false)
         setActiveDropdown(null)
+    }
+
+    // Get game options
+    const getGameOptions = () => {
+        return [
+            { value: 'Zen Master', label: 'Zen Master' },
+            { value: 'Dreamland', label: 'Dreamland' },
+            { value: 'Royal Quest', label: 'Royal Quest' },
+            { value: 'Puzzle Island', label: 'Puzzle Island' },
+            { value: 'Castle Clash', label: 'Castle Clash' }
+        ]
+    }
+
+    // Get priority options
+    const getPriorityOptions = () => {
+        return Object.entries(priorityConfig).map(([key, val]) => ({
+            value: key,
+            label: val.label
+        }))
+    }
+
+    // Get department options
+    const getDepartmentOptions = () => {
+        return [
+            { value: 'Development', label: 'Development' },
+            { value: 'Design', label: 'Design' },
+            { value: 'QA', label: 'QA' },
+            { value: 'Product', label: 'Product' },
+            { value: 'Marketing', label: 'Marketing' },
+            { value: 'Operations', label: 'Operations' }
+        ]
+    }
+
+    // Get label options
+    const getLabelOptions = () => {
+        return [
+            { value: 'frontend', label: 'Frontend' },
+            { value: 'backend', label: 'Backend' },
+            { value: 'api', label: 'API' },
+            { value: 'ui', label: 'UI' },
+            { value: 'ux', label: 'UX' },
+            { value: 'bug', label: 'Bug' },
+            { value: 'enhancement', label: 'Enhancement' },
+            { value: 'documentation', label: 'Documentation' }
+        ]
     }
 
     const groups = getGroupedIssues()

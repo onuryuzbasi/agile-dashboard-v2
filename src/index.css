@@ -6043,9 +6043,32 @@ h4 {
 .list-template-row .cell.assignee:has(.jira-dropdown),
 .list-template-row .cell.status:has(.jira-dropdown),
 .list-template-row .cell.sprint:has(.jira-dropdown),
+.list-template-row .cell.game:has(.jira-dropdown),
+.list-template-row .cell.priority:has(.jira-dropdown),
+.list-template-row .cell.reporter:has(.jira-dropdown),
+.list-template-row .cell.department:has(.jira-dropdown),
+.list-template-row .cell.labels:has(.jira-dropdown),
 .list-template-row .cell.date:has(.jira-date-picker) {
   overflow: visible !important;
   z-index: 100;
+}
+
+/* Clickable cell styling */
+.cell.game,
+.cell.priority,
+.cell.reporter,
+.cell.department,
+.cell.labels {
+  cursor: pointer;
+  position: relative;
+}
+
+.cell.game:hover,
+.cell.priority:hover,
+.cell.reporter:hover,
+.cell.department:hover,
+.cell.labels:hover {
+  background: rgba(0, 82, 204, 0.05);
 }
 
 /* Ensure the row has proper z-index when containing active dropdown */

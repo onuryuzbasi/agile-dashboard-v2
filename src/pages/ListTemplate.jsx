@@ -412,6 +412,12 @@ export default function ListTemplate() {
         return columnsWidth + 40 // +40 for spacer/add-column button
     }, [columns])
 
+    // Calculate total row width (pinned + scrollable) for row borders
+    // Pinned columns: checkbox(28) + type(40) + key(100) + summary(250) + padding/borders ≈ 420px
+    const totalRowWidth = useMemo(() => {
+        return 420 + scrollableWidth
+    }, [scrollableWidth])
+
     // Get parent issue for a given issue
     const getParentIssue = (issue) => {
         if (!issue.epicId) return null
@@ -938,7 +944,7 @@ export default function ListTemplate() {
             <div className="list-template-table-wrapper">
                 <div className="list-template-table">
                     {/* Header Row */}
-                    <div className="list-template-header">
+                    <div className="list-template-header" style={{ minWidth: totalRowWidth }}>
                         <div className="pinned-columns">
                             <div className="header-cell checkbox">
                                 <input type="checkbox" />
@@ -1026,7 +1032,7 @@ export default function ListTemplate() {
                     {groups.map(group => (
                         <div key={group.id} className="list-template-group-container">
                             {/* Group Header */}
-                            <div className="list-template-group-header">
+                            <div className="list-template-group-header" style={{ minWidth: totalRowWidth }}>
                                 <div className="pinned-columns">
                                     <div className="cell checkbox">
                                         <input type="checkbox" />
@@ -1065,6 +1071,7 @@ export default function ListTemplate() {
                                             <div
                                                 key={issue.id}
                                                 className={`list-template-row ${selectedIssues.has(issue.id) ? 'selected' : ''}`}
+                                                style={{ minWidth: totalRowWidth }}
                                             >
                                                 <div className="pinned-columns">
                                                     <div className="cell checkbox">
@@ -1146,7 +1153,7 @@ export default function ListTemplate() {
                     {/* Completed Sprint Section */}
                     {completedSprintCount > 0 && !showCompleted && (
                         <div className="list-template-group-container">
-                            <div className="list-template-group-header completed">
+                            <div className="list-template-group-header completed" style={{ minWidth: totalRowWidth }}>
                                 <div className="pinned-columns">
                                     <div className="cell checkbox" />
                                     <button

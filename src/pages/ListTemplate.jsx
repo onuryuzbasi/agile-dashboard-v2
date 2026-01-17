@@ -165,7 +165,7 @@ function SprintSelector({ value, sprints, onChange, isActive }) {
 }
 
 // Searchable Dropdown for inline editing
-function SearchableDropdown({ options, value, onChange, onClose, placeholder = 'Search...' }) {
+function SearchableDropdown({ options, value, onChange, onClose, placeholder = 'Search...', createButton, renderOption }) {
     const [search, setSearch] = useState('')
     const inputRef = useRef(null)
 
@@ -192,19 +192,29 @@ function SearchableDropdown({ options, value, onChange, onClose, placeholder = '
             <div className="jira-dropdown-options">
                 {filtered.map(opt => (
                     <button
-                        key={opt.value}
+                        key={opt.value ?? 'none'}
                         className={`jira-dropdown-option ${value === opt.value ? 'active' : ''}`}
                         onClick={() => { onChange(opt.value); onClose(); }}
                     >
-                        {opt.icon && <span className="opt-icon">{opt.icon}</span>}
-                        {opt.avatar && <Avatar user={opt.avatar} size={20} />}
-                        <span>{opt.label}</span>
+                        {renderOption ? renderOption(opt) : (
+                            <>
+                                {opt.icon && <span className="opt-icon">{opt.icon}</span>}
+                                {opt.avatar && <Avatar user={opt.avatar} size={20} />}
+                                <span>{opt.label}</span>
+                            </>
+                        )}
                     </button>
                 ))}
                 {filtered.length === 0 && (
                     <div className="jira-dropdown-empty">No results</div>
                 )}
             </div>
+            {createButton && (
+                <>
+                    <div className="jira-dropdown-divider" />
+                    {createButton}
+                </>
+            )}
         </div>
     )
 }
@@ -342,6 +352,10 @@ export default function ListTemplate() {
     // Inline create state
     const [creatingInGroup, setCreatingInGroup] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
+
+    // Epic creation state for dropdown
+    const [showEpicCreate, setShowEpicCreate] = useState(false)
+    const [newEpicName, setNewEpicName] = useState('')
 
     // All available fields configuration
     const allFields = [
@@ -616,10 +630,66 @@ export default function ListTemplate() {
         switch (columnId) {
             case 'parent':
                 return (
-                    <div key={columnId} className="cell" style={cellStyle}>
+                    <div
+                        key={columnId}
+                        className="cell parent"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'parent' })
+                            setShowEpicCreate(false)
+                        }}
+                    >
                         {parentIssue ? (
                             <span className="parent-link">{parentIssue.key}</span>
-                        ) : '—'}
+                        ) : <span className="text-tertiary">—</span>}
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'parent' && (
+                            <SearchableDropdown
+                                options={getEpicOptions()}
+                                value={issue.parentId}
+                                onChange={val => handleFieldUpdate(issue.id, 'parentId', val)}
+                                onClose={() => { setActiveDropdown(null); setShowEpicCreate(false); setNewEpicName(''); }}
+                                placeholder="Search epics..."
+                                renderOption={(opt) => (
+                                    <div className="epic-option">
+                                        {opt.key && <span className="epic-key">{opt.key}</span>}
+                                        <span className="epic-summary">{opt.summary || opt.label}</span>
+                                    </div>
+                                )}
+                                createButton={
+                                    showEpicCreate ? (
+                                        <div className="jira-dropdown-create-form" onClick={e => e.stopPropagation()}>
+                                            <input
+                                                type="text"
+                                                className="jira-dropdown-create-input"
+                                                placeholder="Enter epic name..."
+                                                value={newEpicName}
+                                                onChange={e => setNewEpicName(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') handleCreateEpic(issue.id)
+                                                    if (e.key === 'Escape') { setShowEpicCreate(false); setNewEpicName(''); }
+                                                }}
+                                                autoFocus
+                                            />
+                                            <button
+                                                className="jira-dropdown-create-btn"
+                                                onClick={() => handleCreateEpic(issue.id)}
+                                            >
+                                                Create
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            className="jira-dropdown-option create-epic"
+                                            onClick={e => { e.stopPropagation(); setShowEpicCreate(true); }}
+                                        >
+                                            <Plus size={14} />
+                                            <span>Create Epic</span>
+                                        </button>
+                                    )
+                                }
+                            />
+                        )}
                     </div>
                 )
             case 'assignee':
@@ -859,6 +929,39 @@ export default function ListTemplate() {
             value: key,
             label: val.label
         }))
+    }
+
+    // Get epic options for parent selection
+    const getEpicOptions = () => {
+        const epics = issues.filter(i => i.type === 'epic' && !i.isDeleted)
+        return [
+            { value: null, label: 'None', key: null, summary: 'No parent' },
+            ...epics.map(e => ({
+                value: e.id,
+                label: `${e.key} - ${e.summary.length > 25 ? e.summary.substring(0, 25) + '...' : e.summary}`,
+                key: e.key,
+                summary: e.summary
+            }))
+        ]
+    }
+
+    // Create new epic and return its ID
+    const handleCreateEpic = (issueId) => {
+        if (!newEpicName.trim()) return
+        const newEpic = addIssue({
+            type: 'epic',
+            status: 'todo',
+            priority: 'medium',
+            summary: newEpicName.trim(),
+            description: '',
+            sprintId: null,
+            storyPoints: null,
+            labels: []
+        })
+        handleFieldUpdate(issueId, 'parentId', newEpic.id)
+        setNewEpicName('')
+        setShowEpicCreate(false)
+        setActiveDropdown(null)
     }
 
     const groups = getGroupedIssues()

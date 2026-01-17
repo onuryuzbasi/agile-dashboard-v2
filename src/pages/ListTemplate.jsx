@@ -953,7 +953,7 @@ export default function ListTemplate() {
                                 <ChevronDown size={14} className="sort-icon" />
                             </div>
                         </div>
-                        <div className="scrollable-columns">
+                        <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
                             {columns.map(col => (
                                 <div
                                     key={col.id}
@@ -1098,7 +1098,7 @@ export default function ListTemplate() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="scrollable-columns">
+                                                <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
                                                     {columns.map(col => renderCell(col.id, issue, col, parentIssue, assignee, reporter))}
                                                     {/* Spacer to match header add-column button */}
                                                     <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>

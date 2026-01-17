@@ -6709,3 +6709,72 @@ h4 {
 .estimate-input::placeholder {
   color: var(--text-tertiary);
 }
+
+/* ===== GAMES SETTINGS ===== */
+.games-add-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.games-add-form .input {
+  flex: 1;
+}
+
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.game-item:hover {
+  background: var(--bg-secondary);
+}
+
+.game-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.game-code {
+  padding: 4px 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.game-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.game-item:hover .game-actions {
+  opacity: 1;
+}
+
+.games-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px;
+  color: var(--text-tertiary);
+  text-align: center;
+}

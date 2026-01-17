@@ -62,7 +62,7 @@ const departmentOptions = [
 ]
 
 export default function IssueModal({ issue, onClose }) {
-    const { updateIssue, deleteIssue, addIssue, addWorkLog, removeWorkLog, users, sprints, issues, getUserById } = useProjectStore()
+    const { updateIssue, deleteIssue, addIssue, addWorkLog, removeWorkLog, users, sprints, issues, games, getUserById } = useProjectStore()
 
     const [formData, setFormData] = useState({
         summary: issue.summary,
@@ -304,13 +304,16 @@ export default function IssueModal({ issue, onClose }) {
                         {/* Game */}
                         <div className="input-group">
                             <label className="input-label">Game</label>
-                            <input
-                                type="text"
-                                className="input"
+                            <select
+                                className="input select"
                                 value={formData.game}
                                 onChange={(e) => handleChange('game', e.target.value)}
-                                placeholder="Enter game name..."
-                            />
+                            >
+                                <option value="">None</option>
+                                {games?.map(game => (
+                                    <option key={game.id} value={game.id}>{game.name} ({game.code})</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Parent/Epic - only show for non-epic types */}

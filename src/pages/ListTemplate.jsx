@@ -331,6 +331,7 @@ export default function ListTemplate() {
         issues,
         sprints,
         users,
+        games,
         getUserById,
         setSelectedIssue,
         addIssue,
@@ -979,7 +980,7 @@ export default function ListTemplate() {
                             setActiveDropdown({ issueId: issue.id, field: 'game' })
                         }}
                     >
-                        <span>{issue.game || 'Zen Master'}</span>
+                        <span>{getGameName(issue.game)}</span>
                         {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'game' && (
                             <SearchableDropdown
                                 options={getGameOptions()}
@@ -1253,13 +1254,16 @@ export default function ListTemplate() {
 
     // Get game options
     const getGameOptions = () => {
-        return [
-            { value: 'Zen Master', label: 'Zen Master' },
-            { value: 'Dreamland', label: 'Dreamland' },
-            { value: 'Royal Quest', label: 'Royal Quest' },
-            { value: 'Puzzle Island', label: 'Puzzle Island' },
-            { value: 'Castle Clash', label: 'Castle Clash' }
-        ]
+        return (games || []).map(game => ({
+            value: game.id,
+            label: `${game.name} (${game.code})`
+        }))
+    }
+
+    // Get game name by ID
+    const getGameName = (gameId) => {
+        const game = (games || []).find(g => g.id === gameId)
+        return game ? game.name : (gameId || '—')
     }
 
     // Get priority options

@@ -18,7 +18,11 @@ import {
     Layers,
     ListTree,
     Calendar,
-    X
+    X,
+    Gamepad2,
+    Plus,
+    Pencil,
+    Save
 } from 'lucide-react'
 
 const typeIcons = {
@@ -37,6 +41,10 @@ export default function Settings() {
         issues,
         sprints,
         users,
+        games,
+        addGame,
+        updateGame,
+        deleteGame,
         restoreIssue,
         permanentlyDeleteIssue
     } = useProjectStore()
@@ -49,8 +57,34 @@ export default function Settings() {
     })
     const [importStatus, setImportStatus] = useState(null)
 
+    // Games state
+    const [newGameName, setNewGameName] = useState('')
+    const [newGameCode, setNewGameCode] = useState('')
+    const [editingGame, setEditingGame] = useState(null)
+    const [editName, setEditName] = useState('')
+    const [editCode, setEditCode] = useState('')
+
     // Get deleted issues
     const deletedIssues = issues.filter(i => i.isDeleted)
+
+    const handleAddGame = () => {
+        if (!newGameName.trim() || !newGameCode.trim()) return
+        addGame({ name: newGameName.trim(), code: newGameCode.trim().toUpperCase() })
+        setNewGameName('')
+        setNewGameCode('')
+    }
+
+    const handleEditGame = (game) => {
+        setEditingGame(game.id)
+        setEditName(game.name)
+        setEditCode(game.code)
+    }
+
+    const handleSaveGame = (gameId) => {
+        if (!editName.trim() || !editCode.trim()) return
+        updateGame(gameId, { name: editName.trim(), code: editCode.trim().toUpperCase() })
+        setEditingGame(null)
+    }
 
     const handleJiraConnect = async () => {
         if (!jiraConfig.domain || !jiraConfig.email || !jiraConfig.apiToken) {
@@ -148,6 +182,13 @@ export default function Settings() {
                 >
                     <SettingsIcon size={16} />
                     General
+                </button>
+                <button
+                    className={`settings-tab ${activeTab === 'games' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('games')}
+                >
+                    <Gamepad2 size={16} />
+                    Games
                 </button>
                 <button
                     className={`settings-tab ${activeTab === 'trash' ? 'active' : ''}`}
@@ -296,6 +337,108 @@ export default function Settings() {
                         </div>
                     </SettingSection>
                 </>
+            )}
+
+            {activeTab === 'games' && (
+                <SettingSection
+                    icon={Gamepad2}
+                    title="Games"
+                    description="Manage games that can be assigned to issues"
+                >
+                    {/* Add New Game */}
+                    <div className="games-add-form">
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="Game name"
+                            value={newGameName}
+                            onChange={e => setNewGameName(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="Code (e.g., RQ)"
+                            value={newGameCode}
+                            onChange={e => setNewGameCode(e.target.value)}
+                            style={{ width: 100 }}
+                        />
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleAddGame}
+                            disabled={!newGameName.trim() || !newGameCode.trim()}
+                        >
+                            <Plus size={16} />
+                            Add Game
+                        </button>
+                    </div>
+
+                    {/* Games List */}
+                    <div className="games-list">
+                        {games?.map(game => (
+                            <div key={game.id} className="game-item">
+                                {editingGame === game.id ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            className="input"
+                                            value={editName}
+                                            onChange={e => setEditName(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <input
+                                            type="text"
+                                            className="input"
+                                            value={editCode}
+                                            onChange={e => setEditCode(e.target.value)}
+                                            style={{ width: 80 }}
+                                        />
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={() => handleSaveGame(game.id)}
+                                        >
+                                            <Save size={14} />
+                                        </button>
+                                        <button
+                                            className="btn btn-sm btn-ghost"
+                                            onClick={() => setEditingGame(null)}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="game-name">{game.name}</span>
+                                        <span className="game-code">{game.code}</span>
+                                        <div className="game-actions">
+                                            <button
+                                                className="btn btn-sm btn-ghost"
+                                                onClick={() => handleEditGame(game)}
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button
+                                                className="btn btn-sm btn-ghost btn-danger-text"
+                                                onClick={() => {
+                                                    if (confirm(`Delete game "${game.name}"?`)) {
+                                                        deleteGame(game.id)
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                        {(!games || games.length === 0) && (
+                            <div className="games-empty">
+                                <Gamepad2 size={32} />
+                                <p>No games added yet</p>
+                            </div>
+                        )}
+                    </div>
+                </SettingSection>
             )}
 
             {activeTab === 'trash' && (

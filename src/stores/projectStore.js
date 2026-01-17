@@ -179,6 +179,12 @@ const initialUsers = [
     { id: 'user-3', name: 'Mike Wilson', email: 'mike@example.com', avatar: null }
 ]
 
+const initialGames = [
+    { id: 'game-1', name: 'Royal Quest', code: 'RQ' },
+    { id: 'game-2', name: 'Zen Master', code: 'ZM' },
+    { id: 'game-3', name: 'Star Voyage', code: 'SV' }
+]
+
 export const useProjectStore = create(
     persist(
         (set, get) => ({
@@ -187,6 +193,7 @@ export const useProjectStore = create(
             issues: initialIssues,
             sprints: initialSprints,
             users: initialUsers,
+            games: initialGames,
             currentProjectId: 'proj-1',
             currentSprintId: 'sprint-1',
             theme: 'light',
@@ -388,6 +395,26 @@ export const useProjectStore = create(
             importFromJira: async (jiraData) => {
                 // This will be implemented when Jira integration is added
                 console.log('Importing from Jira:', jiraData)
+            },
+
+            // Game actions
+            addGame: (game) => set((state) => ({
+                games: [...state.games, { ...game, id: `game-${Date.now()}` }]
+            })),
+
+            updateGame: (gameId, updates) => set((state) => ({
+                games: state.games.map(game =>
+                    game.id === gameId ? { ...game, ...updates } : game
+                )
+            })),
+
+            deleteGame: (gameId) => set((state) => ({
+                games: state.games.filter(game => game.id !== gameId)
+            })),
+
+            getGameById: (gameId) => {
+                const state = get()
+                return state.games.find(g => g.id === gameId)
             }
         }),
         {
@@ -397,6 +424,7 @@ export const useProjectStore = create(
                 issues: state.issues,
                 sprints: state.sprints,
                 users: state.users,
+                games: state.games,
                 theme: state.theme,
                 currentProjectId: state.currentProjectId
             })

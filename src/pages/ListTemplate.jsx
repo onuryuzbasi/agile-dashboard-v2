@@ -413,9 +413,9 @@ export default function ListTemplate() {
     }, [columns])
 
     // Calculate total row width (pinned + scrollable) for row borders
-    // Pinned columns: checkbox(28) + type(40) + key(100) + summary(250) + padding/borders ≈ 420px
+    // Pinned columns: checkbox(40) + type(60) + key(100) + summary(300) = 500px
     const totalRowWidth = useMemo(() => {
-        return 420 + scrollableWidth
+        return 500 + scrollableWidth
     }, [scrollableWidth])
 
     // Get parent issue for a given issue

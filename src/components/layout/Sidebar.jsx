@@ -11,7 +11,8 @@ import {
     Moon,
     Sun,
     PenTool,
-    List
+    List,
+    LayoutList
 } from 'lucide-react'
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
     { path: '/backlog', icon: ListTodo, label: 'Backlog' },
     { path: '/sprints', icon: Zap, label: 'Sprints' },
     { path: '/list', icon: List, label: 'List' },
+    { path: '/list-template', icon: LayoutList, label: 'List Template' },
     { path: '/whiteboard', icon: PenTool, label: 'Whiteboard' },
 ]
 

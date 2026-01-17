@@ -1509,7 +1509,7 @@ export default function ListTemplate() {
                                                             />
                                                         )}
                                                     </div>
-                                                    <div className="cell key">
+                                                    <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
                                                         {parentIssue && (
                                                             <span
                                                                 className="parent-key-link"
@@ -1532,7 +1532,7 @@ export default function ListTemplate() {
                                                             {issue.key}
                                                         </span>
                                                     </div>
-                                                    <div className="cell summary">
+                                                    <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
                                                         {editingSummary === issue.id ? (
                                                             <input
                                                                 type="text"
@@ -1576,10 +1576,10 @@ export default function ListTemplate() {
                                                 <div className="cell type">
                                                     <TypeIcon type="story" />
                                                 </div>
-                                                <div className="cell key">
+                                                <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
                                                     <span className="new-key">NEW</span>
                                                 </div>
-                                                <div className="cell summary">
+                                                <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
                                                     <input
                                                         type="text"
                                                         className="inline-create-input"

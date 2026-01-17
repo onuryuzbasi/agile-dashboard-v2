@@ -343,22 +343,42 @@ export default function ListTemplate() {
     const [creatingInGroup, setCreatingInGroup] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
 
-    // Column configuration (scrollable columns - excludes pinned Type, Key, Summary)
-    const columns = [
-        { id: 'parent', label: 'Parent', width: 120 },
-        { id: 'assignee', label: 'Assignee', width: 140 },
-        { id: 'project', label: 'Project Name', width: 120 },
-        { id: 'estimate', label: 'Original estimate', width: 120 },
-        { id: 'status', label: 'Status', width: 100 },
-        { id: 'sprint', label: 'Sprint', width: 100 },
-        { id: 'startDate', label: 'Start date', width: 130 },
-        { id: 'dueDate', label: 'Due date', width: 130 },
-        { id: 'priority', label: 'Priority', width: 80 },
-        { id: 'comments', label: 'Comments', width: 100 },
-        { id: 'reporter', label: 'Reporter', width: 140 },
-        { id: 'department', label: 'Department', width: 120 },
-        { id: 'affectsVersions', label: 'Affects versions', width: 130 }
+    // All available fields configuration
+    const allFields = [
+        { id: 'parent', label: 'Parent', width: 120, defaultVisible: true },
+        { id: 'assignee', label: 'Assignee', width: 140, defaultVisible: true },
+        { id: 'project', label: 'Project Name', width: 120, defaultVisible: true },
+        { id: 'estimate', label: 'Original estimate', width: 120, defaultVisible: true },
+        { id: 'status', label: 'Status', width: 100, defaultVisible: true },
+        { id: 'sprint', label: 'Sprint', width: 100, defaultVisible: true },
+        { id: 'startDate', label: 'Start date', width: 130, defaultVisible: true },
+        { id: 'dueDate', label: 'Due date', width: 130, defaultVisible: true },
+        { id: 'priority', label: 'Priority', width: 80, defaultVisible: true },
+        { id: 'comments', label: 'Comments', width: 100, defaultVisible: true },
+        { id: 'reporter', label: 'Reporter', width: 140, defaultVisible: true },
+        { id: 'department', label: 'Department', width: 120, defaultVisible: true },
+        { id: 'affectsVersions', label: 'Affects versions', width: 130, defaultVisible: true },
+        { id: 'labels', label: 'Labels', width: 120, defaultVisible: false },
+        { id: 'epic', label: 'Epic', width: 150, defaultVisible: false },
+        { id: 'storyPoints', label: 'Story Points', width: 100, defaultVisible: false },
+        { id: 'created', label: 'Created', width: 130, defaultVisible: false },
+        { id: 'updated', label: 'Updated', width: 130, defaultVisible: false },
+        { id: 'resolution', label: 'Resolution', width: 120, defaultVisible: false },
+        { id: 'fixVersions', label: 'Fix versions', width: 130, defaultVisible: false }
     ]
+
+    // Column state (visible columns in order)
+    const [columns, setColumns] = useState(
+        allFields.filter(f => f.defaultVisible).map(f => ({ id: f.id, label: f.label, width: f.width }))
+    )
+
+    // Drag state for column reordering
+    const [draggedColumn, setDraggedColumn] = useState(null)
+    const [dragOverColumn, setDragOverColumn] = useState(null)
+
+    // Add fields dropdown state
+    const [showAddFields, setShowAddFields] = useState(false)
+    const [fieldSearch, setFieldSearch] = useState('')
 
     // Close dropdowns on outside click
     useEffect(() => {
@@ -367,6 +387,8 @@ export default function ListTemplate() {
             setActiveDatePicker(null)
             setShowGroupMenu(false)
             setShowFilterMenu(false)
+            setShowAddFields(false)
+            setFieldSearch('')
         }
         document.addEventListener('click', handler)
         return () => document.removeEventListener('click', handler)
@@ -508,6 +530,72 @@ export default function ListTemplate() {
         })
     }
 
+    // ====== COLUMN DRAG AND DROP ======
+    const handleDragStart = (e, columnId) => {
+        setDraggedColumn(columnId)
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', columnId)
+        // Add some visual feedback
+        e.target.style.opacity = '0.5'
+    }
+
+    const handleDragOver = (e, columnId) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (draggedColumn && columnId !== draggedColumn) {
+            setDragOverColumn(columnId)
+        }
+    }
+
+    const handleDrop = (e, targetColumnId) => {
+        e.preventDefault()
+        if (!draggedColumn || draggedColumn === targetColumnId) return
+
+        setColumns(prevColumns => {
+            const newColumns = [...prevColumns]
+            const draggedIdx = newColumns.findIndex(c => c.id === draggedColumn)
+            const targetIdx = newColumns.findIndex(c => c.id === targetColumnId)
+
+            if (draggedIdx === -1 || targetIdx === -1) return prevColumns
+
+            // Remove dragged column and insert at target position
+            const [removed] = newColumns.splice(draggedIdx, 1)
+            newColumns.splice(targetIdx, 0, removed)
+
+            return newColumns
+        })
+
+        setDraggedColumn(null)
+        setDragOverColumn(null)
+    }
+
+    const handleDragEnd = (e) => {
+        e.target.style.opacity = '1'
+        setDraggedColumn(null)
+        setDragOverColumn(null)
+    }
+
+    // ====== FIELD VISIBILITY TOGGLE ======
+    const toggleFieldVisibility = (fieldId) => {
+        const isVisible = columns.some(c => c.id === fieldId)
+
+        if (isVisible) {
+            // Remove the column
+            setColumns(prev => prev.filter(c => c.id !== fieldId))
+        } else {
+            // Add the column at the end
+            const field = allFields.find(f => f.id === fieldId)
+            if (field) {
+                setColumns(prev => [...prev, { id: field.id, label: field.label, width: field.width }])
+            }
+        }
+    }
+
+    // Filter fields by search
+    const filteredFields = allFields.filter(f =>
+        f.label.toLowerCase().includes(fieldSearch.toLowerCase())
+    )
+
     // Get assignee options
     const getAssigneeOptions = () => {
         return [
@@ -634,15 +722,67 @@ export default function ListTemplate() {
                             {columns.map(col => (
                                 <div
                                     key={col.id}
-                                    className="header-cell"
+                                    className={`header-cell ${dragOverColumn === col.id ? 'drag-over' : ''}`}
                                     style={{ width: col.width, minWidth: col.width, flex: col.flex ? 1 : undefined }}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, col.id)}
+                                    onDragOver={(e) => handleDragOver(e, col.id)}
+                                    onDrop={(e) => handleDrop(e, col.id)}
+                                    onDragEnd={handleDragEnd}
                                 >
                                     {col.label}
                                     <ChevronDown size={14} className="sort-icon" />
                                 </div>
                             ))}
-                            <div className="header-cell add-column">
+                            <div
+                                className="header-cell add-column"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowAddFields(!showAddFields)
+                                }}
+                            >
                                 <Plus size={16} />
+                                {showAddFields && (
+                                    <div
+                                        className="add-fields-dropdown"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="add-fields-header">
+                                            <span>Add Fields</span>
+                                            <button
+                                                className="close-btn"
+                                                onClick={() => setShowAddFields(false)}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="add-fields-search">
+                                            <Search size={14} />
+                                            <input
+                                                type="text"
+                                                placeholder="Search fields..."
+                                                value={fieldSearch}
+                                                onChange={(e) => setFieldSearch(e.target.value)}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="add-fields-list">
+                                            {filteredFields.map(field => {
+                                                const isVisible = columns.some(c => c.id === field.id)
+                                                return (
+                                                    <label key={field.id} className="field-item">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isVisible}
+                                                            onChange={() => toggleFieldVisibility(field.id)}
+                                                        />
+                                                        <span>{field.label}</span>
+                                                    </label>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

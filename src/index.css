@@ -6428,3 +6428,231 @@ h4 {
   accent-color: #0052CC;
   cursor: pointer;
 }
+
+/* ===== AVATAR FILTER ===== */
+.jira-avatar-filter {
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+  border: 2px solid transparent;
+}
+
+.jira-avatar-filter:hover {
+  transform: scale(1.1);
+}
+
+.jira-avatar-filter.active {
+  border-color: #0052CC;
+  box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.3);
+}
+
+/* ===== SUMMARY INLINE EDIT ===== */
+.summary-edit-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 2px solid #0052CC;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: #FFFFFF;
+  color: #172B4D;
+  outline: none;
+}
+
+[data-theme="dark"] .summary-edit-input {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* ===== FLOATING ACTION BAR ===== */
+.floating-action-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #172B4D;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+}
+
+.fab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: #B3BAC5;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.fab-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.fab-count {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fab-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: #B3BAC5;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.fab-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.fab-action.danger {
+  color: #FF5630;
+}
+
+.fab-action.danger:hover {
+  background: rgba(255, 86, 48, 0.15);
+  color: #FF7452;
+}
+
+/* ===== DELETE CONFIRMATION MODAL ===== */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(9, 30, 66, 0.54);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.delete-modal {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .delete-modal {
+  background: var(--bg-elevated);
+}
+
+.delete-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.delete-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #172B4D;
+}
+
+[data-theme="dark"] .delete-modal-header h3 {
+  color: var(--text-primary);
+}
+
+.delete-modal p {
+  color: #5E6C84;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+[data-theme="dark"] .delete-modal p {
+  color: var(--text-secondary);
+}
+
+.delete-confirm-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #DFE1E6;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  margin-bottom: 20px;
+  transition: border-color 0.15s ease;
+}
+
+.delete-confirm-input:focus {
+  outline: none;
+  border-color: #0052CC;
+}
+
+[data-theme="dark"] .delete-confirm-input {
+  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.delete-modal-actions .cancel-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: #5E6C84;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.delete-modal-actions .cancel-btn:hover {
+  background: #F4F5F7;
+}
+
+[data-theme="dark"] .delete-modal-actions .cancel-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.delete-modal-actions .delete-btn {
+  padding: 10px 16px;
+  background: #DE350B;
+  border: none;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.delete-modal-actions .delete-btn:hover:not(:disabled) {
+  background: #BF2600;
+}
+
+.delete-modal-actions .delete-btn:disabled {
+  background: #EBECF0;
+  color: #A5ADBA;
+  cursor: not-allowed;
+}

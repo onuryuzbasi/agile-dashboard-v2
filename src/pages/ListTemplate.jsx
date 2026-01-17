@@ -363,6 +363,14 @@ export default function ListTemplate() {
     const [activeHeaderMenu, setActiveHeaderMenu] = useState(null)
     const [sortConfig, setSortConfig] = useState({ field: null, direction: null })
 
+    // Inline summary editing
+    const [editingSummary, setEditingSummary] = useState(null)
+    const [editingSummaryText, setEditingSummaryText] = useState('')
+
+    // Delete confirmation modal
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteConfirmText, setDeleteConfirmText] = useState('')
+
     // All available fields configuration
     const allFields = [
         { id: 'parent', label: 'Parent', width: 120, defaultVisible: true },
@@ -433,8 +441,8 @@ export default function ListTemplate() {
 
     // Get parent issue for a given issue
     const getParentIssue = (issue) => {
-        if (!issue.epicId) return null
-        return epics.find(e => e.id === issue.epicId)
+        if (!issue.parentId) return null
+        return epics.find(e => e.id === issue.parentId)
     }
 
     // Toggle group collapse
@@ -591,6 +599,32 @@ export default function ListTemplate() {
             }
             return next
         })
+    }
+
+    // Handle summary inline edit
+    const handleSummaryEdit = (issueId, newSummary) => {
+        if (newSummary.trim()) {
+            updateIssue(issueId, { summary: newSummary.trim() })
+        }
+        setEditingSummary(null)
+        setEditingSummaryText('')
+    }
+
+    // Handle bulk delete
+    const handleBulkDelete = () => {
+        if (deleteConfirmText.toLowerCase() === 'delete') {
+            selectedIssues.forEach(issueId => {
+                updateIssue(issueId, { isDeleted: true })
+            })
+            setSelectedIssues(new Set())
+            setShowDeleteModal(false)
+            setDeleteConfirmText('')
+        }
+    }
+
+    // Clear selection
+    const clearSelection = () => {
+        setSelectedIssues(new Set())
     }
 
     // ====== COLUMN DRAG AND DROP ======
@@ -1138,7 +1172,24 @@ export default function ListTemplate() {
                 {/* Avatar Filter Group */}
                 <div className="jira-avatar-group">
                     {users.slice(0, 4).map(user => (
-                        <Avatar key={user.id} user={user} size={28} />
+                        <div
+                            key={user.id}
+                            className={`jira-avatar-filter ${filterAssignees.has(user.id) ? 'active' : ''}`}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setFilterAssignees(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(user.id)) {
+                                        next.delete(user.id)
+                                    } else {
+                                        next.add(user.id)
+                                    }
+                                    return next
+                                })
+                            }}
+                        >
+                            <Avatar user={user} size={28} />
+                        </div>
                     ))}
                     {users.length > 4 && (
                         <div className="jira-avatar-more">+{users.length - 4}</div>
@@ -1412,12 +1463,30 @@ export default function ListTemplate() {
                                                         </span>
                                                     </div>
                                                     <div className="cell summary">
-                                                        <span
-                                                            className="summary-text"
-                                                            onClick={() => setSelectedIssue(issue)}
-                                                        >
-                                                            {issue.summary}
-                                                        </span>
+                                                        {editingSummary === issue.id ? (
+                                                            <input
+                                                                type="text"
+                                                                className="summary-edit-input"
+                                                                value={editingSummaryText}
+                                                                onChange={e => setEditingSummaryText(e.target.value)}
+                                                                onBlur={() => handleSummaryEdit(issue.id, editingSummaryText)}
+                                                                onKeyDown={e => {
+                                                                    if (e.key === 'Enter') handleSummaryEdit(issue.id, editingSummaryText)
+                                                                    if (e.key === 'Escape') { setEditingSummary(null); setEditingSummaryText(''); }
+                                                                }}
+                                                                autoFocus
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                className="summary-text"
+                                                                onClick={() => {
+                                                                    setEditingSummary(issue.id)
+                                                                    setEditingSummaryText(issue.summary)
+                                                                }}
+                                                            >
+                                                                {issue.summary}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
@@ -1487,6 +1556,64 @@ export default function ListTemplate() {
                     )}
                 </div>
             </div>
+
+            {/* Floating Action Bar - shown when items are selected */}
+            {selectedIssues.size > 0 && (
+                <div className="floating-action-bar">
+                    <button className="fab-close" onClick={clearSelection}>
+                        <X size={16} />
+                    </button>
+                    <span className="fab-count">{selectedIssues.size} work items selected</span>
+                    <button className="fab-action">
+                        <Settings2 size={16} />
+                        <span>Edit</span>
+                    </button>
+                    <button className="fab-action">
+                        <MessageSquare size={16} />
+                        <span>Copy to clipboard</span>
+                    </button>
+                    <button className="fab-action danger" onClick={() => setShowDeleteModal(true)}>
+                        <AlertTriangle size={16} />
+                        <span>Delete</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="delete-modal-overlay" onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}>
+                    <div className="delete-modal" onClick={e => e.stopPropagation()}>
+                        <div className="delete-modal-header">
+                            <AlertTriangle size={24} color="#DE350B" />
+                            <h3>Delete {selectedIssues.size} items?</h3>
+                        </div>
+                        <p>This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
+                        <input
+                            type="text"
+                            className="delete-confirm-input"
+                            placeholder="Type 'delete' to confirm"
+                            value={deleteConfirmText}
+                            onChange={e => setDeleteConfirmText(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="delete-modal-actions">
+                            <button
+                                className="cancel-btn"
+                                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-btn"
+                                disabled={deleteConfirmText.toLowerCase() !== 'delete'}
+                                onClick={handleBulkDelete}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

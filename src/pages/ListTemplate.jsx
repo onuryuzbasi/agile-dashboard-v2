@@ -396,6 +396,11 @@ export default function ListTemplate() {
     const [draggedColumn, setDraggedColumn] = useState(null)
     const [dragOverColumn, setDragOverColumn] = useState(null)
 
+    // Resize state for column width adjustment
+    const [resizingColumn, setResizingColumn] = useState(null)
+    const [resizeStartX, setResizeStartX] = useState(0)
+    const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
     // Add fields dropdown state
     const [showAddFields, setShowAddFields] = useState(false)
     const [fieldSearch, setFieldSearch] = useState('')
@@ -671,6 +676,45 @@ export default function ListTemplate() {
         setDraggedColumn(null)
         setDragOverColumn(null)
     }
+
+    // ====== COLUMN RESIZE ======
+    const handleResizeStart = (e, columnId, currentWidth) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setResizingColumn(columnId)
+        setResizeStartX(e.clientX)
+        setResizeStartWidth(currentWidth)
+        document.body.style.cursor = 'col-resize'
+        document.body.style.userSelect = 'none'
+    }
+
+    useEffect(() => {
+        const handleResizeMove = (e) => {
+            if (!resizingColumn) return
+            const delta = e.clientX - resizeStartX
+            const newWidth = Math.max(60, resizeStartWidth + delta)
+            setColumns(prev => prev.map(col =>
+                col.id === resizingColumn ? { ...col, width: newWidth } : col
+            ))
+        }
+
+        const handleResizeEnd = () => {
+            if (!resizingColumn) return
+            setResizingColumn(null)
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+        }
+
+        if (resizingColumn) {
+            document.addEventListener('mousemove', handleResizeMove)
+            document.addEventListener('mouseup', handleResizeEnd)
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleResizeMove)
+            document.removeEventListener('mouseup', handleResizeEnd)
+        }
+    }, [resizingColumn, resizeStartX, resizeStartWidth])
 
     // ====== FIELD VISIBILITY TOGGLE ======
     const toggleFieldVisibility = (fieldId) => {
@@ -1314,6 +1358,11 @@ export default function ListTemplate() {
                                             <button onClick={() => handleHideColumn(col.id)}><EyeOff size={14} /> Hide Field</button>
                                         </div>
                                     )}
+                                    {/* Resize handle */}
+                                    <div
+                                        className="column-resize-handle"
+                                        onMouseDown={(e) => handleResizeStart(e, col.id, col.width)}
+                                    />
                                 </div>
                             ))}
                             <div

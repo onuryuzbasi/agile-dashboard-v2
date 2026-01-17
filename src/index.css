@@ -6656,3 +6656,29 @@ h4 {
   color: #A5ADBA;
   cursor: not-allowed;
 }
+
+/* ===== COLUMN RESIZE HANDLE ===== */
+.column-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s ease;
+  z-index: 10;
+}
+
+.column-resize-handle:hover {
+  background: rgba(0, 82, 204, 0.3);
+}
+
+.column-resize-handle:active {
+  background: #0052CC;
+}
+
+/* Ensure header cells have relative positioning for resize handle */
+.list-template-header .header-cell {
+  position: relative;
+}

@@ -209,25 +209,12 @@ export const useProjectStore = create(
             // Issue actions
             addIssue: (issue) => {
                 const state = get()
-
-                // Get the game code for the key prefix
-                let keyPrefix = 'ALL'
-                if (issue.game) {
-                    const game = state.games.find(g => g.id === issue.game)
-                    if (game && game.code) {
-                        keyPrefix = game.code.toUpperCase()
-                    }
-                }
-
-                // Count existing issues with the same prefix
-                const existingWithPrefix = state.issues.filter(i =>
-                    i.key && i.key.startsWith(keyPrefix + '-')
-                ).length
-
+                const project = state.projects.find(p => p.id === state.currentProjectId)
+                const issueCount = state.issues.filter(i => i.projectId === state.currentProjectId).length
                 const newIssue = {
                     ...issue,
                     id: `issue-${Date.now()}`,
-                    key: `${keyPrefix}-${existingWithPrefix + 1}`,
+                    key: `${project?.key || 'AGILE'}-${issueCount + 1}`,
                     projectId: state.currentProjectId,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()

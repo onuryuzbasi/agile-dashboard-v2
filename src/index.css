@@ -5100,6 +5100,7 @@ h4 {
   font-size: 12px;
   font-weight: 600;
   color: #5E6C84;
+  background: #F4F5F7;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -5107,6 +5108,7 @@ h4 {
   cursor: pointer;
   transition: color 0.1s ease;
   border-right: 1px solid #DFE1E6;
+  border-bottom: 1px solid #DFE1E6;
   flex-shrink: 0;
 }
 
@@ -5116,6 +5118,7 @@ h4 {
 
 [data-theme="dark"] .list-template-header .header-cell {
   color: var(--text-secondary);
+  background: var(--bg-secondary);
   border-color: var(--border-primary);
 }
 
@@ -5349,9 +5352,11 @@ h4 {
   padding: 8px 12px;
   font-size: 14px;
   color: #172B4D;
+  background: #FFFFFF;
   min-height: 40px;
   position: relative;
   border-right: 1px solid #EBECF0;
+  border-bottom: 1px solid #EBECF0;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -5362,6 +5367,7 @@ h4 {
 
 [data-theme="dark"] .list-template-row .cell {
   color: var(--text-primary);
+  background: var(--bg-primary);
   border-color: var(--border-subtle);
 }
 

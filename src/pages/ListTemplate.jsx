@@ -635,7 +635,7 @@ export default function ListTemplate() {
                                 <div
                                     key={col.id}
                                     className="header-cell"
-                                    style={{ width: col.width, flex: col.flex ? 1 : undefined }}
+                                    style={{ width: col.width, minWidth: col.width, flex: col.flex ? 1 : undefined }}
                                 >
                                     {col.label}
                                     <ChevronDown size={14} className="sort-icon" />
@@ -723,7 +723,7 @@ export default function ListTemplate() {
                                                 </div>
                                                 <div className="scrollable-columns">
                                                     {/* Parent */}
-                                                    <div className="cell" style={{ width: 120 }}>
+                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
                                                         {parentIssue ? (
                                                             <span className="parent-link">{parentIssue.key}</span>
                                                         ) : '—'}
@@ -731,7 +731,7 @@ export default function ListTemplate() {
                                                     {/* Assignee */}
                                                     <div
                                                         className="cell assignee"
-                                                        style={{ width: 140 }}
+                                                        style={{ width: 140, minWidth: 140 }}
                                                         onClick={e => {
                                                             e.stopPropagation()
                                                             setActiveDropdown({ issueId: issue.id, field: 'assignee' })
@@ -751,17 +751,17 @@ export default function ListTemplate() {
                                                         )}
                                                     </div>
                                                     {/* Project Name */}
-                                                    <div className="cell" style={{ width: 120 }}>
+                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
                                                         <span>{issue.projectName || 'Zen Master'}</span>
                                                     </div>
                                                     {/* Original Estimate */}
-                                                    <div className="cell" style={{ width: 120 }}>
+                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
                                                         <span>{issue.originalEstimate || issue.storyPoints ? `${issue.storyPoints || issue.originalEstimate}h` : '—'}</span>
                                                     </div>
                                                     {/* Status */}
                                                     <div
                                                         className="cell status"
-                                                        style={{ width: 100 }}
+                                                        style={{ width: 100, minWidth: 100 }}
                                                         onClick={e => {
                                                             e.stopPropagation()
                                                             setActiveDropdown({ issueId: issue.id, field: 'status' })
@@ -780,7 +780,7 @@ export default function ListTemplate() {
                                                     {/* Sprint */}
                                                     <div
                                                         className="cell sprint"
-                                                        style={{ width: 100 }}
+                                                        style={{ width: 100, minWidth: 100 }}
                                                         onClick={e => {
                                                             e.stopPropagation()
                                                             setActiveDropdown({ issueId: issue.id, field: 'sprint' })
@@ -803,7 +803,7 @@ export default function ListTemplate() {
                                                     {/* Start Date */}
                                                     <div
                                                         className="cell date"
-                                                        style={{ width: 130 }}
+                                                        style={{ width: 130, minWidth: 130 }}
                                                         onClick={e => {
                                                             e.stopPropagation()
                                                             setActiveDatePicker({ issueId: issue.id, field: 'startDate' })
@@ -821,7 +821,7 @@ export default function ListTemplate() {
                                                     {/* Due Date */}
                                                     <div
                                                         className="cell date"
-                                                        style={{ width: 130 }}
+                                                        style={{ width: 130, minWidth: 130 }}
                                                         onClick={e => {
                                                             e.stopPropagation()
                                                             setActiveDatePicker({ issueId: issue.id, field: 'dueDate' })
@@ -837,32 +837,34 @@ export default function ListTemplate() {
                                                         )}
                                                     </div>
                                                     {/* Priority */}
-                                                    <div className="cell priority" style={{ width: 80 }}>
+                                                    <div className="cell priority" style={{ width: 80, minWidth: 80 }}>
                                                         <PriorityIcon priority={issue.priority} />
                                                         <span className="priority-label">
                                                             {priorityConfig[issue.priority]?.label || 'Medium'}
                                                         </span>
                                                     </div>
                                                     {/* Comments */}
-                                                    <div className="cell comments" style={{ width: 100 }}>
+                                                    <div className="cell comments" style={{ width: 100, minWidth: 100 }}>
                                                         <MessageSquare size={14} />
                                                         <span>
                                                             {issue.comments?.length ? `${issue.comments.length} comment${issue.comments.length > 1 ? 's' : ''}` : 'Add comment'}
                                                         </span>
                                                     </div>
                                                     {/* Reporter */}
-                                                    <div className="cell reporter" style={{ width: 140 }}>
+                                                    <div className="cell reporter" style={{ width: 140, minWidth: 140 }}>
                                                         <Avatar user={reporter} size={24} />
                                                         <span>{reporter?.name || 'Unknown'}</span>
                                                     </div>
                                                     {/* Department */}
-                                                    <div className="cell" style={{ width: 120 }}>
+                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
                                                         <span>{issue.department || 'Development'}</span>
                                                     </div>
                                                     {/* Affects Versions */}
-                                                    <div className="cell" style={{ width: 130 }}>
+                                                    <div className="cell" style={{ width: 130, minWidth: 130 }}>
                                                         <span>—</span>
                                                     </div>
+                                                    {/* Spacer to match header add-column button */}
+                                                    <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>
                                                 </div>
                                             </div>
                                         )

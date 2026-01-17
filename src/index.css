@@ -5077,12 +5077,14 @@ h4 {
   left: 0;
   background: #F4F5F7;
   z-index: 11;
-  border-right: 1px solid #DFE1E6;
+  border-right: 2px solid #DFE1E6;
+  box-shadow: 4px 0 8px rgba(9, 30, 66, 0.08);
 }
 
 [data-theme="dark"] .list-template-header .pinned-columns {
   background: var(--bg-secondary);
   border-color: var(--border-primary);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.3);
 }
 
 .list-template-header .scrollable-columns {
@@ -5104,10 +5106,16 @@ h4 {
   user-select: none;
   cursor: pointer;
   transition: color 0.1s ease;
+  border-right: 1px solid #DFE1E6;
+}
+
+.list-template-header .header-cell:last-child {
+  border-right: none;
 }
 
 [data-theme="dark"] .list-template-header .header-cell {
   color: var(--text-secondary);
+  border-color: var(--border-primary);
 }
 
 .list-template-header .header-cell:hover {
@@ -5301,13 +5309,32 @@ h4 {
   display: flex;
   position: sticky;
   left: 0;
-  background: inherit;
+  background: #FFFFFF;
   z-index: 5;
-  border-right: 1px solid #EBECF0;
+  border-right: 2px solid #DFE1E6;
+  box-shadow: 4px 0 8px rgba(9, 30, 66, 0.08);
+}
+
+.list-template-row:hover .pinned-columns {
+  background: #F4F5F7;
+}
+
+.list-template-row.selected .pinned-columns {
+  background: #DEEBFF;
 }
 
 [data-theme="dark"] .list-template-row .pinned-columns {
-  border-color: var(--border-subtle);
+  background: var(--bg-primary);
+  border-color: var(--border-primary);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .list-template-row:hover .pinned-columns {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .list-template-row.selected .pinned-columns {
+  background: var(--accent-light);
 }
 
 .list-template-row .scrollable-columns {
@@ -5324,10 +5351,16 @@ h4 {
   color: #172B4D;
   min-height: 40px;
   position: relative;
+  border-right: 1px solid #EBECF0;
+}
+
+.list-template-row .cell:last-child {
+  border-right: none;
 }
 
 [data-theme="dark"] .list-template-row .cell {
   color: var(--text-primary);
+  border-color: var(--border-subtle);
 }
 
 .list-template-row .cell.checkbox {

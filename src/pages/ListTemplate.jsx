@@ -409,11 +409,10 @@ export default function ListTemplate() {
         const groups = []
 
         if (groupBy === 'sprint') {
-            const filteredSprints = sprints.filter(s =>
-                showCompleted ? s.state === 'closed' : s.state !== 'closed'
-            )
+            // Always show non-closed sprints first
+            const activeSprints = sprints.filter(s => s.state !== 'closed')
 
-            const sortedSprints = [...filteredSprints].sort((a, b) => {
+            const sortedSprints = [...activeSprints].sort((a, b) => {
                 if (a.state === 'active') return -1
                 if (b.state === 'active') return 1
                 return new Date(a.startDate || 0) - new Date(b.startDate || 0)
@@ -430,13 +429,27 @@ export default function ListTemplate() {
                 })
             })
 
-            if (!showCompleted) {
-                const backlogIssues = activeIssues.filter(i => !i.sprintId)
-                groups.push({
-                    id: 'backlog',
-                    name: 'Backlog',
-                    type: 'backlog',
-                    issues: backlogIssues
+            // Always show backlog
+            const backlogIssues = activeIssues.filter(i => !i.sprintId)
+            groups.push({
+                id: 'backlog',
+                name: 'Backlog',
+                type: 'backlog',
+                issues: backlogIssues
+            })
+
+            // Show completed sprints if toggled
+            if (showCompleted) {
+                const closedSprints = sprints.filter(s => s.state === 'closed')
+                closedSprints.forEach(sprint => {
+                    const sprintIssues = activeIssues.filter(i => i.sprintId === sprint.id)
+                    groups.push({
+                        id: sprint.id,
+                        name: sprint.name,
+                        type: 'completed',
+                        state: sprint.state,
+                        issues: sprintIssues
+                    })
                 })
             }
         }

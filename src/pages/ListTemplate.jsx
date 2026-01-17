@@ -596,6 +596,235 @@ export default function ListTemplate() {
         f.label.toLowerCase().includes(fieldSearch.toLowerCase())
     )
 
+    // ====== DYNAMIC CELL RENDERER ======
+    // Renders cell content based on column ID for dynamic column ordering
+    const renderCell = (columnId, issue, column, parentIssue, assignee, reporter) => {
+        const cellStyle = { width: column.width, minWidth: column.width }
+
+        switch (columnId) {
+            case 'parent':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        {parentIssue ? (
+                            <span className="parent-link">{parentIssue.key}</span>
+                        ) : '—'}
+                    </div>
+                )
+            case 'assignee':
+                return (
+                    <div
+                        key={columnId}
+                        className="cell assignee"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'assignee' })
+                        }}
+                    >
+                        <Avatar user={assignee} size={24} />
+                        <span className="assignee-name">
+                            {assignee?.name || 'Unassigned'}
+                        </span>
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'assignee' && (
+                            <SearchableDropdown
+                                options={getAssigneeOptions()}
+                                value={issue.assigneeId}
+                                onChange={val => handleFieldUpdate(issue.id, 'assigneeId', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
+                    </div>
+                )
+            case 'project':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.projectName || 'Zen Master'}</span>
+                    </div>
+                )
+            case 'estimate':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.originalEstimate || issue.storyPoints ? `${issue.storyPoints || issue.originalEstimate}h` : '—'}</span>
+                    </div>
+                )
+            case 'status':
+                return (
+                    <div
+                        key={columnId}
+                        className="cell status"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'status' })
+                        }}
+                    >
+                        <StatusBadge status={issue.status} />
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'status' && (
+                            <SearchableDropdown
+                                options={getStatusOptions()}
+                                value={issue.status}
+                                onChange={val => handleFieldUpdate(issue.id, 'status', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
+                    </div>
+                )
+            case 'sprint':
+                return (
+                    <div
+                        key={columnId}
+                        className="cell sprint"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDropdown({ issueId: issue.id, field: 'sprint' })
+                        }}
+                    >
+                        <SprintSelector
+                            value={issue.sprintId}
+                            sprints={sprints}
+                            isActive={activeDropdown?.issueId === issue.id && activeDropdown?.field === 'sprint'}
+                        />
+                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'sprint' && (
+                            <SearchableDropdown
+                                options={getSprintOptions()}
+                                value={issue.sprintId}
+                                onChange={val => handleFieldUpdate(issue.id, 'sprintId', val)}
+                                onClose={() => setActiveDropdown(null)}
+                            />
+                        )}
+                    </div>
+                )
+            case 'startDate':
+                return (
+                    <div
+                        key={columnId}
+                        className="cell date"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDatePicker({ issueId: issue.id, field: 'startDate' })
+                        }}
+                    >
+                        <DateCell value={issue.startDate} />
+                        {activeDatePicker?.issueId === issue.id && activeDatePicker?.field === 'startDate' && (
+                            <DatePicker
+                                value={issue.startDate}
+                                onChange={val => handleFieldUpdate(issue.id, 'startDate', val)}
+                                onClose={() => setActiveDatePicker(null)}
+                            />
+                        )}
+                    </div>
+                )
+            case 'dueDate':
+                return (
+                    <div
+                        key={columnId}
+                        className="cell date"
+                        style={cellStyle}
+                        onClick={e => {
+                            e.stopPropagation()
+                            setActiveDatePicker({ issueId: issue.id, field: 'dueDate' })
+                        }}
+                    >
+                        <DateCell value={issue.dueDate} showWarning />
+                        {activeDatePicker?.issueId === issue.id && activeDatePicker?.field === 'dueDate' && (
+                            <DatePicker
+                                value={issue.dueDate}
+                                onChange={val => handleFieldUpdate(issue.id, 'dueDate', val)}
+                                onClose={() => setActiveDatePicker(null)}
+                            />
+                        )}
+                    </div>
+                )
+            case 'priority':
+                return (
+                    <div key={columnId} className="cell priority" style={cellStyle}>
+                        <PriorityIcon priority={issue.priority} />
+                        <span className="priority-label">
+                            {priorityConfig[issue.priority]?.label || 'Medium'}
+                        </span>
+                    </div>
+                )
+            case 'comments':
+                return (
+                    <div key={columnId} className="cell comments" style={cellStyle}>
+                        <MessageSquare size={14} />
+                        <span>
+                            {issue.comments?.length ? `${issue.comments.length} comment${issue.comments.length > 1 ? 's' : ''}` : 'Add comment'}
+                        </span>
+                    </div>
+                )
+            case 'reporter':
+                return (
+                    <div key={columnId} className="cell reporter" style={cellStyle}>
+                        <Avatar user={reporter} size={24} />
+                        <span>{reporter?.name || 'Unknown'}</span>
+                    </div>
+                )
+            case 'department':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.department || 'Development'}</span>
+                    </div>
+                )
+            case 'affectsVersions':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>—</span>
+                    </div>
+                )
+            case 'labels':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.labels?.join(', ') || '—'}</span>
+                    </div>
+                )
+            case 'epic':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{parentIssue?.summary || '—'}</span>
+                    </div>
+                )
+            case 'storyPoints':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.storyPoints || '—'}</span>
+                    </div>
+                )
+            case 'created':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.createdAt ? formatDate(issue.createdAt) : '—'}</span>
+                    </div>
+                )
+            case 'updated':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.updatedAt ? formatDate(issue.updatedAt) : '—'}</span>
+                    </div>
+                )
+            case 'resolution':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>{issue.resolution || '—'}</span>
+                    </div>
+                )
+            case 'fixVersions':
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>—</span>
+                    </div>
+                )
+            default:
+                return (
+                    <div key={columnId} className="cell" style={cellStyle}>
+                        <span>—</span>
+                    </div>
+                )
+        }
+    }
+
     // Get assignee options
     const getAssigneeOptions = () => {
         return [
@@ -862,147 +1091,7 @@ export default function ListTemplate() {
                                                     </div>
                                                 </div>
                                                 <div className="scrollable-columns">
-                                                    {/* Parent */}
-                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
-                                                        {parentIssue ? (
-                                                            <span className="parent-link">{parentIssue.key}</span>
-                                                        ) : '—'}
-                                                    </div>
-                                                    {/* Assignee */}
-                                                    <div
-                                                        className="cell assignee"
-                                                        style={{ width: 140, minWidth: 140 }}
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDropdown({ issueId: issue.id, field: 'assignee' })
-                                                        }}
-                                                    >
-                                                        <Avatar user={assignee} size={24} />
-                                                        <span className="assignee-name">
-                                                            {assignee?.name || 'Unassigned'}
-                                                        </span>
-                                                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'assignee' && (
-                                                            <SearchableDropdown
-                                                                options={getAssigneeOptions()}
-                                                                value={issue.assigneeId}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'assigneeId', val)}
-                                                                onClose={() => setActiveDropdown(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    {/* Project Name */}
-                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
-                                                        <span>{issue.projectName || 'Zen Master'}</span>
-                                                    </div>
-                                                    {/* Original Estimate */}
-                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
-                                                        <span>{issue.originalEstimate || issue.storyPoints ? `${issue.storyPoints || issue.originalEstimate}h` : '—'}</span>
-                                                    </div>
-                                                    {/* Status */}
-                                                    <div
-                                                        className="cell status"
-                                                        style={{ width: 100, minWidth: 100 }}
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDropdown({ issueId: issue.id, field: 'status' })
-                                                        }}
-                                                    >
-                                                        <StatusBadge status={issue.status} />
-                                                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'status' && (
-                                                            <SearchableDropdown
-                                                                options={getStatusOptions()}
-                                                                value={issue.status}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'status', val)}
-                                                                onClose={() => setActiveDropdown(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    {/* Sprint */}
-                                                    <div
-                                                        className="cell sprint"
-                                                        style={{ width: 100, minWidth: 100 }}
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDropdown({ issueId: issue.id, field: 'sprint' })
-                                                        }}
-                                                    >
-                                                        <SprintSelector
-                                                            value={issue.sprintId}
-                                                            sprints={sprints}
-                                                            isActive={activeDropdown?.issueId === issue.id && activeDropdown?.field === 'sprint'}
-                                                        />
-                                                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'sprint' && (
-                                                            <SearchableDropdown
-                                                                options={getSprintOptions()}
-                                                                value={issue.sprintId}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'sprintId', val)}
-                                                                onClose={() => setActiveDropdown(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    {/* Start Date */}
-                                                    <div
-                                                        className="cell date"
-                                                        style={{ width: 130, minWidth: 130 }}
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDatePicker({ issueId: issue.id, field: 'startDate' })
-                                                        }}
-                                                    >
-                                                        <DateCell value={issue.startDate} />
-                                                        {activeDatePicker?.issueId === issue.id && activeDatePicker?.field === 'startDate' && (
-                                                            <DatePicker
-                                                                value={issue.startDate}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'startDate', val)}
-                                                                onClose={() => setActiveDatePicker(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    {/* Due Date */}
-                                                    <div
-                                                        className="cell date"
-                                                        style={{ width: 130, minWidth: 130 }}
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDatePicker({ issueId: issue.id, field: 'dueDate' })
-                                                        }}
-                                                    >
-                                                        <DateCell value={issue.dueDate} showWarning />
-                                                        {activeDatePicker?.issueId === issue.id && activeDatePicker?.field === 'dueDate' && (
-                                                            <DatePicker
-                                                                value={issue.dueDate}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'dueDate', val)}
-                                                                onClose={() => setActiveDatePicker(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    {/* Priority */}
-                                                    <div className="cell priority" style={{ width: 80, minWidth: 80 }}>
-                                                        <PriorityIcon priority={issue.priority} />
-                                                        <span className="priority-label">
-                                                            {priorityConfig[issue.priority]?.label || 'Medium'}
-                                                        </span>
-                                                    </div>
-                                                    {/* Comments */}
-                                                    <div className="cell comments" style={{ width: 100, minWidth: 100 }}>
-                                                        <MessageSquare size={14} />
-                                                        <span>
-                                                            {issue.comments?.length ? `${issue.comments.length} comment${issue.comments.length > 1 ? 's' : ''}` : 'Add comment'}
-                                                        </span>
-                                                    </div>
-                                                    {/* Reporter */}
-                                                    <div className="cell reporter" style={{ width: 140, minWidth: 140 }}>
-                                                        <Avatar user={reporter} size={24} />
-                                                        <span>{reporter?.name || 'Unknown'}</span>
-                                                    </div>
-                                                    {/* Department */}
-                                                    <div className="cell" style={{ width: 120, minWidth: 120 }}>
-                                                        <span>{issue.department || 'Development'}</span>
-                                                    </div>
-                                                    {/* Affects Versions */}
-                                                    <div className="cell" style={{ width: 130, minWidth: 130 }}>
-                                                        <span>—</span>
-                                                    </div>
+                                                    {columns.map(col => renderCell(col.id, issue, col, parentIssue, assignee, reporter))}
                                                     {/* Spacer to match header add-column button */}
                                                     <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>
                                                 </div>

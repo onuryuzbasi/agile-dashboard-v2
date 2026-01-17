@@ -392,6 +392,10 @@ export default function ListTemplate() {
         allFields.filter(f => f.defaultVisible).map(f => ({ id: f.id, label: f.label, width: f.width }))
     )
 
+    // Pinned column widths (Key, Summary)
+    const [keyWidth, setKeyWidth] = useState(100)
+    const [summaryWidth, setSummaryWidth] = useState(300)
+
     // Drag state for column reordering
     const [draggedColumn, setDraggedColumn] = useState(null)
     const [dragOverColumn, setDragOverColumn] = useState(null)
@@ -693,9 +697,18 @@ export default function ListTemplate() {
             if (!resizingColumn) return
             const delta = e.clientX - resizeStartX
             const newWidth = Math.max(60, resizeStartWidth + delta)
-            setColumns(prev => prev.map(col =>
-                col.id === resizingColumn ? { ...col, width: newWidth } : col
-            ))
+
+            // Handle pinned columns
+            if (resizingColumn === 'key') {
+                setKeyWidth(newWidth)
+            } else if (resizingColumn === 'summary') {
+                setSummaryWidth(newWidth)
+            } else {
+                // Handle scrollable columns
+                setColumns(prev => prev.map(col =>
+                    col.id === resizingColumn ? { ...col, width: newWidth } : col
+                ))
+            }
         }
 
         const handleResizeEnd = () => {
@@ -1300,7 +1313,7 @@ export default function ListTemplate() {
                             <div className="header-cell type">
                                 <span className="header-label">Type</span>
                             </div>
-                            <div className="header-cell key">
+                            <div className="header-cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
                                 <span className="header-label">Key</span>
                                 <button
                                     className="header-menu-btn"
@@ -1314,8 +1327,12 @@ export default function ListTemplate() {
                                         <button onClick={() => handleSort('key', 'desc')}><ArrowDown size={14} /> Sort Z to A</button>
                                     </div>
                                 )}
+                                <div
+                                    className="column-resize-handle"
+                                    onMouseDown={(e) => handleResizeStart(e, 'key', keyWidth)}
+                                />
                             </div>
-                            <div className="header-cell summary">
+                            <div className="header-cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
                                 <span className="header-label">Summary</span>
                                 <button
                                     className="header-menu-btn"
@@ -1329,6 +1346,10 @@ export default function ListTemplate() {
                                         <button onClick={() => handleSort('summary', 'desc')}><ArrowDown size={14} /> Sort Z to A</button>
                                     </div>
                                 )}
+                                <div
+                                    className="column-resize-handle"
+                                    onMouseDown={(e) => handleResizeStart(e, 'summary', summaryWidth)}
+                                />
                             </div>
                         </div>
                         <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>

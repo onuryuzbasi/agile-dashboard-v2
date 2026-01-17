@@ -5172,6 +5172,188 @@ h4 {
   background: rgba(0, 82, 204, 0.2);
 }
 
+/* Header label truncation */
+.header-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+/* Header menu button */
+.header-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: #5E6C84;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: all 0.1s ease;
+  flex-shrink: 0;
+}
+
+.list-template-header .header-cell:hover .header-menu-btn {
+  opacity: 1;
+}
+
+.header-menu-btn:hover {
+  background: rgba(0, 82, 204, 0.1);
+  color: #0052CC;
+}
+
+[data-theme="dark"] .header-menu-btn {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .header-menu-btn:hover {
+  background: rgba(76, 154, 255, 0.2);
+  color: var(--accent);
+}
+
+/* Header menu dropdown */
+.header-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: #FFFFFF;
+  border: 1px solid #DFE1E6;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
+  z-index: 1000;
+  padding: 4px 0;
+}
+
+[data-theme="dark"] .header-menu-dropdown {
+  background: var(--bg-elevated);
+  border-color: var(--border-primary);
+}
+
+.header-menu-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #172B4D;
+  cursor: pointer;
+  text-align: left;
+}
+
+.header-menu-dropdown button:hover {
+  background: #F4F5F7;
+}
+
+[data-theme="dark"] .header-menu-dropdown button {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .header-menu-dropdown button:hover {
+  background: var(--bg-tertiary);
+}
+
+.header-menu-dropdown .menu-divider {
+  height: 1px;
+  background: #DFE1E6;
+  margin: 4px 0;
+}
+
+[data-theme="dark"] .header-menu-dropdown .menu-divider {
+  background: var(--border-primary);
+}
+
+/* Key cell - EpicKey > IssueKey styling */
+.parent-key-link,
+.issue-key-link {
+  color: #0052CC;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.parent-key-link:hover,
+.issue-key-link:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .parent-key-link,
+[data-theme="dark"] .issue-key-link {
+  color: var(--accent);
+}
+
+.key-separator {
+  color: #5E6C84;
+  margin: 0 4px;
+  font-size: 11px;
+}
+
+[data-theme="dark"] .key-separator {
+  color: var(--text-tertiary);
+}
+
+/* Parent cell edit button */
+.cell.parent {
+  position: relative;
+}
+
+.parent-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: #5E6C84;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: all 0.1s ease;
+  margin-left: auto;
+}
+
+.cell.parent:hover .parent-edit-btn {
+  opacity: 1;
+}
+
+.parent-edit-btn:hover {
+  background: rgba(0, 82, 204, 0.1);
+  color: #0052CC;
+}
+
+/* Parent link in cell */
+.parent-link {
+  color: #0052CC;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.parent-link:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .parent-link {
+  color: var(--accent);
+}
+
+/* Type cell dropdown positioning */
+.cell.type {
+  position: relative;
+  cursor: pointer;
+}
+
+.cell.type:has(.jira-dropdown) {
+  overflow: visible !important;
+  z-index: 100;
+}
+
 /* Add Fields Dropdown */
 .add-fields-dropdown {
   position: absolute;

@@ -15,6 +15,7 @@ import {
     Search,
     Filter,
     MoreHorizontal,
+    MoreVertical,
     Calendar,
     MessageSquare,
     Settings2,
@@ -23,7 +24,8 @@ import {
     ChevronsLeft,
     ChevronsRight,
     AlertTriangle,
-    User
+    User,
+    EyeOff
 } from 'lucide-react'
 
 // Type icons configuration
@@ -357,6 +359,10 @@ export default function ListTemplate() {
     const [showEpicCreate, setShowEpicCreate] = useState(false)
     const [newEpicName, setNewEpicName] = useState('')
 
+    // Header menu state
+    const [activeHeaderMenu, setActiveHeaderMenu] = useState(null)
+    const [sortConfig, setSortConfig] = useState({ field: null, direction: null })
+
     // All available fields configuration
     const allFields = [
         { id: 'parent', label: 'Parent', width: 120, defaultVisible: true },
@@ -395,6 +401,7 @@ export default function ListTemplate() {
             setShowFilterMenu(false)
             setShowAddFields(false)
             setFieldSearch('')
+            setActiveHeaderMenu(null)
         }
         document.addEventListener('click', handler)
         return () => document.removeEventListener('click', handler)
@@ -497,14 +504,52 @@ export default function ListTemplate() {
         return groups
     }
 
-    // Filter issues by search
+    // Filter issues by search and assignees
     const filterIssues = (issueList) => {
-        if (!searchQuery) return issueList
-        const query = searchQuery.toLowerCase()
-        return issueList.filter(issue =>
-            issue.summary.toLowerCase().includes(query) ||
-            issue.key.toLowerCase().includes(query)
-        )
+        let filtered = issueList
+
+        // Filter by search query
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase()
+            filtered = filtered.filter(issue =>
+                issue.summary.toLowerCase().includes(query) ||
+                issue.key.toLowerCase().includes(query)
+            )
+        }
+
+        // Filter by assignees
+        if (filterAssignees.size > 0) {
+            filtered = filtered.filter(issue => filterAssignees.has(issue.assigneeId))
+        }
+
+        // Sort issues if sort is configured
+        if (sortConfig.field && sortConfig.direction) {
+            filtered = [...filtered].sort((a, b) => {
+                let aVal = a[sortConfig.field] || ''
+                let bVal = b[sortConfig.field] || ''
+
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+
+                if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
+                if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
+                return 0
+            })
+        }
+
+        return filtered
+    }
+
+    // Handle sort column
+    const handleSort = (field, direction) => {
+        setSortConfig({ field, direction })
+        setActiveHeaderMenu(null)
+    }
+
+    // Handle hide column
+    const handleHideColumn = (columnId) => {
+        setColumns(prev => prev.filter(col => col.id !== columnId))
+        setActiveHeaderMenu(null)
     }
 
     // Handle field update
@@ -628,13 +673,44 @@ export default function ListTemplate() {
                         style={cellStyle}
                         onClick={e => {
                             e.stopPropagation()
-                            setActiveDropdown({ issueId: issue.id, field: 'parent' })
-                            setShowEpicCreate(false)
+                            if (!parentIssue) {
+                                setActiveDropdown({ issueId: issue.id, field: 'parent' })
+                                setShowEpicCreate(false)
+                            }
                         }}
                     >
                         {parentIssue ? (
-                            <span className="parent-link">{parentIssue.key}</span>
-                        ) : <span className="text-tertiary">—</span>}
+                            <span
+                                className="parent-link"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedIssue(parentIssue)
+                                }}
+                            >
+                                {parentIssue.key}
+                            </span>
+                        ) : (
+                            <span
+                                className="text-tertiary parent-empty"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveDropdown({ issueId: issue.id, field: 'parent' })
+                                    setShowEpicCreate(false)
+                                }}
+                            >
+                                —
+                            </span>
+                        )}
+                        <button
+                            className="parent-edit-btn"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setActiveDropdown({ issueId: issue.id, field: 'parent' })
+                                setShowEpicCreate(false)
+                            }}
+                        >
+                            <ChevronDown size={12} />
+                        </button>
                         {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'parent' && (
                             <SearchableDropdown
                                 options={getEpicOptions()}
@@ -1030,6 +1106,14 @@ export default function ListTemplate() {
         ]
     }
 
+    // Get type options
+    const getTypeOptions = () => {
+        return Object.entries(typeIcons).map(([key, val]) => ({
+            value: key,
+            label: key.charAt(0).toUpperCase() + key.slice(1)
+        }))
+    }
+
     const groups = getGroupedIssues()
     const activeFilterCount = filterAssignees.size
 
@@ -1118,14 +1202,38 @@ export default function ListTemplate() {
                             <div className="header-cell checkbox">
                                 <input type="checkbox" />
                             </div>
-                            <div className="header-cell type">Type</div>
+                            <div className="header-cell type">
+                                <span className="header-label">Type</span>
+                            </div>
                             <div className="header-cell key">
-                                Key
-                                <ChevronDown size={14} className="sort-icon" />
+                                <span className="header-label">Key</span>
+                                <button
+                                    className="header-menu-btn"
+                                    onClick={(e) => { e.stopPropagation(); setActiveHeaderMenu(activeHeaderMenu === 'key' ? null : 'key'); }}
+                                >
+                                    <MoreVertical size={14} />
+                                </button>
+                                {activeHeaderMenu === 'key' && (
+                                    <div className="header-menu-dropdown" onClick={e => e.stopPropagation()}>
+                                        <button onClick={() => handleSort('key', 'asc')}><ArrowUp size={14} /> Sort A to Z</button>
+                                        <button onClick={() => handleSort('key', 'desc')}><ArrowDown size={14} /> Sort Z to A</button>
+                                    </div>
+                                )}
                             </div>
                             <div className="header-cell summary">
-                                Summary
-                                <ChevronDown size={14} className="sort-icon" />
+                                <span className="header-label">Summary</span>
+                                <button
+                                    className="header-menu-btn"
+                                    onClick={(e) => { e.stopPropagation(); setActiveHeaderMenu(activeHeaderMenu === 'summary' ? null : 'summary'); }}
+                                >
+                                    <MoreVertical size={14} />
+                                </button>
+                                {activeHeaderMenu === 'summary' && (
+                                    <div className="header-menu-dropdown" onClick={e => e.stopPropagation()}>
+                                        <button onClick={() => handleSort('summary', 'asc')}><ArrowUp size={14} /> Sort A to Z</button>
+                                        <button onClick={() => handleSort('summary', 'desc')}><ArrowDown size={14} /> Sort Z to A</button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
@@ -1140,8 +1248,21 @@ export default function ListTemplate() {
                                     onDrop={(e) => handleDrop(e, col.id)}
                                     onDragEnd={handleDragEnd}
                                 >
-                                    {col.label}
-                                    <ChevronDown size={14} className="sort-icon" />
+                                    <span className="header-label">{col.label}</span>
+                                    <button
+                                        className="header-menu-btn"
+                                        onClick={(e) => { e.stopPropagation(); setActiveHeaderMenu(activeHeaderMenu === col.id ? null : col.id); }}
+                                    >
+                                        <MoreVertical size={14} />
+                                    </button>
+                                    {activeHeaderMenu === col.id && (
+                                        <div className="header-menu-dropdown" onClick={e => e.stopPropagation()}>
+                                            <button onClick={() => handleSort(col.id, 'asc')}><ArrowUp size={14} /> Sort A to Z</button>
+                                            <button onClick={() => handleSort(col.id, 'desc')}><ArrowDown size={14} /> Sort Z to A</button>
+                                            <div className="menu-divider" />
+                                            <button onClick={() => handleHideColumn(col.id)}><EyeOff size={14} /> Hide Field</button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                             <div
@@ -1250,20 +1371,45 @@ export default function ListTemplate() {
                                                             onChange={() => toggleIssueSelection(issue.id)}
                                                         />
                                                     </div>
-                                                    <div className="cell type">
+                                                    <div
+                                                        className="cell type"
+                                                        onClick={e => {
+                                                            e.stopPropagation()
+                                                            setActiveDropdown({ issueId: issue.id, field: 'type' })
+                                                        }}
+                                                    >
                                                         <TypeIcon type={issue.type} />
+                                                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'type' && (
+                                                            <SearchableDropdown
+                                                                options={getTypeOptions()}
+                                                                value={issue.type}
+                                                                onChange={val => handleFieldUpdate(issue.id, 'type', val)}
+                                                                onClose={() => setActiveDropdown(null)}
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div className="cell key">
                                                         {parentIssue && (
-                                                            <div className="parent-key">{parentIssue.key}</div>
+                                                            <span
+                                                                className="parent-key-link"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    setSelectedIssue(parentIssue)
+                                                                }}
+                                                            >
+                                                                {parentIssue.key}
+                                                            </span>
                                                         )}
-                                                        <div
-                                                            className={`issue-key ${parentIssue ? 'has-parent' : ''}`}
-                                                            onClick={() => setSelectedIssue(issue)}
+                                                        {parentIssue && <span className="key-separator">&gt;</span>}
+                                                        <span
+                                                            className="issue-key-link"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setSelectedIssue(issue)
+                                                            }}
                                                         >
-                                                            {parentIssue && <span className="key-indent">└</span>}
-                                                            <span className="key-link">{issue.key}</span>
-                                                        </div>
+                                                            {issue.key}
+                                                        </span>
                                                     </div>
                                                     <div className="cell summary">
                                                         <span

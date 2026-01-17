@@ -33,6 +33,35 @@ const typeIcons = {
     subtask: { icon: ListTree, color: 'var(--subtask)' }
 }
 
+// SettingSection component - defined outside to prevent re-mounting on state changes
+const SettingSection = ({ icon: Icon, title, description, children }) => (
+    <div className="card mb-4 animate-fade-in">
+        <div className="card-header mb-4">
+            <div className="flex items-center gap-3">
+                <div
+                    style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--accent-light)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--accent)'
+                    }}
+                >
+                    <Icon size={20} />
+                </div>
+                <div>
+                    <h3 className="font-semibold">{title}</h3>
+                    <p className="text-sm text-secondary">{description}</p>
+                </div>
+            </div>
+        </div>
+        {children}
+    </div>
+)
+
 export default function Settings() {
     const {
         theme,
@@ -134,33 +163,6 @@ export default function Settings() {
         return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
     }
 
-    const SettingSection = ({ icon: Icon, title, description, children }) => (
-        <div className="card mb-4 animate-fade-in">
-            <div className="card-header mb-4">
-                <div className="flex items-center gap-3">
-                    <div
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 'var(--radius-md)',
-                            background: 'var(--accent-light)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--accent)'
-                        }}
-                    >
-                        <Icon size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold">{title}</h3>
-                        <p className="text-sm text-secondary">{description}</p>
-                    </div>
-                </div>
-            </div>
-            {children}
-        </div>
-    )
 
     return (
         <div className="animate-fade-in">

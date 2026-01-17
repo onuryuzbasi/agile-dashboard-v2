@@ -406,6 +406,12 @@ export default function ListTemplate() {
         [issues]
     )
 
+    // Calculate total scrollable columns width dynamically
+    const scrollableWidth = useMemo(() => {
+        const columnsWidth = columns.reduce((sum, col) => sum + col.width, 0)
+        return columnsWidth + 40 // +40 for spacer/add-column button
+    }, [columns])
+
     // Get parent issue for a given issue
     const getParentIssue = (issue) => {
         if (!issue.epicId) return null
@@ -1043,6 +1049,8 @@ export default function ListTemplate() {
                                         <Plus size={14} />
                                     </button>
                                 </div>
+                                {/* Scrollable spacer to extend group header with columns */}
+                                <div className="scrollable-columns group-header-spacer" style={{ minWidth: scrollableWidth }}></div>
                             </div>
 
                             {/* Group Issues */}
@@ -1150,6 +1158,8 @@ export default function ListTemplate() {
                                     <span className="group-name">Completed sprint</span>
                                     <span className="completed-count">{completedSprintCount}</span>
                                 </div>
+                                {/* Scrollable spacer to extend group header with columns */}
+                                <div className="scrollable-columns group-header-spacer" style={{ minWidth: scrollableWidth }}></div>
                             </div>
                         </div>
                     )}

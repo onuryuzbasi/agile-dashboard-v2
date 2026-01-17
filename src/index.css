@@ -5338,6 +5338,12 @@ h4 {
   background: #F4F5F7;
 }
 
+/* Group header spacer - extends to match all columns */
+.list-template-group-header .group-header-spacer {
+  flex-shrink: 0;
+  background: inherit;
+}
+
 [data-theme="dark"] .list-template-group-header.completed {
   background: var(--bg-secondary);
 }

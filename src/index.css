@@ -6682,3 +6682,30 @@ h4 {
 .list-template-header .header-cell {
   position: relative;
 }
+
+/* ===== ESTIMATE INPUT ===== */
+.estimate-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.estimate-input:hover {
+  border-color: var(--border-secondary);
+}
+
+.estimate-input:focus {
+  outline: none;
+  border-color: #0052CC;
+  background: var(--bg-primary);
+}
+
+.estimate-input::placeholder {
+  color: var(--text-tertiary);
+}

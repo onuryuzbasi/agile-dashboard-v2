@@ -610,6 +610,98 @@ export default function ListTemplate() {
         })
     }
 
+    // Get all visible issue IDs (only from expanded groups)
+    const getVisibleIssueIds = () => {
+        const groups = getGroupedIssues()
+        const visibleIds = []
+        groups.forEach(group => {
+            if (!collapsedGroups.has(group.id)) {
+                filterIssues(group.issues).forEach(issue => visibleIds.push(issue.id))
+            }
+        })
+        return visibleIds
+    }
+
+    // Toggle all visible issues (master checkbox)
+    const toggleAllVisible = () => {
+        const visibleIds = getVisibleIssueIds()
+        const allSelected = visibleIds.every(id => selectedIssues.has(id))
+
+        if (allSelected) {
+            // Deselect all visible
+            setSelectedIssues(prev => {
+                const next = new Set(prev)
+                visibleIds.forEach(id => next.delete(id))
+                return next
+            })
+        } else {
+            // Select all visible
+            setSelectedIssues(prev => {
+                const next = new Set(prev)
+                visibleIds.forEach(id => next.add(id))
+                return next
+            })
+        }
+    }
+
+    // Toggle all issues in a specific group
+    const toggleGroupSelection = (groupId) => {
+        const groups = getGroupedIssues()
+        const group = groups.find(g => g.id === groupId)
+        if (!group) return
+
+        const groupIssueIds = filterIssues(group.issues).map(issue => issue.id)
+        const allSelected = groupIssueIds.every(id => selectedIssues.has(id))
+
+        if (allSelected) {
+            // Deselect all in group
+            setSelectedIssues(prev => {
+                const next = new Set(prev)
+                groupIssueIds.forEach(id => next.delete(id))
+                return next
+            })
+        } else {
+            // Select all in group
+            setSelectedIssues(prev => {
+                const next = new Set(prev)
+                groupIssueIds.forEach(id => next.add(id))
+                return next
+            })
+        }
+    }
+
+    // Check if all visible issues are selected (for master checkbox state)
+    const areAllVisibleSelected = () => {
+        const visibleIds = getVisibleIssueIds()
+        return visibleIds.length > 0 && visibleIds.every(id => selectedIssues.has(id))
+    }
+
+    // Check if some but not all visible issues are selected (indeterminate state)
+    const areSomeVisibleSelected = () => {
+        const visibleIds = getVisibleIssueIds()
+        const selectedCount = visibleIds.filter(id => selectedIssues.has(id)).length
+        return selectedCount > 0 && selectedCount < visibleIds.length
+    }
+
+    // Check if all issues in a group are selected
+    const areAllGroupSelected = (groupId) => {
+        const groups = getGroupedIssues()
+        const group = groups.find(g => g.id === groupId)
+        if (!group) return false
+        const groupIssueIds = filterIssues(group.issues).map(issue => issue.id)
+        return groupIssueIds.length > 0 && groupIssueIds.every(id => selectedIssues.has(id))
+    }
+
+    // Check if some issues in a group are selected
+    const areSomeGroupSelected = (groupId) => {
+        const groups = getGroupedIssues()
+        const group = groups.find(g => g.id === groupId)
+        if (!group) return false
+        const groupIssueIds = filterIssues(group.issues).map(issue => issue.id)
+        const selectedCount = groupIssueIds.filter(id => selectedIssues.has(id)).length
+        return selectedCount > 0 && selectedCount < groupIssueIds.length
+    }
+
     // Handle summary inline edit
     const handleSummaryEdit = (issueId, newSummary) => {
         if (newSummary.trim()) {
@@ -901,7 +993,14 @@ export default function ListTemplate() {
             case 'estimate':
                 return (
                     <div key={columnId} className="cell estimate" style={cellStyle}>
-                        <span>{issue.originalEstimate ? `${issue.originalEstimate}h` : '—'}</span>
+                        <input
+                            type="text"
+                            className="estimate-input"
+                            value={issue.originalEstimate || ''}
+                            placeholder="—"
+                            onChange={e => handleFieldUpdate(issue.id, 'originalEstimate', e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                        />
                     </div>
                 )
             case 'status':
@@ -1308,7 +1407,12 @@ export default function ListTemplate() {
                     <div className="list-template-header" style={{ minWidth: totalRowWidth }}>
                         <div className="pinned-columns">
                             <div className="header-cell checkbox">
-                                <input type="checkbox" />
+                                <input
+                                    type="checkbox"
+                                    checked={areAllVisibleSelected()}
+                                    ref={el => { if (el) el.indeterminate = areSomeVisibleSelected() }}
+                                    onChange={toggleAllVisible}
+                                />
                             </div>
                             <div className="header-cell type">
                                 <span className="header-label">Type</span>
@@ -1446,7 +1550,12 @@ export default function ListTemplate() {
                             <div className="list-template-group-header" style={{ minWidth: totalRowWidth }}>
                                 <div className="pinned-columns">
                                     <div className="cell checkbox">
-                                        <input type="checkbox" />
+                                        <input
+                                            type="checkbox"
+                                            checked={areAllGroupSelected(group.id)}
+                                            ref={el => { if (el) el.indeterminate = areSomeGroupSelected(group.id) }}
+                                            onChange={() => toggleGroupSelection(group.id)}
+                                        />
                                     </div>
                                     <button
                                         className="group-expand-btn"

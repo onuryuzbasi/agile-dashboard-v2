@@ -961,7 +961,7 @@ h4 {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: var(--space-2);
-  z-index: 50;
+  z-index: 1000;
   animation: fadeIn var(--transition-fast);
 }
 
@@ -2915,7 +2915,8 @@ h4 {
 /* Wrapper for horizontal and vertical scrolling of both header and body */
 .list-scroll-container {
   flex: 1;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -2999,10 +3000,12 @@ h4 {
 }
 
 .list-cell {
-  padding: 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
   display: flex;
   align-items: center;
   border-right: 1px solid var(--border-primary);
+  background-color: var(--bg-secondary);
+  min-height: 40px;
 }
 
 .list-cell-checkbox {
@@ -3030,14 +3033,12 @@ h4 {
   flex: 1;
   min-width: 200px;
   max-width: 350px;
+  width: 350px;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.3;
+  text-overflow: clip;
+  white-space: nowrap;
+  line-height: 1.5;
   background-color: inherit;
-  position: relative;
-  z-index: 1;
 }
 
 .list-cell-assignee {
@@ -3328,10 +3329,30 @@ h4 {
   min-width: max-content;
   background-color: var(--bg-secondary);
   min-height: 48px;
+  isolation: isolate;
 }
 
 .list-row:hover {
   background: var(--bg-hover);
+}
+
+/* Elevate row z-index when it contains an open dropdown/picker */
+.list-row:has(.date-picker),
+.list-row:has(.searchable-dropdown),
+.list-row:has(.type-dropdown-menu),
+.list-row:has(.assignee-dropdown-menu),
+.list-row:has(.column-sort-dropdown) {
+  z-index: 100;
+  position: relative;
+}
+
+/* Ensure ALL cells have solid background on row hover */
+.list-row:hover .list-cell {
+  background-color: var(--bg-hover) !important;
+}
+
+.list-row:hover .list-scrollable-cells {
+  background-color: var(--bg-hover) !important;
 }
 
 .list-row:last-child {
@@ -3460,15 +3481,14 @@ h4 {
 
 /* ===== List View Advanced Features ===== */
 
-/* Editable Cell */
+/* Editable Cell - clean style without dark box */
 .list-cell-editable {
   cursor: pointer;
   position: relative;
 }
 
 .list-cell-editable:hover {
-  background: var(--bg-hover);
-  border-radius: var(--radius-sm);
+  background: transparent;
 }
 
 /* Inline edit input for numeric fields */
@@ -3732,12 +3752,9 @@ h4 {
   border-left: 2px solid var(--accent);
 }
 
-/* Pinned columns container */
+/* Columns container - no longer pinned/sticky */
 .list-pinned-columns {
   display: flex;
-  position: sticky;
-  left: 0;
-  z-index: 10;
   background: var(--bg-secondary);
   flex-shrink: 0;
 }
@@ -3900,24 +3917,63 @@ h4 {
   color: var(--text-link);
 }
 
-/* Pinned row cells */
+/* Row cells container - no longer pinned/sticky */
 .list-pinned-cells {
   display: flex;
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  background: var(--bg-primary);
   flex-shrink: 0;
+  background-color: var(--bg-secondary);
+}
+
+/* Ensure all cells inside pinned area have solid background */
+.list-pinned-cells .list-cell {
+  background-color: var(--bg-secondary) !important;
+  position: relative;
+  z-index: 21;
+}
+
+/* Summary cell specifically needs solid background and text clipping */
+.list-pinned-cells .list-cell-summary {
+  background-color: var(--bg-secondary) !important;
+  position: relative;
+  z-index: 21;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .list-row:hover .list-pinned-cells {
-  background: var(--bg-hover);
+  background-color: var(--bg-hover) !important;
+  box-shadow: 20px 0 0 0 var(--bg-hover);
 }
 
-/* Scrollable row cells */
+.list-row:hover .list-pinned-cells .list-cell {
+  background-color: var(--bg-hover) !important;
+}
+
+.list-row:hover .list-pinned-cells .list-cell-summary {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Selected row styling */
+.list-row.selected .list-pinned-cells,
+.list-row.selected .list-pinned-cells .list-cell,
+.list-row.selected .list-pinned-cells .list-cell-summary {
+  background-color: var(--accent-light) !important;
+}
+
+/* Scrollable row cells - ensure they are below pinned cells */
 .list-scrollable-cells {
   display: flex;
   flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* All cells in scrollable area should stay behind pinned area */
+.list-scrollable-cells .list-cell,
+.list-scrollable-cells .list-cell-editable,
+.list-scrollable-cells .avatar {
+  position: relative;
+  z-index: auto;
 }
 
 .list-header-cell:hover {

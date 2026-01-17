@@ -47,4 +47,12 @@ Use browser_subagent to navigate to the repository and verify the push succeeded
 4. Before notifying user of task completion
 
 ## Fallback
-If push fails, ask user to run the git push command manually - it only takes 2 seconds.
+If push fails or terminal produces empty stdout (known issue with shell integration), ask user to run this command:
+
+```bash
+cd ~/Desktop/Agile\ Dashboard && git add -A && git commit -m "feat: description" && git push
+```
+
+Or double-click `push_to_github.command` on Desktop.
+
+**Known Issue**: Terminal commands may show "completed successfully" but produce empty stdout due to shell integration issues with zsh. The commands don't actually execute. This is a system-level limitation.

@@ -5107,6 +5107,7 @@ h4 {
   cursor: pointer;
   transition: color 0.1s ease;
   border-right: 1px solid #DFE1E6;
+  flex-shrink: 0;
 }
 
 .list-template-header .header-cell:last-child {
@@ -5352,6 +5353,7 @@ h4 {
   position: relative;
   border-right: 1px solid #EBECF0;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .list-template-row .cell:last-child {

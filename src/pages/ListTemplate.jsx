@@ -437,19 +437,20 @@ export default function ListTemplate() {
                 issues: backlogIssues
             })
 
-            // Show completed sprints if toggled
+            // Show completed sprints if toggled - all in ONE group
             if (showCompleted) {
                 const closedSprints = sprints.filter(s => s.state === 'closed')
-                closedSprints.forEach(sprint => {
-                    const sprintIssues = activeIssues.filter(i => i.sprintId === sprint.id)
+                const closedSprintIds = closedSprints.map(s => s.id)
+                const completedIssues = activeIssues.filter(i => closedSprintIds.includes(i.sprintId))
+
+                if (completedIssues.length > 0) {
                     groups.push({
-                        id: sprint.id,
-                        name: sprint.name,
+                        id: 'completed',
+                        name: 'Completed',
                         type: 'completed',
-                        state: sprint.state,
-                        issues: sprintIssues
+                        issues: completedIssues
                     })
-                })
+                }
             }
         }
 
@@ -843,7 +844,7 @@ export default function ListTemplate() {
                                                         </span>
                                                     </div>
                                                     {/* Comments */}
-                                                    <div className="cell comments" style={{ width: 120 }}>
+                                                    <div className="cell comments" style={{ width: 100 }}>
                                                         <MessageSquare size={14} />
                                                         <span>
                                                             {issue.comments?.length ? `${issue.comments.length} comment${issue.comments.length > 1 ? 's' : ''}` : 'Add comment'}

@@ -6938,3 +6938,25 @@ h4 {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Quick Create Trigger Button */
+.quick-create-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.quick-create-trigger:hover {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}

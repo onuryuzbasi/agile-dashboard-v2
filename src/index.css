@@ -7414,10 +7414,19 @@ h4 {
   gap: 4px;
   opacity: 0;
   transition: opacity 0.15s ease;
+  margin-left: auto;
+  pointer-events: auto;
 }
 
-.field-item:hover .field-item-actions {
+.field-item:hover .field-item-actions,
+.field-item.sortable-item:hover .field-item-actions {
   opacity: 1;
+}
+
+.field-item-actions button {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 10;
 }
 
 /* Color Picker Mini */
@@ -7456,12 +7465,28 @@ h4 {
 }
 
 .field-item-chip.sortable-chip {
-  cursor: grab;
+  cursor: default;
   transition: all 0.15s ease;
 }
 
-.field-item-chip.sortable-chip:active {
+.chip-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--text-tertiary);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.chip-drag-handle:hover {
+  color: var(--text-secondary);
+}
+
+.chip-drag-handle:active {
   cursor: grabbing;
+  color: var(--accent);
 }
 
 .label-chip {

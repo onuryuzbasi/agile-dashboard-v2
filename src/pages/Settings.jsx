@@ -142,12 +142,14 @@ function SortableChipItem({ id, children }) {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 1000 : 1,
-        cursor: 'grab'
+        zIndex: isDragging ? 1000 : 1
     }
 
     return (
-        <div ref={setNodeRef} style={style} className="field-item-chip sortable-chip" {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style} className="field-item-chip sortable-chip">
+            <div className="chip-drag-handle" {...attributes} {...listeners}>
+                <GripVertical size={12} />
+            </div>
             {children}
         </div>
     )

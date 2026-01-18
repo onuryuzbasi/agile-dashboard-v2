@@ -16,12 +16,35 @@ import IssueModal from './components/board/IssueModal'
 import CreateIssueModal from './components/board/CreateIssueModal'
 
 function App() {
-    const { theme, sidebarCollapsed, selectedIssue, setSelectedIssue } = useProjectStore()
+    const {
+        theme,
+        sidebarCollapsed,
+        selectedIssue,
+        setSelectedIssue,
+        isLoading,
+        isInitialized,
+        initFromSupabase
+    } = useProjectStore()
+
+    // Initialize from Supabase on mount
+    useEffect(() => {
+        initFromSupabase()
+    }, [initFromSupabase])
 
     // Initialize theme on mount
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme)
     }, [theme])
+
+    // Show loading screen while fetching data
+    if (!isInitialized) {
+        return (
+            <div className="app-loading">
+                <div className="loading-spinner" />
+                <p>Loading Agile Dashboard...</p>
+            </div>
+        )
+    }
 
     return (
         <BrowserRouter>

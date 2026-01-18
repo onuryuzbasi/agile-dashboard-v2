@@ -21,7 +21,8 @@ import {
     Clock,
     Building2,
     Gamepad2,
-    Link2
+    Link2,
+    History
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 
@@ -142,6 +143,25 @@ export default function IssueModal({ issue, onClose }) {
     const [workLogMinutes, setWorkLogMinutes] = useState('')
     const [workLogDescription, setWorkLogDescription] = useState('')
     const [workLogDate, setWorkLogDate] = useState(new Date().toISOString().split('T')[0])
+
+    // Activity log state
+    const [activityLogExpanded, setActivityLogExpanded] = useState(false)
+
+    // Helper function for relative time display
+    const getRelativeTime = (timestamp) => {
+        const now = new Date()
+        const date = new Date(timestamp)
+        const diffMs = now - date
+        const diffMins = Math.floor(diffMs / 60000)
+        const diffHours = Math.floor(diffMs / 3600000)
+        const diffDays = Math.floor(diffMs / 86400000)
+
+        if (diffMins < 1) return 'just now'
+        if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -798,6 +818,72 @@ export default function IssueModal({ issue, onClose }) {
                         )}
                     </div>
 
+                    {/* Activity History Section */}
+                    <div className="activity-log-section">
+                        <div
+                            className="activity-log-header"
+                            onClick={() => setActivityLogExpanded(!activityLogExpanded)}
+                        >
+                            <div className="activity-log-title">
+                                {activityLogExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                <History size={16} />
+                                <span>Activity History</span>
+                                <span className="activity-log-count">
+                                    {(issue.history || []).length} changes
+                                </span>
+                            </div>
+                        </div>
+
+                        {activityLogExpanded && (
+                            <div className="activity-log-content">
+                                {(issue.history || []).length === 0 ? (
+                                    <div className="activity-log-empty">
+                                        No activity recorded yet.
+                                    </div>
+                                ) : (
+                                    <div className="activity-log-list">
+                                        {[...(issue.history || [])]
+                                            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                                            .map(entry => {
+                                                const entryUser = getUserById(entry.userId)
+                                                return (
+                                                    <div key={entry.id} className="activity-log-item">
+                                                        <div className="activity-log-avatar">
+                                                            <span className="avatar sm">
+                                                                {entryUser?.name?.charAt(0) || '?'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="activity-log-details">
+                                                            <div className="activity-log-text">
+                                                                <span className="activity-log-user">
+                                                                    {entryUser?.name || 'Unknown'}
+                                                                </span>
+                                                                {' changed '}
+                                                                <span className="activity-log-field">
+                                                                    {entry.fieldLabel}
+                                                                </span>
+                                                                {' from '}
+                                                                <span className="activity-log-value old">
+                                                                    '{entry.oldLabel}'
+                                                                </span>
+                                                                {' to '}
+                                                                <span className="activity-log-value new">
+                                                                    '{entry.newLabel}'
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="activity-log-time">
+                                                            {getRelativeTime(entry.timestamp)}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     {/* Metadata */}
                     <div
                         className="mt-4 pt-4"

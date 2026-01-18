@@ -384,24 +384,162 @@ export const useProjectStore = create(
                 return newIssue
             },
 
-            updateIssue: (issueId, updates) => set((state) => ({
-                issues: state.issues.map(issue =>
-                    issue.id === issueId
-                        ? { ...issue, ...updates, updatedAt: new Date().toISOString() }
-                        : issue
-                )
-            })),
+            updateIssue: (issueId, updates, userId = 'user-1') => set((state) => {
+                // Field labels for readable history display
+                const fieldLabels = {
+                    summary: 'Summary',
+                    description: 'Description',
+                    type: 'Type',
+                    status: 'Status',
+                    priority: 'Priority',
+                    assigneeId: 'Assignee',
+                    reporterId: 'Reporter',
+                    sprintId: 'Sprint',
+                    storyPoints: 'Story Points',
+                    originalEstimate: 'Original Estimate',
+                    game: 'Game',
+                    parentId: 'Parent (Epic)',
+                    department: 'Department',
+                    startDate: 'Start Date',
+                    dueDate: 'Due Date'
+                }
+
+                // Fields to track for history
+                const trackedFields = Object.keys(fieldLabels)
+
+                return {
+                    issues: state.issues.map(issue => {
+                        if (issue.id !== issueId) return issue
+
+                        // Generate history entries for changed fields
+                        const historyEntries = []
+                        const timestamp = new Date().toISOString()
+
+                        for (const field of trackedFields) {
+                            if (updates[field] !== undefined && updates[field] !== issue[field]) {
+                                // Get readable labels for old/new values
+                                let oldLabel = issue[field] || 'None'
+                                let newLabel = updates[field] || 'None'
+
+                                // Handle user ID fields
+                                if (field === 'assigneeId' || field === 'reporterId') {
+                                    const oldUser = state.users?.find(u => u.id === issue[field])
+                                    const newUser = state.users?.find(u => u.id === updates[field])
+                                    oldLabel = oldUser?.name || 'Unassigned'
+                                    newLabel = newUser?.name || 'Unassigned'
+                                }
+
+                                // Handle sprint ID
+                                if (field === 'sprintId') {
+                                    const oldSprint = state.sprints?.find(s => s.id === issue[field])
+                                    const newSprint = state.sprints?.find(s => s.id === updates[field])
+                                    oldLabel = oldSprint?.name || 'Backlog'
+                                    newLabel = newSprint?.name || 'Backlog'
+                                }
+
+                                // Handle status labels
+                                if (field === 'status') {
+                                    const oldStatus = state.fieldConfig?.statuses?.find(s => s.key === issue[field])
+                                    const newStatus = state.fieldConfig?.statuses?.find(s => s.key === updates[field])
+                                    oldLabel = oldStatus?.label || issue[field] || 'Unknown'
+                                    newLabel = newStatus?.label || updates[field] || 'Unknown'
+                                }
+
+                                // Handle priority labels
+                                if (field === 'priority') {
+                                    const oldPriority = state.fieldConfig?.priorities?.find(p => p.key === issue[field])
+                                    const newPriority = state.fieldConfig?.priorities?.find(p => p.key === updates[field])
+                                    oldLabel = oldPriority?.label || issue[field] || 'Unknown'
+                                    newLabel = newPriority?.label || updates[field] || 'Unknown'
+                                }
+
+                                // Handle type labels
+                                if (field === 'type') {
+                                    const oldType = state.fieldConfig?.issueTypes?.find(t => t.key === issue[field])
+                                    const newType = state.fieldConfig?.issueTypes?.find(t => t.key === updates[field])
+                                    oldLabel = oldType?.label || issue[field] || 'Unknown'
+                                    newLabel = newType?.label || updates[field] || 'Unknown'
+                                }
+
+                                // Handle department
+                                if (field === 'department') {
+                                    const oldDept = state.departments?.find(d => d.id === issue[field])
+                                    const newDept = state.departments?.find(d => d.id === updates[field])
+                                    oldLabel = oldDept?.name || 'None'
+                                    newLabel = newDept?.name || 'None'
+                                }
+
+                                // Handle game
+                                if (field === 'game') {
+                                    const oldGame = state.games?.find(g => g.id === issue[field])
+                                    const newGame = state.games?.find(g => g.id === updates[field])
+                                    oldLabel = oldGame?.name || 'None'
+                                    newLabel = newGame?.name || 'None'
+                                }
+
+                                // Handle parent epic
+                                if (field === 'parentId') {
+                                    const oldParent = state.issues?.find(i => i.id === issue[field])
+                                    const newParent = state.issues?.find(i => i.id === updates[field])
+                                    oldLabel = oldParent?.summary || 'None'
+                                    newLabel = newParent?.summary || 'None'
+                                }
+
+                                historyEntries.push({
+                                    id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                    userId,
+                                    timestamp,
+                                    field,
+                                    fieldLabel: fieldLabels[field],
+                                    oldValue: issue[field],
+                                    newValue: updates[field],
+                                    oldLabel,
+                                    newLabel
+                                })
+                            }
+                        }
+
+                        return {
+                            ...issue,
+                            ...updates,
+                            updatedAt: timestamp,
+                            history: [...(issue.history || []), ...historyEntries]
+                        }
+                    })
+                }
+            }),
 
             deleteIssue: (issueId) => set((state) => ({
                 issues: state.issues.filter(issue => issue.id !== issueId)
             })),
 
-            moveIssue: (issueId, newStatus) => set((state) => ({
-                issues: state.issues.map(issue =>
-                    issue.id === issueId
-                        ? { ...issue, status: newStatus, updatedAt: new Date().toISOString() }
-                        : issue
-                )
+            moveIssue: (issueId, newStatus, userId = 'user-1') => set((state) => ({
+                issues: state.issues.map(issue => {
+                    if (issue.id !== issueId) return issue
+
+                    const timestamp = new Date().toISOString()
+                    const oldStatus = state.fieldConfig?.statuses?.find(s => s.key === issue.status)
+                    const newStatusConfig = state.fieldConfig?.statuses?.find(s => s.key === newStatus)
+
+                    const historyEntry = {
+                        id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        userId,
+                        timestamp,
+                        field: 'status',
+                        fieldLabel: 'Status',
+                        oldValue: issue.status,
+                        newValue: newStatus,
+                        oldLabel: oldStatus?.label || issue.status,
+                        newLabel: newStatusConfig?.label || newStatus
+                    }
+
+                    return {
+                        ...issue,
+                        status: newStatus,
+                        updatedAt: timestamp,
+                        history: [...(issue.history || []), historyEntry]
+                    }
+                })
             })),
 
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),

@@ -348,6 +348,13 @@ export const useProjectStore = create(
                     [fieldType]: state.fieldConfig[fieldType].filter(item => item.id !== itemId)
                 }
             })),
+            reorderFieldConfigItem: (fieldType, newOrder) => set((state) => ({
+                fieldConfig: {
+                    ...state.fieldConfig,
+                    [fieldType]: newOrder
+                }
+            })),
+            reorderDepartments: (newOrder) => set({ departments: newOrder }),
 
             // Department Actions (using fieldConfig pattern)
             addDepartment: (dept) => set((state) => ({

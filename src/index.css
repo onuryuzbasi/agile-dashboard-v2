@@ -7340,6 +7340,32 @@ h4 {
   transition: all 0.15s ease;
 }
 
+.field-item.sortable-item {
+  position: relative;
+}
+
+.field-item .drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--text-tertiary);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.field-item .drag-handle:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.field-item .drag-handle:active {
+  cursor: grabbing;
+  color: var(--accent);
+}
+
 .field-item:hover {
   background: var(--bg-secondary);
 }

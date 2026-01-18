@@ -1,6 +1,22 @@
 import { useState } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
     Settings as SettingsIcon,
     Link,
     Moon,
@@ -29,7 +45,8 @@ import {
     Minus,
     Tag,
     Building2,
-    Circle
+    Circle,
+    GripVertical
 } from 'lucide-react'
 
 // Icon mapping for dynamic icon rendering
@@ -82,6 +99,34 @@ const SettingSection = ({ icon: Icon, title, description, children }) => (
     </div>
 )
 
+// Sortable Field Item Component
+function SortableFieldItem({ id, children }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} className="field-item sortable-item">
+            <div className="drag-handle" {...attributes} {...listeners}>
+                <GripVertical size={16} />
+            </div>
+            {children}
+        </div>
+    )
+}
+
 export default function Settings() {
     const {
         theme,
@@ -102,9 +147,38 @@ export default function Settings() {
         addFieldConfigItem,
         updateFieldConfigItem,
         deleteFieldConfigItem,
+        reorderFieldConfigItem,
+        reorderDepartments,
         restoreIssue,
         permanentlyDeleteIssue
     } = useProjectStore()
+
+    // DnD sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
+
+    // Handle drag end for reordering
+    const handleDragEnd = (event, fieldType, items) => {
+        const { active, over } = event
+        if (active.id !== over?.id) {
+            const oldIndex = items.findIndex(item => item.id === active.id)
+            const newIndex = items.findIndex(item => item.id === over.id)
+            const newOrder = arrayMove(items, oldIndex, newIndex)
+            if (fieldType === 'departments') {
+                reorderDepartments(newOrder)
+            } else {
+                reorderFieldConfigItem(fieldType, newOrder)
+            }
+        }
+    }
 
     const [activeTab, setActiveTab] = useState('general')
     const [jiraConfig, setJiraConfig] = useState({
@@ -476,63 +550,74 @@ export default function Settings() {
                                 Add
                             </button>
                         </div>
-                        <div className="field-manager-list">
-                            {fieldConfig?.statuses?.map(status => (
-                                <div key={status.id} className="field-item">
-                                    {editingFieldItem === `statuses-${status.id}` ? (
-                                        <>
-                                            <input
-                                                type="text"
-                                                className="input"
-                                                value={editFieldValue.statuses?.label || ''}
-                                                onChange={e => setEditFieldValue({
-                                                    ...editFieldValue,
-                                                    statuses: { ...editFieldValue.statuses, label: e.target.value }
-                                                })}
-                                                autoFocus
-                                            />
-                                            <div className="color-picker-mini">
-                                                {colorPresets.slice(0, 8).map(color => (
-                                                    <button
-                                                        key={color}
-                                                        className={`color-dot ${editFieldValue.statuses?.bgColor === color ? 'selected' : ''}`}
-                                                        style={{ backgroundColor: color }}
-                                                        onClick={() => setEditFieldValue({
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, 'statuses', fieldConfig?.statuses || [])}
+                        >
+                            <SortableContext
+                                items={(fieldConfig?.statuses || []).map(s => s.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="field-manager-list">
+                                    {fieldConfig?.statuses?.map(status => (
+                                        <SortableFieldItem key={status.id} id={status.id}>
+                                            {editingFieldItem === `statuses-${status.id}` ? (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        className="input"
+                                                        value={editFieldValue.statuses?.label || ''}
+                                                        onChange={e => setEditFieldValue({
                                                             ...editFieldValue,
-                                                            statuses: { ...editFieldValue.statuses, bgColor: color }
+                                                            statuses: { ...editFieldValue.statuses, label: e.target.value }
                                                         })}
+                                                        autoFocus
                                                     />
-                                                ))}
-                                            </div>
-                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('statuses', status.id)}>
-                                                <Save size={14} />
-                                            </button>
-                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
-                                                <X size={14} />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span
-                                                className="field-item-badge"
-                                                style={{ backgroundColor: status.bgColor, color: status.textColor }}
-                                            >
-                                                {status.label}
-                                            </span>
-                                            <span className="field-item-key">{status.key}</span>
-                                            <div className="field-item-actions">
-                                                <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('statuses', status)}>
-                                                    <Pencil size={14} />
-                                                </button>
-                                                <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('statuses', status.id, status.label)}>
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                                                    <div className="color-picker-mini">
+                                                        {colorPresets.slice(0, 8).map(color => (
+                                                            <button
+                                                                key={color}
+                                                                className={`color-dot ${editFieldValue.statuses?.bgColor === color ? 'selected' : ''}`}
+                                                                style={{ backgroundColor: color }}
+                                                                onClick={() => setEditFieldValue({
+                                                                    ...editFieldValue,
+                                                                    statuses: { ...editFieldValue.statuses, bgColor: color }
+                                                                })}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('statuses', status.id)}>
+                                                        <Save size={14} />
+                                                    </button>
+                                                    <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                        <X size={14} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span
+                                                        className="field-item-badge"
+                                                        style={{ backgroundColor: status.bgColor, color: status.textColor }}
+                                                    >
+                                                        {status.label}
+                                                    </span>
+                                                    <span className="field-item-key">{status.key}</span>
+                                                    <div className="field-item-actions">
+                                                        <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('statuses', status)}>
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                        <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('statuses', status.id, status.label)}>
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </SortableFieldItem>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </SortableContext>
+                        </DndContext>
                     </SettingSection>
 
                     {/* Priorities Section */}
@@ -574,62 +659,73 @@ export default function Settings() {
                                 Add
                             </button>
                         </div>
-                        <div className="field-manager-list">
-                            {fieldConfig?.priorities?.map(priority => {
-                                const IconComp = iconMap[priority.icon] || Minus
-                                return (
-                                    <div key={priority.id} className="field-item">
-                                        {editingFieldItem === `priorities-${priority.id}` ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    className="input"
-                                                    value={editFieldValue.priorities?.label || ''}
-                                                    onChange={e => setEditFieldValue({
-                                                        ...editFieldValue,
-                                                        priorities: { ...editFieldValue.priorities, label: e.target.value }
-                                                    })}
-                                                    autoFocus
-                                                />
-                                                <div className="color-picker-mini">
-                                                    {colorPresets.slice(0, 8).map(color => (
-                                                        <button
-                                                            key={color}
-                                                            className={`color-dot ${editFieldValue.priorities?.color === color ? 'selected' : ''}`}
-                                                            style={{ backgroundColor: color }}
-                                                            onClick={() => setEditFieldValue({
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, 'priorities', fieldConfig?.priorities || [])}
+                        >
+                            <SortableContext
+                                items={(fieldConfig?.priorities || []).map(p => p.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="field-manager-list">
+                                    {fieldConfig?.priorities?.map(priority => {
+                                        const IconComp = iconMap[priority.icon] || Minus
+                                        return (
+                                            <SortableFieldItem key={priority.id} id={priority.id}>
+                                                {editingFieldItem === `priorities-${priority.id}` ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            className="input"
+                                                            value={editFieldValue.priorities?.label || ''}
+                                                            onChange={e => setEditFieldValue({
                                                                 ...editFieldValue,
-                                                                priorities: { ...editFieldValue.priorities, color }
+                                                                priorities: { ...editFieldValue.priorities, label: e.target.value }
                                                             })}
+                                                            autoFocus
                                                         />
-                                                    ))}
-                                                </div>
-                                                <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('priorities', priority.id)}>
-                                                    <Save size={14} />
-                                                </button>
-                                                <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
-                                                    <X size={14} />
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <IconComp size={16} style={{ color: priority.color }} />
-                                                <span className="field-item-label" style={{ color: priority.color }}>{priority.label}</span>
-                                                <span className="field-item-key">{priority.key}</span>
-                                                <div className="field-item-actions">
-                                                    <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('priorities', priority)}>
-                                                        <Pencil size={14} />
-                                                    </button>
-                                                    <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('priorities', priority.id, priority.label)}>
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
+                                                        <div className="color-picker-mini">
+                                                            {colorPresets.slice(0, 8).map(color => (
+                                                                <button
+                                                                    key={color}
+                                                                    className={`color-dot ${editFieldValue.priorities?.color === color ? 'selected' : ''}`}
+                                                                    style={{ backgroundColor: color }}
+                                                                    onClick={() => setEditFieldValue({
+                                                                        ...editFieldValue,
+                                                                        priorities: { ...editFieldValue.priorities, color }
+                                                                    })}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('priorities', priority.id)}>
+                                                            <Save size={14} />
+                                                        </button>
+                                                        <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                            <X size={14} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <IconComp size={16} style={{ color: priority.color }} />
+                                                        <span className="field-item-label" style={{ color: priority.color }}>{priority.label}</span>
+                                                        <span className="field-item-key">{priority.key}</span>
+                                                        <div className="field-item-actions">
+                                                            <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('priorities', priority)}>
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('priorities', priority.id, priority.label)}>
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </SortableFieldItem>
+                                        )
+                                    })}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </SettingSection>
 
                     {/* Issue Types Section */}

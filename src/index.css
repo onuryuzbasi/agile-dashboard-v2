@@ -7455,6 +7455,15 @@ h4 {
   position: relative;
 }
 
+.field-item-chip.sortable-chip {
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.field-item-chip.sortable-chip:active {
+  cursor: grabbing;
+}
+
 .label-chip {
   padding: 4px 10px;
   border-radius: var(--radius-full);

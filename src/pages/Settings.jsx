@@ -127,6 +127,32 @@ function SortableFieldItem({ id, children }) {
     )
 }
 
+// Sortable Chip Item Component (for labels)
+function SortableChipItem({ id, children }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1,
+        cursor: 'grab'
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} className="field-item-chip sortable-chip" {...attributes} {...listeners}>
+            {children}
+        </div>
+    )
+}
+
 export default function Settings() {
     const {
         theme,
@@ -767,64 +793,75 @@ export default function Settings() {
                                 Add
                             </button>
                         </div>
-                        <div className="field-manager-list">
-                            {fieldConfig?.issueTypes?.map(type => {
-                                const IconComp = iconMap[type.icon] || CheckSquare
-                                return (
-                                    <div key={type.id} className="field-item">
-                                        {editingFieldItem === `issueTypes-${type.id}` ? (
-                                            <>
-                                                <input
-                                                    type="text"
-                                                    className="input"
-                                                    value={editFieldValue.issueTypes?.label || ''}
-                                                    onChange={e => setEditFieldValue({
-                                                        ...editFieldValue,
-                                                        issueTypes: { ...editFieldValue.issueTypes, label: e.target.value }
-                                                    })}
-                                                    autoFocus
-                                                />
-                                                <div className="color-picker-mini">
-                                                    {colorPresets.slice(0, 8).map(color => (
-                                                        <button
-                                                            key={color}
-                                                            className={`color-dot ${editFieldValue.issueTypes?.color === color ? 'selected' : ''}`}
-                                                            style={{ backgroundColor: color }}
-                                                            onClick={() => setEditFieldValue({
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, 'issueTypes', fieldConfig?.issueTypes || [])}
+                        >
+                            <SortableContext
+                                items={(fieldConfig?.issueTypes || []).map(t => t.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="field-manager-list">
+                                    {fieldConfig?.issueTypes?.map(type => {
+                                        const IconComp = iconMap[type.icon] || CheckSquare
+                                        return (
+                                            <SortableFieldItem key={type.id} id={type.id}>
+                                                {editingFieldItem === `issueTypes-${type.id}` ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            className="input"
+                                                            value={editFieldValue.issueTypes?.label || ''}
+                                                            onChange={e => setEditFieldValue({
                                                                 ...editFieldValue,
-                                                                issueTypes: { ...editFieldValue.issueTypes, color }
+                                                                issueTypes: { ...editFieldValue.issueTypes, label: e.target.value }
                                                             })}
+                                                            autoFocus
                                                         />
-                                                    ))}
-                                                </div>
-                                                <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('issueTypes', type.id)}>
-                                                    <Save size={14} />
-                                                </button>
-                                                <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
-                                                    <X size={14} />
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="field-item-icon" style={{ backgroundColor: type.bgColor || type.color + '22' }}>
-                                                    <IconComp size={14} style={{ color: type.color }} />
-                                                </div>
-                                                <span className="field-item-label">{type.label}</span>
-                                                <span className="field-item-key">{type.key}</span>
-                                                <div className="field-item-actions">
-                                                    <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('issueTypes', type)}>
-                                                        <Pencil size={14} />
-                                                    </button>
-                                                    <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('issueTypes', type.id, type.label)}>
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
+                                                        <div className="color-picker-mini">
+                                                            {colorPresets.slice(0, 8).map(color => (
+                                                                <button
+                                                                    key={color}
+                                                                    className={`color-dot ${editFieldValue.issueTypes?.color === color ? 'selected' : ''}`}
+                                                                    style={{ backgroundColor: color }}
+                                                                    onClick={() => setEditFieldValue({
+                                                                        ...editFieldValue,
+                                                                        issueTypes: { ...editFieldValue.issueTypes, color }
+                                                                    })}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('issueTypes', type.id)}>
+                                                            <Save size={14} />
+                                                        </button>
+                                                        <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                            <X size={14} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="field-item-icon" style={{ backgroundColor: type.bgColor || type.color + '22' }}>
+                                                            <IconComp size={14} style={{ color: type.color }} />
+                                                        </div>
+                                                        <span className="field-item-label">{type.label}</span>
+                                                        <span className="field-item-key">{type.key}</span>
+                                                        <div className="field-item-actions">
+                                                            <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('issueTypes', type)}>
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('issueTypes', type.id, type.label)}>
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </SortableFieldItem>
+                                        )
+                                    })}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </SettingSection>
 
                     {/* Departments Section */}
@@ -864,63 +901,74 @@ export default function Settings() {
                                 Add
                             </button>
                         </div>
-                        <div className="field-manager-list">
-                            {departments?.map(dept => (
-                                <div key={dept.id} className="field-item">
-                                    {editingFieldItem === `departments-${dept.id}` ? (
-                                        <>
-                                            <input
-                                                type="text"
-                                                className="input"
-                                                value={editFieldValue.departments?.name || ''}
-                                                onChange={e => setEditFieldValue({
-                                                    ...editFieldValue,
-                                                    departments: { ...editFieldValue.departments, name: e.target.value }
-                                                })}
-                                                autoFocus
-                                            />
-                                            <input
-                                                type="text"
-                                                className="input"
-                                                value={editFieldValue.departments?.code || ''}
-                                                onChange={e => setEditFieldValue({
-                                                    ...editFieldValue,
-                                                    departments: { ...editFieldValue.departments, code: e.target.value.toUpperCase() }
-                                                })}
-                                                style={{ width: 80 }}
-                                            />
-                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveDepartment(dept.id)}>
-                                                <Save size={14} />
-                                            </button>
-                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
-                                                <X size={14} />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Building2 size={16} style={{ color: 'var(--accent)' }} />
-                                            <span className="field-item-label">{dept.name}</span>
-                                            <span className="field-item-key">{dept.code}</span>
-                                            <div className="field-item-actions">
-                                                <button className="btn btn-sm btn-ghost" onClick={() => {
-                                                    setEditingFieldItem(`departments-${dept.id}`)
-                                                    setEditFieldValue({ departments: { ...dept } })
-                                                }}>
-                                                    <Pencil size={14} />
-                                                </button>
-                                                <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => {
-                                                    if (confirm(`Delete department "${dept.name}"?`)) {
-                                                        deleteDepartment(dept.id)
-                                                    }
-                                                }}>
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, 'departments', departments || [])}
+                        >
+                            <SortableContext
+                                items={(departments || []).map(d => d.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="field-manager-list">
+                                    {departments?.map(dept => (
+                                        <SortableFieldItem key={dept.id} id={dept.id}>
+                                            {editingFieldItem === `departments-${dept.id}` ? (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        className="input"
+                                                        value={editFieldValue.departments?.name || ''}
+                                                        onChange={e => setEditFieldValue({
+                                                            ...editFieldValue,
+                                                            departments: { ...editFieldValue.departments, name: e.target.value }
+                                                        })}
+                                                        autoFocus
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        className="input"
+                                                        value={editFieldValue.departments?.code || ''}
+                                                        onChange={e => setEditFieldValue({
+                                                            ...editFieldValue,
+                                                            departments: { ...editFieldValue.departments, code: e.target.value.toUpperCase() }
+                                                        })}
+                                                        style={{ width: 80 }}
+                                                    />
+                                                    <button className="btn btn-sm btn-primary" onClick={() => handleSaveDepartment(dept.id)}>
+                                                        <Save size={14} />
+                                                    </button>
+                                                    <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                        <X size={14} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Building2 size={16} style={{ color: 'var(--accent)' }} />
+                                                    <span className="field-item-label">{dept.name}</span>
+                                                    <span className="field-item-key">{dept.code}</span>
+                                                    <div className="field-item-actions">
+                                                        <button className="btn btn-sm btn-ghost" onClick={() => {
+                                                            setEditingFieldItem(`departments-${dept.id}`)
+                                                            setEditFieldValue({ departments: { ...dept } })
+                                                        }}>
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                        <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => {
+                                                            if (confirm(`Delete department "${dept.name}"?`)) {
+                                                                deleteDepartment(dept.id)
+                                                            }
+                                                        }}>
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </SortableFieldItem>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </SortableContext>
+                        </DndContext>
                     </SettingSection>
 
                     {/* Labels Section */}
@@ -962,47 +1010,58 @@ export default function Settings() {
                                 Add
                             </button>
                         </div>
-                        <div className="field-manager-list field-manager-labels">
-                            {fieldConfig?.labels?.map(label => (
-                                <div key={label.id} className="field-item-chip">
-                                    {editingFieldItem === `labels-${label.id}` ? (
-                                        <>
-                                            <input
-                                                type="text"
-                                                className="input input-sm"
-                                                value={editFieldValue.labels?.name || ''}
-                                                onChange={e => setEditFieldValue({
-                                                    ...editFieldValue,
-                                                    labels: { ...editFieldValue.labels, name: e.target.value }
-                                                })}
-                                                autoFocus
-                                            />
-                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('labels', label.id)}>
-                                                <Save size={12} />
-                                            </button>
-                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
-                                                <X size={12} />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span
-                                                className="label-chip"
-                                                style={{ backgroundColor: label.color + '22', color: label.color, borderColor: label.color }}
-                                            >
-                                                {label.name}
-                                            </span>
-                                            <button className="chip-edit" onClick={() => handleEditFieldItem('labels', label)}>
-                                                <Pencil size={10} />
-                                            </button>
-                                            <button className="chip-delete" onClick={() => handleDeleteFieldItem('labels', label.id, label.name)}>
-                                                <X size={10} />
-                                            </button>
-                                        </>
-                                    )}
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event) => handleDragEnd(event, 'labels', fieldConfig?.labels || [])}
+                        >
+                            <SortableContext
+                                items={(fieldConfig?.labels || []).map(l => l.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="field-manager-list field-manager-labels">
+                                    {fieldConfig?.labels?.map(label => (
+                                        <SortableChipItem key={label.id} id={label.id}>
+                                            {editingFieldItem === `labels-${label.id}` ? (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        className="input input-sm"
+                                                        value={editFieldValue.labels?.name || ''}
+                                                        onChange={e => setEditFieldValue({
+                                                            ...editFieldValue,
+                                                            labels: { ...editFieldValue.labels, name: e.target.value }
+                                                        })}
+                                                        autoFocus
+                                                    />
+                                                    <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('labels', label.id)}>
+                                                        <Save size={12} />
+                                                    </button>
+                                                    <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                        <X size={12} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span
+                                                        className="label-chip"
+                                                        style={{ backgroundColor: label.color + '22', color: label.color, borderColor: label.color }}
+                                                    >
+                                                        {label.name}
+                                                    </span>
+                                                    <button className="chip-edit" onClick={() => handleEditFieldItem('labels', label)}>
+                                                        <Pencil size={10} />
+                                                    </button>
+                                                    <button className="chip-delete" onClick={() => handleDeleteFieldItem('labels', label.id, label.name)}>
+                                                        <X size={10} />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </SortableChipItem>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </SortableContext>
+                        </DndContext>
                     </SettingSection>
                 </div>
             )}

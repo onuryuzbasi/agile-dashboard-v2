@@ -12,13 +12,52 @@ const initialProjects = [
     }
 ]
 
+const initialDepartments = [
+    { id: 'dept-1', name: 'Engineering', code: 'ENG' },
+    { id: 'dept-2', name: 'Design', code: 'DES' },
+    { id: 'dept-3', name: 'Product', code: 'PRD' },
+    { id: 'dept-4', name: 'QA', code: 'QA' }
+]
+
+// Field Configuration - Centralized configurable fields
+const initialFieldConfig = {
+    priorities: [
+        { id: 'pri-1', key: 'highest', label: 'Highest', color: '#CD1316', icon: 'ArrowUp', order: 1 },
+        { id: 'pri-2', key: 'high', label: 'High', color: '#E97F33', icon: 'ArrowUp', order: 2 },
+        { id: 'pri-3', key: 'medium', label: 'Medium', color: '#E9A233', icon: 'Minus', order: 3 },
+        { id: 'pri-4', key: 'low', label: 'Low', color: '#2D8738', icon: 'ArrowDown', order: 4 },
+        { id: 'pri-5', key: 'lowest', label: 'Lowest', color: '#57A55A', icon: 'ArrowDown', order: 5 }
+    ],
+    statuses: [
+        { id: 'sta-1', key: 'todo', label: 'TO DO', bgColor: '#DFE1E6', textColor: '#42526E' },
+        { id: 'sta-2', key: 'progress', label: 'IN PROGRESS', bgColor: '#0052CC', textColor: '#FFFFFF' },
+        { id: 'sta-3', key: 'review', label: 'IN REVIEW', bgColor: '#FF991F', textColor: '#172B4D' },
+        { id: 'sta-4', key: 'done', label: 'DONE', bgColor: '#00875A', textColor: '#FFFFFF' }
+    ],
+    issueTypes: [
+        { id: 'type-1', key: 'story', label: 'Story', icon: 'BookOpen', color: '#36B37E', bgColor: '#E3FCEF' },
+        { id: 'type-2', key: 'bug', label: 'Bug', icon: 'Bug', color: '#FF5630', bgColor: '#FFEBE6' },
+        { id: 'type-3', key: 'task', label: 'Task', icon: 'CheckSquare', color: '#4FADE6', bgColor: '#DEEBFF' },
+        { id: 'type-4', key: 'epic', label: 'Epic', icon: 'Layers', color: '#904EE2', bgColor: '#EAE6FF' },
+        { id: 'type-5', key: 'subtask', label: 'Subtask', icon: 'ListTree', color: '#4FADE6', bgColor: '#DEEBFF' }
+    ],
+    labels: [
+        { id: 'lbl-1', name: 'frontend', color: '#36B37E' },
+        { id: 'lbl-2', name: 'backend', color: '#0052CC' },
+        { id: 'lbl-3', name: 'security', color: '#FF5630' },
+        { id: 'lbl-4', name: 'ux', color: '#6554C0' },
+        { id: 'lbl-5', name: 'core', color: '#FF991F' },
+        { id: 'lbl-6', name: 'auth', color: '#00B8D9' }
+    ]
+}
+
 const initialIssues = [
     {
         id: 'issue-1',
         key: 'AGILE-1',
         projectId: 'proj-1',
         type: 'epic',
-        status: 'todo',
+        status: 'done',
         priority: 'high',
         summary: 'User Authentication System',
         description: 'Implement complete user authentication with login, register, and password reset',
@@ -27,6 +66,10 @@ const initialIssues = [
         sprintId: 'sprint-1',
         storyPoints: 13,
         labels: ['security', 'core'],
+        startDate: '2026-01-10',
+        dueDate: '2026-01-28',
+        gameId: 'game-1',
+        departmentId: 'dept-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -35,15 +78,20 @@ const initialIssues = [
         key: 'AGILE-2',
         projectId: 'proj-1',
         type: 'story',
-        status: 'progress',
+        status: 'done',
         priority: 'high',
-        summary: 'Implement Kanban Board Drag & Drop',
-        description: 'Add ability to drag and drop issues between columns on the Kanban board',
+        summary: 'Implement Login Form',
+        description: 'Create login form with email and password fields',
         assigneeId: 'user-2',
         reporterId: 'user-1',
         sprintId: 'sprint-1',
+        parentId: 'issue-1',
         storyPoints: 8,
         labels: ['frontend', 'ux'],
+        startDate: '2026-01-12',
+        dueDate: '2026-01-20',
+        gameId: 'game-1',
+        departmentId: 'dept-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -51,16 +99,21 @@ const initialIssues = [
         id: 'issue-3',
         key: 'AGILE-3',
         projectId: 'proj-1',
-        type: 'bug',
-        status: 'review',
+        type: 'story',
+        status: 'done',
         priority: 'highest',
-        summary: 'Fix responsive sidebar on mobile devices',
-        description: 'Sidebar does not collapse correctly on screens smaller than 768px',
+        summary: 'Implement Registration Flow',
+        description: 'Create user registration with email verification',
         assigneeId: 'user-1',
         reporterId: 'user-2',
         sprintId: 'sprint-1',
+        parentId: 'issue-1',
         storyPoints: 3,
-        labels: ['bug', 'mobile'],
+        labels: ['frontend', 'auth'],
+        startDate: '2026-01-14',
+        dueDate: '2026-01-22',
+        gameId: 'game-1',
+        departmentId: 'dept-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -68,16 +121,20 @@ const initialIssues = [
         id: 'issue-4',
         key: 'AGILE-4',
         projectId: 'proj-1',
-        type: 'task',
-        status: 'done',
+        type: 'epic',
+        status: 'progress',
         priority: 'medium',
-        summary: 'Setup CI/CD pipeline with GitHub Actions',
-        description: 'Configure automated testing and deployment workflow',
+        summary: 'Gameplay Matchland',
+        description: 'Implement core gameplay features for Matchland game mode',
         assigneeId: 'user-3',
         reporterId: 'user-1',
         sprintId: 'sprint-1',
-        storyPoints: 5,
-        labels: ['devops'],
+        storyPoints: 21,
+        labels: ['gameplay'],
+        startDate: '2026-01-08',
+        dueDate: '2026-02-05',
+        gameId: 'game-2',
+        departmentId: 'dept-2',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -85,16 +142,20 @@ const initialIssues = [
         id: 'issue-5',
         key: 'AGILE-5',
         projectId: 'proj-1',
-        type: 'story',
-        status: 'todo',
-        priority: 'medium',
-        summary: 'Create Sprint Planning View',
-        description: 'Design and implement the sprint planning interface with drag-drop from backlog',
+        type: 'epic',
+        status: 'done',
+        priority: 'high',
+        summary: 'Level Difficulty Seed Dream Design',
+        description: 'Design level difficulty progression and dream seed mechanics',
         assigneeId: 'user-2',
         reporterId: 'user-1',
         sprintId: 'sprint-1',
-        storyPoints: 8,
-        labels: ['frontend'],
+        storyPoints: 13,
+        labels: ['design', 'gameplay'],
+        startDate: '2026-01-06',
+        dueDate: '2026-01-30',
+        gameId: 'game-1',
+        departmentId: 'dept-2',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -102,16 +163,20 @@ const initialIssues = [
         id: 'issue-6',
         key: 'AGILE-6',
         projectId: 'proj-1',
-        type: 'task',
-        status: 'todo',
-        priority: 'low',
-        summary: 'Add dark mode toggle',
-        description: 'Implement theme switcher with system preference detection',
-        assigneeId: null,
+        type: 'epic',
+        status: 'done',
+        priority: 'medium',
+        summary: 'Archery Arena - Zen',
+        description: 'Create zen mode for archery arena with calming mechanics',
+        assigneeId: 'user-1',
         reporterId: 'user-1',
-        sprintId: null,
-        storyPoints: 3,
-        labels: ['enhancement', 'ux'],
+        sprintId: 'sprint-1',
+        storyPoints: 8,
+        labels: ['gameplay', 'zen'],
+        startDate: '2026-01-05',
+        dueDate: '2026-02-10',
+        gameId: 'game-2',
+        departmentId: 'dept-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -120,15 +185,20 @@ const initialIssues = [
         key: 'AGILE-7',
         projectId: 'proj-1',
         type: 'story',
-        status: 'progress',
+        status: 'done',
         priority: 'high',
-        summary: 'Build Issue Detail Modal',
-        description: 'Create modal component for viewing and editing issue details',
+        summary: 'Password Reset Flow',
+        description: 'Implement password reset with email verification',
         assigneeId: 'user-1',
         reporterId: 'user-1',
         sprintId: 'sprint-1',
+        parentId: 'issue-1',
         storyPoints: 5,
-        labels: ['frontend'],
+        labels: ['frontend', 'auth'],
+        startDate: '2026-01-18',
+        dueDate: '2026-01-26',
+        gameId: 'game-1',
+        departmentId: 'dept-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -136,17 +206,63 @@ const initialIssues = [
         id: 'issue-8',
         key: 'AGILE-8',
         projectId: 'proj-1',
-        type: 'subtask',
+        type: 'story',
         status: 'done',
         priority: 'medium',
-        summary: 'Design color palette and tokens',
-        description: 'Define CSS custom properties for consistent theming',
+        summary: 'Session Token Management',
+        description: 'Implement JWT token refresh and session management',
         assigneeId: 'user-2',
         reporterId: 'user-2',
         sprintId: 'sprint-1',
-        parentId: 'issue-2',
+        parentId: 'issue-1',
+        storyPoints: 5,
+        labels: ['backend', 'auth'],
+        startDate: '2026-01-20',
+        dueDate: '2026-01-28',
+        gameId: 'game-1',
+        departmentId: 'dept-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: 'issue-9',
+        key: 'AGILE-9',
+        projectId: 'proj-1',
+        type: 'bug',
+        status: 'todo',
+        priority: 'high',
+        summary: 'Fix Mobile Responsive Layout',
+        description: 'Fix layout issues on mobile devices',
+        assigneeId: 'user-3',
+        reporterId: 'user-1',
+        sprintId: null,
+        storyPoints: 3,
+        labels: ['bug', 'mobile'],
+        startDate: '2026-01-22',
+        dueDate: '2026-01-30',
+        gameId: null,
+        departmentId: 'dept-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    },
+    {
+        id: 'issue-10',
+        key: 'AGILE-10',
+        projectId: 'proj-1',
+        type: 'task',
+        status: 'progress',
+        priority: 'medium',
+        summary: 'Update Documentation',
+        description: 'Update API documentation and user guides',
+        assigneeId: 'user-2',
+        reporterId: 'user-1',
+        sprintId: null,
         storyPoints: 2,
-        labels: ['design'],
+        labels: ['docs'],
+        startDate: '2026-01-15',
+        dueDate: '2026-01-25',
+        gameId: null,
+        departmentId: 'dept-3',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     }
@@ -194,16 +310,54 @@ export const useProjectStore = create(
             sprints: initialSprints,
             users: initialUsers,
             games: initialGames,
+            departments: initialDepartments,
+            fieldConfig: initialFieldConfig, // Centralized field configuration
             currentProjectId: 'proj-1',
             currentSprintId: 'sprint-1',
             theme: 'light',
             sidebarCollapsed: false,
             selectedIssue: null,
+            createIssueModalOpen: false,
+            createIssueDefaultType: 'story',
+            savedFilters: [], // Array of { id, name, filters }
 
             // Project actions
             setCurrentProject: (projectId) => set({ currentProjectId: projectId }),
             addProject: (project) => set((state) => ({
                 projects: [...state.projects, { ...project, id: `proj-${Date.now()}`, createdAt: new Date().toISOString() }]
+            })),
+
+            // Field Configuration Actions
+            addFieldConfigItem: (fieldType, item) => set((state) => ({
+                fieldConfig: {
+                    ...state.fieldConfig,
+                    [fieldType]: [...state.fieldConfig[fieldType], { ...item, id: `${fieldType.slice(0, 3)}-${Date.now()}` }]
+                }
+            })),
+            updateFieldConfigItem: (fieldType, itemId, updates) => set((state) => ({
+                fieldConfig: {
+                    ...state.fieldConfig,
+                    [fieldType]: state.fieldConfig[fieldType].map(item =>
+                        item.id === itemId ? { ...item, ...updates } : item
+                    )
+                }
+            })),
+            deleteFieldConfigItem: (fieldType, itemId) => set((state) => ({
+                fieldConfig: {
+                    ...state.fieldConfig,
+                    [fieldType]: state.fieldConfig[fieldType].filter(item => item.id !== itemId)
+                }
+            })),
+
+            // Department Actions (using fieldConfig pattern)
+            addDepartment: (dept) => set((state) => ({
+                departments: [...state.departments, { ...dept, id: `dept-${Date.now()}` }]
+            })),
+            updateDepartment: (deptId, updates) => set((state) => ({
+                departments: state.departments.map(d => d.id === deptId ? { ...d, ...updates } : d)
+            })),
+            deleteDepartment: (deptId) => set((state) => ({
+                departments: state.departments.filter(d => d.id !== deptId)
             })),
 
             // Issue actions
@@ -244,6 +398,32 @@ export const useProjectStore = create(
             })),
 
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),
+
+            // Create Issue Modal
+            openCreateModal: (defaultType = 'story') => set({
+                createIssueModalOpen: true,
+                createIssueDefaultType: defaultType
+            }),
+            closeCreateModal: () => set({
+                createIssueModalOpen: false,
+                createIssueDefaultType: 'story'
+            }),
+
+            // Saved Filters
+            addSavedFilter: (name, filters) => set((state) => ({
+                savedFilters: [
+                    ...state.savedFilters,
+                    {
+                        id: `filter-${Date.now()}`,
+                        name,
+                        filters, // Object with arrays for each field
+                        createdAt: new Date().toISOString()
+                    }
+                ]
+            })),
+            removeSavedFilter: (filterId) => set((state) => ({
+                savedFilters: state.savedFilters.filter(f => f.id !== filterId)
+            })),
 
             // Soft delete issues (move to trash)
             softDeleteIssues: (issueIds) => set((state) => ({
@@ -425,6 +605,9 @@ export const useProjectStore = create(
                 sprints: state.sprints,
                 users: state.users,
                 games: state.games,
+                departments: state.departments,
+                fieldConfig: state.fieldConfig,
+                savedFilters: state.savedFilters,
                 theme: state.theme,
                 currentProjectId: state.currentProjectId
             })

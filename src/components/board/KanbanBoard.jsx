@@ -8,16 +8,19 @@ import {
     useSensors
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import KanbanColumn from './KanbanColumn'
 import IssueCard from './IssueCard'
 
-const statuses = ['todo', 'progress', 'review', 'done']
-
 export default function KanbanBoard() {
-    const { getSprintIssues, currentSprintId, moveIssue, issues } = useProjectStore()
+    const { getSprintIssues, currentSprintId, moveIssue, issues, fieldConfig } = useProjectStore()
     const [activeIssue, setActiveIssue] = useState(null)
+
+    // Get status keys dynamically from fieldConfig
+    const statuses = useMemo(() => {
+        return fieldConfig?.statuses?.map(s => s.key) || ['todo', 'progress', 'review', 'done']
+    }, [fieldConfig])
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -33,7 +36,7 @@ export default function KanbanBoard() {
     // Get issues for current sprint
     const sprintIssues = currentSprintId
         ? getSprintIssues(currentSprintId)
-        : issues.filter(i => i.projectId === 'proj-1')
+        : issues.filter(i => i.projectId === 'proj-1' && !i.isDeleted)
 
     // Group issues by status
     const issuesByStatus = statuses.reduce((acc, status) => {
@@ -104,7 +107,8 @@ export default function KanbanBoard() {
                     <KanbanColumn
                         key={status}
                         status={status}
-                        issues={issuesByStatus[status]}
+                        issues={issuesByStatus[status] || []}
+                        fieldConfig={fieldConfig}
                     />
                 ))}
             </div>
@@ -117,3 +121,4 @@ export default function KanbanBoard() {
         </DndContext>
     )
 }
+

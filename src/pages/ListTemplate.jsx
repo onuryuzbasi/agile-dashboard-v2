@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useProjectStore } from '../stores/projectStore'
+import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import {
     Plus,
     ChevronDown,
@@ -28,9 +29,10 @@ import {
     EyeOff,
     CornerDownLeft
 } from 'lucide-react'
+import { getIconByName } from '../config/fieldConfig'
 
-// Type icons configuration
-const typeIcons = {
+// Default type icons (fallback)
+const defaultTypeIcons = {
     story: { icon: BookOpen, color: '#36B37E', bg: '#E3FCEF' },
     bug: { icon: Bug, color: '#FF5630', bg: '#FFEBE6' },
     task: { icon: CheckSquare, color: '#4FADE6', bg: '#DEEBFF' },
@@ -38,8 +40,8 @@ const typeIcons = {
     subtask: { icon: ListTree, color: '#4FADE6', bg: '#DEEBFF' }
 }
 
-// Priority configuration
-const priorityConfig = {
+// Default priority config (fallback)
+const defaultPriorityConfig = {
     highest: { icon: ArrowUp, color: '#CD1316', label: 'Highest' },
     high: { icon: ArrowUp, color: '#E97F33', label: 'High' },
     medium: { icon: Minus, color: '#E9A233', label: 'Medium' },
@@ -47,8 +49,8 @@ const priorityConfig = {
     lowest: { icon: ArrowDown, color: '#57A55A', label: 'Lowest' }
 }
 
-// Status configuration - Jira style
-const statusConfig = {
+// Default status config (fallback)
+const defaultStatusConfig = {
     todo: { label: 'TO DO', bg: '#DFE1E6', color: '#42526E' },
     progress: { label: 'IN PROGRESS', bg: '#0052CC', color: '#FFFFFF' },
     review: { label: 'IN REVIEW', bg: '#FF991F', color: '#172B4D' },
@@ -71,37 +73,38 @@ const isOverdue = (dateString) => {
     return date < today
 }
 
-// Type Icon Component
-function TypeIcon({ type }) {
-    const config = typeIcons[type] || typeIcons.task
-    const IconComponent = config.icon
+// Type Icon Component - Now accepts optional typeConfig
+function TypeIcon({ type, typeConfig }) {
+    // Use typeConfig if provided, otherwise fall back to defaults
+    const config = typeConfig || defaultTypeIcons[type] || defaultTypeIcons.task
+    const IconComponent = config.icon || getIconByName(config.iconName, CheckSquare)
     return (
         <div
             className="jira-type-icon"
-            style={{ backgroundColor: config.bg }}
+            style={{ backgroundColor: config.bg || `${config.color}20` }}
         >
             <IconComponent size={14} color={config.color} />
         </div>
     )
 }
 
-// Status Badge Component
-function StatusBadge({ status }) {
-    const config = statusConfig[status] || statusConfig.todo
+// Status Badge Component - Now accepts optional statusConfig
+function StatusBadge({ status, statusConfig }) {
+    const config = statusConfig?.[status] || defaultStatusConfig[status] || defaultStatusConfig.todo
     return (
         <span
             className="jira-status-badge"
-            style={{ backgroundColor: config.bg, color: config.color }}
+            style={{ backgroundColor: config.bg || config.bgColor, color: config.color || config.textColor }}
         >
             {config.label}
         </span>
     )
 }
 
-// Priority Icon Component
-function PriorityIcon({ priority }) {
-    const config = priorityConfig[priority] || priorityConfig.medium
-    const IconComponent = config.icon
+// Priority Icon Component - Now accepts optional priorityConfig
+function PriorityIcon({ priority, priorityConfig }) {
+    const config = priorityConfig?.[priority] || defaultPriorityConfig[priority] || defaultPriorityConfig.medium
+    const IconComponent = config.icon || getIconByName(config.iconName, Minus)
     return (
         <div className="jira-priority-icon" title={config.label}>
             <IconComponent size={16} color={config.color} />
@@ -326,18 +329,75 @@ function DatePicker({ value, onChange, onClose }) {
     )
 }
 
-// Main List Template Component
 export default function ListTemplate() {
     const {
         issues,
         sprints,
         users,
         games,
+        departments,
+        fieldConfig,
+        savedFilters,
         getUserById,
         setSelectedIssue,
         addIssue,
-        updateIssue
+        updateIssue,
+        addSavedFilter,
+        removeSavedFilter
     } = useProjectStore()
+
+    // Build dynamic configs from fieldConfig
+    const dynamicStatusConfig = useMemo(() => {
+        const config = {}
+            ; (fieldConfig?.statuses || []).forEach(s => {
+                config[s.key] = {
+                    label: s.label,
+                    bg: s.bgColor || '#DFE1E6',
+                    color: s.textColor || '#42526E'
+                }
+            })
+        if (Object.keys(config).length === 0) return defaultStatusConfig
+        return config
+    }, [fieldConfig])
+
+    const dynamicPriorityConfig = useMemo(() => {
+        const config = {}
+            ; (fieldConfig?.priorities || []).forEach(p => {
+                config[p.key] = {
+                    label: p.label,
+                    color: p.color || '#E9A233',
+                    icon: defaultPriorityConfig[p.key]?.icon || Minus
+                }
+            })
+        if (Object.keys(config).length === 0) return defaultPriorityConfig
+        return config
+    }, [fieldConfig])
+
+    const dynamicTypeConfig = useMemo(() => {
+        const config = {}
+            ; (fieldConfig?.issueTypes || []).forEach(t => {
+                config[t.key] = {
+                    icon: getIconByName(t.icon, CheckSquare),
+                    color: t.color || '#4FADE6',
+                    bg: `${t.color || '#4FADE6'}20`
+                }
+            })
+        if (Object.keys(config).length === 0) return defaultTypeIcons
+        return config
+    }, [fieldConfig])
+
+    // Dynamic options for inline editing dropdowns
+    const statusOptions = useMemo(() => {
+        return (fieldConfig?.statuses || []).map(s => ({ value: s.key, label: s.label }))
+    }, [fieldConfig])
+
+    const priorityOptions = useMemo(() => {
+        return (fieldConfig?.priorities || []).map(p => ({ value: p.key, label: p.label }))
+    }, [fieldConfig])
+
+    const typeOptions = useMemo(() => {
+        return (fieldConfig?.issueTypes || []).map(t => ({ value: t.key, label: t.label }))
+    }, [fieldConfig])
 
     // State
     const [searchQuery, setSearchQuery] = useState('')
@@ -350,8 +410,17 @@ export default function ListTemplate() {
     const [showCompleted, setShowCompleted] = useState(false)
 
     // Filter state
-    const [filterAssignees, setFilterAssignees] = useState(new Set())
     const [showFilterMenu, setShowFilterMenu] = useState(false)
+    const [filterAssignees, setFilterAssignees] = useState(new Set())
+    const [filterStatuses, setFilterStatuses] = useState(new Set())
+    const [filterPriorities, setFilterPriorities] = useState(new Set())
+    const [filterTypes, setFilterTypes] = useState(new Set())
+    const [filterSprints, setFilterSprints] = useState(new Set())
+    const [filterEpics, setFilterEpics] = useState(new Set())
+    const [filterGames, setFilterGames] = useState(new Set())
+    const [filterDepartments, setFilterDepartments] = useState(new Set())
+    const [filterLabels, setFilterLabels] = useState(new Set())
+    const [filterReporters, setFilterReporters] = useState(new Set())
 
     // Inline create state
     const [creatingInGroup, setCreatingInGroup] = useState(null)
@@ -527,7 +596,7 @@ export default function ListTemplate() {
         return groups
     }
 
-    // Filter issues by search and assignees
+    // Filter issues by search and all faceted filters
     const filterIssues = (issueList) => {
         let filtered = issueList
 
@@ -540,9 +609,61 @@ export default function ListTemplate() {
             )
         }
 
-        // Filter by assignees
+        // Type filter (OR within group)
+        if (filterTypes.size > 0) {
+            filtered = filtered.filter(issue => filterTypes.has(issue.type))
+        }
+
+        // Status filter (OR within group)
+        if (filterStatuses.size > 0) {
+            filtered = filtered.filter(issue => filterStatuses.has(issue.status))
+        }
+
+        // Priority filter (OR within group)
+        if (filterPriorities.size > 0) {
+            filtered = filtered.filter(issue => filterPriorities.has(issue.priority))
+        }
+
+        // Assignee filter (OR within group)
         if (filterAssignees.size > 0) {
-            filtered = filtered.filter(issue => filterAssignees.has(issue.assigneeId))
+            filtered = filtered.filter(issue => filterAssignees.has(issue.assigneeId || 'unassigned'))
+        }
+
+        // Sprint filter (OR within group)
+        if (filterSprints.size > 0) {
+            filtered = filtered.filter(issue => filterSprints.has(issue.sprintId || 'backlog'))
+        }
+
+        // Epic filter (OR within group)
+        if (filterEpics.size > 0) {
+            filtered = filtered.filter(issue => {
+                return filterEpics.has(issue.parentId) ||
+                    (issue.type === 'epic' && filterEpics.has(issue.id)) ||
+                    (!issue.parentId && issue.type !== 'epic' && filterEpics.has('no-epic'))
+            })
+        }
+
+        // Game filter (OR within group)
+        if (filterGames.size > 0) {
+            filtered = filtered.filter(issue => filterGames.has(issue.gameId || 'no-game'))
+        }
+
+        // Department filter (OR within group)
+        if (filterDepartments.size > 0) {
+            filtered = filtered.filter(issue => filterDepartments.has(issue.departmentId || 'no-department'))
+        }
+
+        // Labels filter (OR within group)
+        if (filterLabels.size > 0) {
+            filtered = filtered.filter(issue => {
+                const issueLabels = issue.labels || []
+                return issueLabels.some(label => filterLabels.has(label))
+            })
+        }
+
+        // Reporter filter (OR within group)
+        if (filterReporters.size > 0) {
+            filtered = filtered.filter(issue => filterReporters.has(issue.reporterId))
         }
 
         // Sort issues if sort is configured
@@ -561,6 +682,70 @@ export default function ListTemplate() {
         }
 
         return filtered
+    }
+
+    // Get active filter count
+    const activeFilterCount = filterTypes.size + filterStatuses.size + filterPriorities.size +
+        filterAssignees.size + filterSprints.size + filterEpics.size +
+        filterGames.size + filterDepartments.size + filterLabels.size + filterReporters.size
+
+    // Filters object for FacetedFilterMenu
+    const filters = useMemo(() => ({
+        type: filterTypes,
+        status: filterStatuses,
+        priority: filterPriorities,
+        assignee: filterAssignees,
+        sprint: filterSprints,
+        epic: filterEpics,
+        game: filterGames,
+        department: filterDepartments,
+        label: filterLabels,
+        reporter: filterReporters
+    }), [filterTypes, filterStatuses, filterPriorities, filterAssignees, filterSprints,
+        filterEpics, filterGames, filterDepartments, filterLabels, filterReporters])
+
+    // Handle filter change from FacetedFilterMenu
+    const handleFilterChange = (field, newSet) => {
+        switch (field) {
+            case 'type': setFilterTypes(newSet); break
+            case 'status': setFilterStatuses(newSet); break
+            case 'priority': setFilterPriorities(newSet); break
+            case 'assignee': setFilterAssignees(newSet); break
+            case 'sprint': setFilterSprints(newSet); break
+            case 'epic': setFilterEpics(newSet); break
+            case 'game': setFilterGames(newSet); break
+            case 'department': setFilterDepartments(newSet); break
+            case 'label': setFilterLabels(newSet); break
+            case 'reporter': setFilterReporters(newSet); break
+        }
+    }
+
+    // Clear all filters
+    const clearAllFilters = () => {
+        setFilterTypes(new Set())
+        setFilterStatuses(new Set())
+        setFilterPriorities(new Set())
+        setFilterAssignees(new Set())
+        setFilterSprints(new Set())
+        setFilterEpics(new Set())
+        setFilterGames(new Set())
+        setFilterDepartments(new Set())
+        setFilterLabels(new Set())
+        setFilterReporters(new Set())
+    }
+
+    // Apply saved filter (converts arrays back to Sets)
+    const applySavedFilter = (savedFiltersObj) => {
+        setFilterTypes(new Set(savedFiltersObj.type || []))
+        setFilterStatuses(new Set(savedFiltersObj.status || []))
+        setFilterPriorities(new Set(savedFiltersObj.priority || []))
+        setFilterAssignees(new Set(savedFiltersObj.assignee || []))
+        setFilterSprints(new Set(savedFiltersObj.sprint || []))
+        setFilterEpics(new Set(savedFiltersObj.epic || []))
+        setFilterGames(new Set(savedFiltersObj.game || []))
+        setFilterDepartments(new Set(savedFiltersObj.department || []))
+        setFilterLabels(new Set(savedFiltersObj.label || []))
+        setFilterReporters(new Set(savedFiltersObj.reporter || []))
     }
 
     // Handle sort column
@@ -1117,7 +1302,7 @@ export default function ListTemplate() {
                     >
                         <PriorityIcon priority={issue.priority} />
                         <span className="priority-label">
-                            {priorityConfig[issue.priority]?.label || 'Medium'}
+                            {dynamicPriorityConfig[issue.priority]?.label || 'Medium'}
                         </span>
                         {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'priority' && (
                             <SearchableDropdown
@@ -1221,9 +1406,9 @@ export default function ListTemplate() {
         ]
     }
 
-    // Get status options
+    // Get status options - now uses dynamic config
     const getStatusOptions = () => {
-        return Object.entries(statusConfig).map(([key, val]) => ({
+        return Object.entries(dynamicStatusConfig).map(([key, val]) => ({
             value: key,
             label: val.label
         }))
@@ -1276,50 +1461,39 @@ export default function ListTemplate() {
         return game ? game.name : (gameId || '—')
     }
 
-    // Get priority options
+    // Get priority options - now uses dynamic config
     const getPriorityOptions = () => {
-        return Object.entries(priorityConfig).map(([key, val]) => ({
+        return Object.entries(dynamicPriorityConfig).map(([key, val]) => ({
             value: key,
             label: val.label
         }))
     }
 
-    // Get department options
+    // Get department options - now uses dynamic config from store
     const getDepartmentOptions = () => {
-        return [
-            { value: 'Development', label: 'Development' },
-            { value: 'Design', label: 'Design' },
-            { value: 'QA', label: 'QA' },
-            { value: 'Product', label: 'Product' },
-            { value: 'Marketing', label: 'Marketing' },
-            { value: 'Operations', label: 'Operations' }
-        ]
+        return (departments || []).map(dept => ({
+            value: dept.id,
+            label: dept.name
+        }))
     }
 
-    // Get label options
+    // Get label options - now uses dynamic config from store
     const getLabelOptions = () => {
-        return [
-            { value: 'frontend', label: 'Frontend' },
-            { value: 'backend', label: 'Backend' },
-            { value: 'api', label: 'API' },
-            { value: 'ui', label: 'UI' },
-            { value: 'ux', label: 'UX' },
-            { value: 'bug', label: 'Bug' },
-            { value: 'enhancement', label: 'Enhancement' },
-            { value: 'documentation', label: 'Documentation' }
-        ]
+        return (fieldConfig?.labels || []).map(label => ({
+            value: label.key,
+            label: label.label
+        }))
     }
 
-    // Get type options
+    // Get type options - now uses dynamic config from store
     const getTypeOptions = () => {
-        return Object.entries(typeIcons).map(([key, val]) => ({
-            value: key,
-            label: key.charAt(0).toUpperCase() + key.slice(1)
+        return (fieldConfig?.issueTypes || []).map(t => ({
+            value: t.key,
+            label: t.label
         }))
     }
 
     const groups = getGroupedIssues()
-    const activeFilterCount = filterAssignees.size
 
     // Count completed sprints
     const completedSprintCount = sprints.filter(s => s.state === 'closed').length
@@ -1366,17 +1540,36 @@ export default function ListTemplate() {
                     )}
                 </div>
 
-                {/* Filter Button */}
-                <button
-                    className="jira-filter-btn"
-                    onClick={e => { e.stopPropagation(); setShowFilterMenu(!showFilterMenu); }}
-                >
-                    <Filter size={16} />
-                    <span>Filter</span>
-                    {activeFilterCount > 0 && (
-                        <span className="jira-filter-count">{activeFilterCount}</span>
-                    )}
-                </button>
+                {/* Filter Button & Menu */}
+                <div className="filter-wrapper" onClick={e => e.stopPropagation()}>
+                    <button
+                        className={`jira-filter-btn ${activeFilterCount > 0 ? 'active' : ''}`}
+                        onClick={() => setShowFilterMenu(!showFilterMenu)}
+                    >
+                        <Filter size={16} />
+                        <span>Filter</span>
+                        {activeFilterCount > 0 && (
+                            <span className="jira-filter-count">{activeFilterCount}</span>
+                        )}
+                    </button>
+                    <FacetedFilterMenu
+                        issues={issues.filter(i => !i.isDeleted)}
+                        users={users}
+                        sprints={sprints}
+                        games={games}
+                        departments={departments}
+                        fieldConfig={fieldConfig}
+                        filters={filters}
+                        onFilterChange={handleFilterChange}
+                        onClearAll={clearAllFilters}
+                        isOpen={showFilterMenu}
+                        onClose={() => setShowFilterMenu(false)}
+                        savedFilters={savedFilters}
+                        onSaveFilter={addSavedFilter}
+                        onDeleteSavedFilter={removeSavedFilter}
+                        onApplySavedFilter={applySavedFilter}
+                    />
+                </div>
 
                 {/* Spacer */}
                 <div className="toolbar-spacer" />

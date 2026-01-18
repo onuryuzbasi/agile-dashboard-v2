@@ -12,7 +12,8 @@ import {
     Sun,
     PenTool,
     List,
-    LayoutList
+    LayoutList,
+    GanttChartSquare
 } from 'lucide-react'
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
     { path: '/sprints', icon: Zap, label: 'Sprints' },
     { path: '/list', icon: List, label: 'List' },
     { path: '/list-template', icon: LayoutList, label: 'List Template' },
+    { path: '/timeline', icon: GanttChartSquare, label: 'Timeline' },
     { path: '/whiteboard', icon: PenTool, label: 'Whiteboard' },
 ]
 

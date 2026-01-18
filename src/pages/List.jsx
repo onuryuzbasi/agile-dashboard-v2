@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useProjectStore } from '../stores/projectStore'
+import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import {
     Plus,
     ChevronDown,
@@ -341,11 +342,17 @@ export default function List() {
         issues,
         sprints,
         users,
+        games,
+        departments,
+        fieldConfig,
+        savedFilters,
         getUserById,
         setSelectedIssue,
         addIssue,
         updateIssue,
-        softDeleteIssues
+        softDeleteIssues,
+        addSavedFilter,
+        removeSavedFilter
     } = useProjectStore()
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -367,6 +374,12 @@ export default function List() {
     const [filterStatuses, setFilterStatuses] = useState(new Set())
     const [filterPriorities, setFilterPriorities] = useState(new Set())
     const [filterTypes, setFilterTypes] = useState(new Set())
+    const [filterSprints, setFilterSprints] = useState(new Set())
+    const [filterEpics, setFilterEpics] = useState(new Set())
+    const [filterGames, setFilterGames] = useState(new Set())
+    const [filterDepartments, setFilterDepartments] = useState(new Set())
+    const [filterLabels, setFilterLabels] = useState(new Set())
+    const [filterReporters, setFilterReporters] = useState(new Set())
 
     // Inline create state
     const [creatingInGroup, setCreatingInGroup] = useState(null)
@@ -662,24 +675,59 @@ export default function List() {
                 if (!searchMatch) return false
             }
 
-            // Assignee filter
-            if (filterAssignees.size > 0) {
-                if (!filterAssignees.has(issue.assigneeId || 'unassigned')) return false
+            // Type filter (OR within group)
+            if (filterTypes.size > 0) {
+                if (!filterTypes.has(issue.type)) return false
             }
 
-            // Status filter
+            // Status filter (OR within group)
             if (filterStatuses.size > 0) {
                 if (!filterStatuses.has(issue.status)) return false
             }
 
-            // Priority filter
+            // Priority filter (OR within group)
             if (filterPriorities.size > 0) {
                 if (!filterPriorities.has(issue.priority)) return false
             }
 
-            // Type filter
-            if (filterTypes.size > 0) {
-                if (!filterTypes.has(issue.type)) return false
+            // Assignee filter (OR within group)
+            if (filterAssignees.size > 0) {
+                if (!filterAssignees.has(issue.assigneeId || 'unassigned')) return false
+            }
+
+            // Sprint filter (OR within group)
+            if (filterSprints.size > 0) {
+                if (!filterSprints.has(issue.sprintId || 'backlog')) return false
+            }
+
+            // Epic filter (OR within group)
+            if (filterEpics.size > 0) {
+                const epicMatch = filterEpics.has(issue.parentId) ||
+                    (issue.type === 'epic' && filterEpics.has(issue.id)) ||
+                    (!issue.parentId && issue.type !== 'epic' && filterEpics.has('no-epic'))
+                if (!epicMatch) return false
+            }
+
+            // Game filter (OR within group)
+            if (filterGames.size > 0) {
+                if (!filterGames.has(issue.gameId || 'no-game')) return false
+            }
+
+            // Department filter (OR within group)
+            if (filterDepartments.size > 0) {
+                if (!filterDepartments.has(issue.departmentId || 'no-department')) return false
+            }
+
+            // Labels filter (OR within group)
+            if (filterLabels.size > 0) {
+                const issueLabels = issue.labels || []
+                const hasMatchingLabel = issueLabels.some(label => filterLabels.has(label))
+                if (!hasMatchingLabel) return false
+            }
+
+            // Reporter filter (OR within group)
+            if (filterReporters.size > 0) {
+                if (!filterReporters.has(issue.reporterId)) return false
             }
 
             return true
@@ -687,7 +735,40 @@ export default function List() {
     }
 
     // Get active filter count
-    const activeFilterCount = filterAssignees.size + filterStatuses.size + filterPriorities.size + filterTypes.size
+    const activeFilterCount = filterTypes.size + filterStatuses.size + filterPriorities.size +
+        filterAssignees.size + filterSprints.size + filterEpics.size +
+        filterGames.size + filterDepartments.size + filterLabels.size + filterReporters.size
+
+    // Filters object for FacetedFilterMenu
+    const filters = useMemo(() => ({
+        type: filterTypes,
+        status: filterStatuses,
+        priority: filterPriorities,
+        assignee: filterAssignees,
+        sprint: filterSprints,
+        epic: filterEpics,
+        game: filterGames,
+        department: filterDepartments,
+        label: filterLabels,
+        reporter: filterReporters
+    }), [filterTypes, filterStatuses, filterPriorities, filterAssignees, filterSprints,
+        filterEpics, filterGames, filterDepartments, filterLabels, filterReporters])
+
+    // Handle filter change from FacetedFilterMenu
+    const handleFilterChange = (field, newSet) => {
+        switch (field) {
+            case 'type': setFilterTypes(newSet); break
+            case 'status': setFilterStatuses(newSet); break
+            case 'priority': setFilterPriorities(newSet); break
+            case 'assignee': setFilterAssignees(newSet); break
+            case 'sprint': setFilterSprints(newSet); break
+            case 'epic': setFilterEpics(newSet); break
+            case 'game': setFilterGames(newSet); break
+            case 'department': setFilterDepartments(newSet); break
+            case 'label': setFilterLabels(newSet); break
+            case 'reporter': setFilterReporters(newSet); break
+        }
+    }
 
     // Toggle filter helper
     const toggleFilter = (set, setFn, value) => {
@@ -704,10 +785,31 @@ export default function List() {
 
     // Clear all filters
     const clearAllFilters = () => {
-        setFilterAssignees(new Set())
+        setFilterTypes(new Set())
         setFilterStatuses(new Set())
         setFilterPriorities(new Set())
-        setFilterTypes(new Set())
+        setFilterAssignees(new Set())
+        setFilterSprints(new Set())
+        setFilterEpics(new Set())
+        setFilterGames(new Set())
+        setFilterDepartments(new Set())
+        setFilterLabels(new Set())
+        setFilterReporters(new Set())
+    }
+
+    // Apply saved filter (converts arrays back to Sets)
+    const applySavedFilter = (savedFilters) => {
+        // Clear all first, then apply saved
+        setFilterTypes(new Set(savedFilters.type || []))
+        setFilterStatuses(new Set(savedFilters.status || []))
+        setFilterPriorities(new Set(savedFilters.priority || []))
+        setFilterAssignees(new Set(savedFilters.assignee || []))
+        setFilterSprints(new Set(savedFilters.sprint || []))
+        setFilterEpics(new Set(savedFilters.epic || []))
+        setFilterGames(new Set(savedFilters.game || []))
+        setFilterDepartments(new Set(savedFilters.department || []))
+        setFilterLabels(new Set(savedFilters.label || []))
+        setFilterReporters(new Set(savedFilters.reporter || []))
     }
 
     // Handle inline issue creation
@@ -1400,105 +1502,23 @@ export default function List() {
                                 <span className="filter-count">{activeFilterCount}</span>
                             )}
                         </button>
-                        {showFilterMenu && (
-                            <div className="filter-menu" onClick={e => e.stopPropagation()}>
-                                <div className="filter-menu-header">
-                                    <span>Filters</span>
-                                    {activeFilterCount > 0 && (
-                                        <button className="btn btn-ghost btn-xs" onClick={clearAllFilters}>
-                                            Clear all
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Assignee Filter */}
-                                <div className="filter-section">
-                                    <div className="filter-section-title">Assignee</div>
-                                    <div className="filter-options">
-                                        <label className="filter-option">
-                                            <input
-                                                type="checkbox"
-                                                checked={filterAssignees.has('unassigned')}
-                                                onChange={() => toggleFilter(filterAssignees, setFilterAssignees, 'unassigned')}
-                                            />
-                                            <span>Unassigned</span>
-                                        </label>
-                                        {users.map(user => (
-                                            <label key={user.id} className="filter-option">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={filterAssignees.has(user.id)}
-                                                    onChange={() => toggleFilter(filterAssignees, setFilterAssignees, user.id)}
-                                                />
-                                                <div className="avatar xs">{user.name.charAt(0)}</div>
-                                                <span>{user.name}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Status Filter */}
-                                <div className="filter-section">
-                                    <div className="filter-section-title">Status</div>
-                                    <div className="filter-options">
-                                        {Object.entries(statusConfig).map(([key, config]) => (
-                                            <label key={key} className="filter-option">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={filterStatuses.has(key)}
-                                                    onChange={() => toggleFilter(filterStatuses, setFilterStatuses, key)}
-                                                />
-                                                <span className={`status-badge ${key}`}>{config.label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Priority Filter */}
-                                <div className="filter-section">
-                                    <div className="filter-section-title">Priority</div>
-                                    <div className="filter-options">
-                                        {Object.entries(priorityConfig).map(([key, config]) => {
-                                            const PriorityIcon = config.icon
-                                            return (
-                                                <label key={key} className="filter-option">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={filterPriorities.has(key)}
-                                                        onChange={() => toggleFilter(filterPriorities, setFilterPriorities, key)}
-                                                    />
-                                                    <PriorityIcon size={14} style={{ color: config.color }} />
-                                                    <span>{config.label}</span>
-                                                </label>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Type Filter */}
-                                <div className="filter-section">
-                                    <div className="filter-section-title">Type</div>
-                                    <div className="filter-options">
-                                        {Object.entries(typeIcons).filter(([key]) => key !== 'epic').map(([key, config]) => {
-                                            const TypeIcon = config.icon
-                                            return (
-                                                <label key={key} className="filter-option">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={filterTypes.has(key)}
-                                                        onChange={() => toggleFilter(filterTypes, setFilterTypes, key)}
-                                                    />
-                                                    <span className={`issue-type-icon ${key}`} style={{ width: 16, height: 16 }}>
-                                                        <TypeIcon size={10} />
-                                                    </span>
-                                                    <span style={{ textTransform: 'capitalize' }}>{key}</span>
-                                                </label>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <FacetedFilterMenu
+                            issues={issues.filter(i => !i.isDeleted)}
+                            users={users}
+                            sprints={sprints}
+                            games={games}
+                            departments={departments}
+                            fieldConfig={fieldConfig}
+                            filters={filters}
+                            onFilterChange={handleFilterChange}
+                            onClearAll={clearAllFilters}
+                            isOpen={showFilterMenu}
+                            onClose={() => setShowFilterMenu(false)}
+                            savedFilters={savedFilters}
+                            onSaveFilter={addSavedFilter}
+                            onDeleteSavedFilter={removeSavedFilter}
+                            onApplySavedFilter={applySavedFilter}
+                        />
                     </div>
                 </div>
 

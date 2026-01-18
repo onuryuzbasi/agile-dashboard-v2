@@ -11,7 +11,9 @@ import List from './pages/List'
 import ListTemplate from './pages/ListTemplate'
 import Settings from './pages/Settings'
 import Whiteboard from './pages/Whiteboard'
+import Timeline from './pages/Timeline'
 import IssueModal from './components/board/IssueModal'
+import CreateIssueModal from './components/board/CreateIssueModal'
 
 function App() {
     const { theme, sidebarCollapsed, selectedIssue, setSelectedIssue } = useProjectStore()
@@ -36,6 +38,7 @@ function App() {
                             <Route path="/sprints" element={<Sprints />} />
                             <Route path="/list" element={<List />} />
                             <Route path="/list-template" element={<ListTemplate />} />
+                            <Route path="/timeline" element={<Timeline />} />
                             <Route path="/whiteboard" element={<Whiteboard />} />
                             <Route path="/settings" element={<Settings />} />
                         </Routes>
@@ -49,9 +52,13 @@ function App() {
                         onClose={() => setSelectedIssue(null)}
                     />
                 )}
+
+                {/* Create Issue Modal */}
+                <CreateIssueModal />
             </div>
         </BrowserRouter>
     )
 }
 
 export default App
+

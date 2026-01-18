@@ -13,12 +13,17 @@ const pageTitles = {
 
 export default function Header() {
     const location = useLocation()
-    const { getCurrentProject, users } = useProjectStore()
+    const { getCurrentProject, users, openCreateModal } = useProjectStore()
     const [searchQuery, setSearchQuery] = useState('')
 
     const project = getCurrentProject()
     const currentUser = users[0] // Mock current user
     const pageTitle = pageTitles[location.pathname] || 'Agile Dashboard'
+
+    // Open create modal with Epic as default type
+    const handleCreateClick = () => {
+        openCreateModal('epic')
+    }
 
     return (
         <header className="header">
@@ -52,8 +57,8 @@ export default function Header() {
                     />
                 </div>
 
-                {/* Create Issue Button */}
-                <button className="btn btn-primary">
+                {/* Create Issue Button - WIRED TO MODAL */}
+                <button className="btn btn-primary" onClick={handleCreateClick}>
                     <Plus size={18} />
                     <span>Create</span>
                 </button>
@@ -71,3 +76,4 @@ export default function Header() {
         </header>
     )
 }
+

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import {
     X,
@@ -23,8 +23,10 @@ import {
     Gamepad2,
     Link2
 } from 'lucide-react'
+import { getIconByName } from '../../config/fieldConfig'
 
-const typeIcons = {
+// Keep typeIcons for rendering (will use fieldConfig where applicable)
+const typeIconsDefault = {
     story: BookOpen,
     bug: Bug,
     task: CheckSquare,
@@ -32,37 +34,81 @@ const typeIcons = {
     subtask: ListTree
 }
 
-const typeOptions = [
-    { value: 'story', label: 'Story', color: 'var(--story)' },
-    { value: 'bug', label: 'Bug', color: 'var(--bug)' },
-    { value: 'task', label: 'Task', color: 'var(--task)' },
-    { value: 'epic', label: 'Epic', color: 'var(--epic)' },
-    { value: 'subtask', label: 'Subtask', color: 'var(--subtask)' }
-]
-
-const priorityOptions = [
-    { value: 'highest', label: 'Highest', color: 'var(--priority-highest)' },
-    { value: 'high', label: 'High', color: 'var(--priority-high)' },
-    { value: 'medium', label: 'Medium', color: 'var(--priority-medium)' },
-    { value: 'low', label: 'Low', color: 'var(--priority-low)' },
-    { value: 'lowest', label: 'Lowest', color: 'var(--priority-lowest)' }
-]
-
-const statusOptions = [
-    { value: 'todo', label: 'To Do' },
-    { value: 'progress', label: 'In Progress' },
-    { value: 'review', label: 'In Review' },
-    { value: 'done', label: 'Done' }
-]
-
-const departmentOptions = [
-    { value: '', label: 'None' },
-    { value: 'development', label: 'Development' },
-    { value: 'design', label: 'Design' }
-]
-
 export default function IssueModal({ issue, onClose }) {
-    const { updateIssue, deleteIssue, addIssue, addWorkLog, removeWorkLog, users, sprints, issues, games, getUserById } = useProjectStore()
+    const {
+        updateIssue,
+        deleteIssue,
+        addIssue,
+        addWorkLog,
+        removeWorkLog,
+        users,
+        sprints,
+        issues,
+        games,
+        departments,
+        fieldConfig,
+        getUserById
+    } = useProjectStore()
+
+    // Build dynamic options from fieldConfig
+    const typeOptions = useMemo(() => {
+        return fieldConfig?.issueTypes?.map(t => ({
+            value: t.key,
+            label: t.label,
+            color: t.color
+        })) || [
+                { value: 'story', label: 'Story', color: 'var(--story)' },
+                { value: 'bug', label: 'Bug', color: 'var(--bug)' },
+                { value: 'task', label: 'Task', color: 'var(--task)' },
+                { value: 'epic', label: 'Epic', color: 'var(--epic)' },
+                { value: 'subtask', label: 'Subtask', color: 'var(--subtask)' }
+            ]
+    }, [fieldConfig])
+
+    const priorityOptions = useMemo(() => {
+        return fieldConfig?.priorities?.map(p => ({
+            value: p.key,
+            label: p.label,
+            color: p.color
+        })) || [
+                { value: 'highest', label: 'Highest', color: 'var(--priority-highest)' },
+                { value: 'high', label: 'High', color: 'var(--priority-high)' },
+                { value: 'medium', label: 'Medium', color: 'var(--priority-medium)' },
+                { value: 'low', label: 'Low', color: 'var(--priority-low)' },
+                { value: 'lowest', label: 'Lowest', color: 'var(--priority-lowest)' }
+            ]
+    }, [fieldConfig])
+
+    const statusOptions = useMemo(() => {
+        return fieldConfig?.statuses?.map(s => ({
+            value: s.key,
+            label: s.label
+        })) || [
+                { value: 'todo', label: 'To Do' },
+                { value: 'progress', label: 'In Progress' },
+                { value: 'review', label: 'In Review' },
+                { value: 'done', label: 'Done' }
+            ]
+    }, [fieldConfig])
+
+    const departmentOptions = useMemo(() => {
+        const opts = [{ value: '', label: 'None' }]
+        if (departments) {
+            departments.forEach(d => {
+                opts.push({ value: d.id, label: d.name })
+            })
+        }
+        return opts
+    }, [departments])
+
+    // Get type icon (using fieldConfig if available)
+    const getTypeIcon = (typeKey) => {
+        const typeConfig = fieldConfig?.issueTypes?.find(t => t.key === typeKey)
+        if (typeConfig?.icon) {
+            return getIconByName(typeConfig.icon, CheckSquare)
+        }
+        return typeIconsDefault[typeKey] || CheckSquare
+    }
 
     const [formData, setFormData] = useState({
         summary: issue.summary,
@@ -153,7 +199,7 @@ export default function IssueModal({ issue, onClose }) {
     // Get available epics for parent selection (only show if not epic type)
     const availableEpics = issues.filter(i => i.type === 'epic' && i.id !== issue.id && !i.isDeleted)
 
-    const TypeIcon = typeIcons[formData.type] || CheckSquare
+    const TypeIcon = getTypeIcon(formData.type)
     const assignee = formData.assigneeId ? getUserById(formData.assigneeId) : null
     const reporter = formData.reporterId ? getUserById(formData.reporterId) : null
 
@@ -509,7 +555,7 @@ export default function IssueModal({ issue, onClose }) {
                                                 <span>Status</span>
                                             </div>
                                             {childIssues.map(child => {
-                                                const ChildTypeIcon = typeIcons[child.type] || CheckSquare
+                                                const ChildTypeIcon = getTypeIcon(child.type)
                                                 const childAssignee = child.assigneeId ? getUserById(child.assigneeId) : null
                                                 return (
                                                     <div key={child.id} className="child-item-row">
@@ -534,10 +580,7 @@ export default function IssueModal({ issue, onClose }) {
                                                         </div>
                                                         <div className="child-item-status">
                                                             <span className={`status-badge ${child.status}`}>
-                                                                {child.status === 'todo' && 'TO DO'}
-                                                                {child.status === 'progress' && 'IN PROGRESS'}
-                                                                {child.status === 'review' && 'IN REVIEW'}
-                                                                {child.status === 'done' && 'DONE'}
+                                                                {statusOptions.find(s => s.value === child.status)?.label || child.status}
                                                             </span>
                                                         </div>
                                                     </div>

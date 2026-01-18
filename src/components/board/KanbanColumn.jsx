@@ -2,28 +2,37 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import IssueCard from './IssueCard'
 
-const statusConfig = {
-    todo: { label: 'To Do', className: 'todo' },
-    progress: { label: 'In Progress', className: 'progress' },
-    review: { label: 'In Review', className: 'review' },
-    done: { label: 'Done', className: 'done' }
-}
-
-export default function KanbanColumn({ status, issues }) {
+export default function KanbanColumn({ status, issues, fieldConfig }) {
     const { setNodeRef, isOver } = useDroppable({
         id: status
     })
 
-    const config = statusConfig[status] || { label: status, className: '' }
+    // Get config from fieldConfig prop (dynamic from Settings)
+    const statusData = fieldConfig?.statuses?.find(s => s.key === status) || {
+        label: status.charAt(0).toUpperCase() + status.slice(1),
+        bgColor: '#64748b',
+        textColor: '#ffffff'
+    }
 
     return (
         <div
             ref={setNodeRef}
-            className={`kanban-column ${config.className} ${isOver ? 'drag-over' : ''}`}
+            className={`kanban-column ${status} ${isOver ? 'drag-over' : ''}`}
+            style={{
+                '--column-color': statusData.bgColor
+            }}
         >
             <div className="kanban-column-header">
                 <div className="kanban-column-title">
-                    <span>{config.label}</span>
+                    <span
+                        className="kanban-column-label"
+                        style={{
+                            backgroundColor: statusData.bgColor,
+                            color: statusData.textColor
+                        }}
+                    >
+                        {statusData.label}
+                    </span>
                 </div>
                 <span className="kanban-column-count">{issues.length}</span>
             </div>
@@ -54,3 +63,4 @@ export default function KanbanColumn({ status, issues }) {
         </div>
     )
 }
+

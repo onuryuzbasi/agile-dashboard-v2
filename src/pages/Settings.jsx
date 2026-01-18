@@ -22,8 +22,28 @@ import {
     Gamepad2,
     Plus,
     Pencil,
-    Save
+    Save,
+    Sliders,
+    ArrowUp,
+    ArrowDown,
+    Minus,
+    Tag,
+    Building2,
+    Circle
 } from 'lucide-react'
+
+// Icon mapping for dynamic icon rendering
+const iconMap = {
+    BookOpen, Bug, CheckSquare, Layers, ListTree,
+    ArrowUp, ArrowDown, Minus, Tag, Circle
+}
+
+// Color presets for easy selection
+const colorPresets = [
+    '#CD1316', '#E97F33', '#E9A233', '#2D8738', '#57A55A',
+    '#36B37E', '#0052CC', '#6554C0', '#FF5630', '#FF991F',
+    '#00B8D9', '#4FADE6', '#904EE2', '#42526E', '#DFE1E6'
+]
 
 const typeIcons = {
     story: { icon: BookOpen, color: 'var(--story)' },
@@ -71,9 +91,17 @@ export default function Settings() {
         sprints,
         users,
         games,
+        departments,
+        fieldConfig,
         addGame,
         updateGame,
         deleteGame,
+        addDepartment,
+        updateDepartment,
+        deleteDepartment,
+        addFieldConfigItem,
+        updateFieldConfigItem,
+        deleteFieldConfigItem,
         restoreIssue,
         permanentlyDeleteIssue
     } = useProjectStore()
@@ -93,8 +121,67 @@ export default function Settings() {
     const [editName, setEditName] = useState('')
     const [editCode, setEditCode] = useState('')
 
+    // Field Manager state
+    const [newFieldValue, setNewFieldValue] = useState({})
+    const [editingFieldItem, setEditingFieldItem] = useState(null)
+    const [editFieldValue, setEditFieldValue] = useState({})
+
     // Get deleted issues
     const deletedIssues = issues.filter(i => i.isDeleted)
+
+    // Field Manager handlers
+    const handleAddFieldItem = (fieldType, defaults = {}) => {
+        const value = newFieldValue[fieldType]
+        if (!value?.name && !value?.label && !value?.key) return
+
+        const item = {
+            key: value.key || value.name?.toLowerCase().replace(/\s+/g, '_') || `item-${Date.now()}`,
+            label: value.label || value.name,
+            name: value.name,
+            color: value.color || colorPresets[Math.floor(Math.random() * colorPresets.length)],
+            ...defaults,
+            ...value
+        }
+        addFieldConfigItem(fieldType, item)
+        setNewFieldValue({ ...newFieldValue, [fieldType]: {} })
+    }
+
+    const handleEditFieldItem = (fieldType, item) => {
+        setEditingFieldItem(`${fieldType}-${item.id}`)
+        setEditFieldValue({ [fieldType]: { ...item } })
+    }
+
+    const handleSaveFieldItem = (fieldType, itemId) => {
+        const updates = editFieldValue[fieldType]
+        if (updates) {
+            updateFieldConfigItem(fieldType, itemId, updates)
+        }
+        setEditingFieldItem(null)
+        setEditFieldValue({})
+    }
+
+    const handleDeleteFieldItem = (fieldType, itemId, itemName) => {
+        if (confirm(`Delete "${itemName}"? Issues using this value may be affected.`)) {
+            deleteFieldConfigItem(fieldType, itemId)
+        }
+    }
+
+    // Department handlers
+    const handleAddDepartment = () => {
+        const value = newFieldValue.departments
+        if (!value?.name) return
+        addDepartment({ name: value.name, code: value.code || value.name.slice(0, 3).toUpperCase() })
+        setNewFieldValue({ ...newFieldValue, departments: {} })
+    }
+
+    const handleSaveDepartment = (deptId) => {
+        const updates = editFieldValue.departments
+        if (updates) {
+            updateDepartment(deptId, updates)
+        }
+        setEditingFieldItem(null)
+        setEditFieldValue({})
+    }
 
     const handleAddGame = () => {
         if (!newGameName.trim() || !newGameCode.trim()) return
@@ -184,6 +271,13 @@ export default function Settings() {
                 >
                     <SettingsIcon size={16} />
                     General
+                </button>
+                <button
+                    className={`settings-tab ${activeTab === 'fields' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('fields')}
+                >
+                    <Sliders size={16} />
+                    Field Manager
                 </button>
                 <button
                     className={`settings-tab ${activeTab === 'games' ? 'active' : ''}`}
@@ -339,6 +433,482 @@ export default function Settings() {
                         </div>
                     </SettingSection>
                 </>
+            )}
+
+            {activeTab === 'fields' && (
+                <div className="field-manager">
+                    {/* Statuses Section */}
+                    <SettingSection
+                        icon={CheckSquare}
+                        title="Statuses"
+                        description="Configure workflow statuses for issues"
+                    >
+                        <div className="field-manager-add">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Status name (e.g., Testing)"
+                                value={newFieldValue.statuses?.label || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    statuses: { ...newFieldValue.statuses, label: e.target.value, key: e.target.value.toLowerCase().replace(/\s+/g, '_') }
+                                })}
+                            />
+                            <div className="color-picker-mini">
+                                {colorPresets.slice(0, 8).map(color => (
+                                    <button
+                                        key={color}
+                                        className={`color-dot ${newFieldValue.statuses?.bgColor === color ? 'selected' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => setNewFieldValue({
+                                            ...newFieldValue,
+                                            statuses: { ...newFieldValue.statuses, bgColor: color, textColor: '#FFFFFF' }
+                                        })}
+                                    />
+                                ))}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleAddFieldItem('statuses', { textColor: '#FFFFFF' })}
+                                disabled={!newFieldValue.statuses?.label}
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                        <div className="field-manager-list">
+                            {fieldConfig?.statuses?.map(status => (
+                                <div key={status.id} className="field-item">
+                                    {editingFieldItem === `statuses-${status.id}` ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                value={editFieldValue.statuses?.label || ''}
+                                                onChange={e => setEditFieldValue({
+                                                    ...editFieldValue,
+                                                    statuses: { ...editFieldValue.statuses, label: e.target.value }
+                                                })}
+                                                autoFocus
+                                            />
+                                            <div className="color-picker-mini">
+                                                {colorPresets.slice(0, 8).map(color => (
+                                                    <button
+                                                        key={color}
+                                                        className={`color-dot ${editFieldValue.statuses?.bgColor === color ? 'selected' : ''}`}
+                                                        style={{ backgroundColor: color }}
+                                                        onClick={() => setEditFieldValue({
+                                                            ...editFieldValue,
+                                                            statuses: { ...editFieldValue.statuses, bgColor: color }
+                                                        })}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('statuses', status.id)}>
+                                                <Save size={14} />
+                                            </button>
+                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                <X size={14} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span
+                                                className="field-item-badge"
+                                                style={{ backgroundColor: status.bgColor, color: status.textColor }}
+                                            >
+                                                {status.label}
+                                            </span>
+                                            <span className="field-item-key">{status.key}</span>
+                                            <div className="field-item-actions">
+                                                <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('statuses', status)}>
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('statuses', status.id, status.label)}>
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </SettingSection>
+
+                    {/* Priorities Section */}
+                    <SettingSection
+                        icon={ArrowUp}
+                        title="Priorities"
+                        description="Configure priority levels for issues"
+                    >
+                        <div className="field-manager-add">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Priority name (e.g., Critical)"
+                                value={newFieldValue.priorities?.label || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    priorities: { ...newFieldValue.priorities, label: e.target.value, key: e.target.value.toLowerCase() }
+                                })}
+                            />
+                            <div className="color-picker-mini">
+                                {colorPresets.slice(0, 8).map(color => (
+                                    <button
+                                        key={color}
+                                        className={`color-dot ${newFieldValue.priorities?.color === color ? 'selected' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => setNewFieldValue({
+                                            ...newFieldValue,
+                                            priorities: { ...newFieldValue.priorities, color }
+                                        })}
+                                    />
+                                ))}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleAddFieldItem('priorities', { icon: 'Minus', order: (fieldConfig?.priorities?.length || 0) + 1 })}
+                                disabled={!newFieldValue.priorities?.label}
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                        <div className="field-manager-list">
+                            {fieldConfig?.priorities?.map(priority => {
+                                const IconComp = iconMap[priority.icon] || Minus
+                                return (
+                                    <div key={priority.id} className="field-item">
+                                        {editingFieldItem === `priorities-${priority.id}` ? (
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={editFieldValue.priorities?.label || ''}
+                                                    onChange={e => setEditFieldValue({
+                                                        ...editFieldValue,
+                                                        priorities: { ...editFieldValue.priorities, label: e.target.value }
+                                                    })}
+                                                    autoFocus
+                                                />
+                                                <div className="color-picker-mini">
+                                                    {colorPresets.slice(0, 8).map(color => (
+                                                        <button
+                                                            key={color}
+                                                            className={`color-dot ${editFieldValue.priorities?.color === color ? 'selected' : ''}`}
+                                                            style={{ backgroundColor: color }}
+                                                            onClick={() => setEditFieldValue({
+                                                                ...editFieldValue,
+                                                                priorities: { ...editFieldValue.priorities, color }
+                                                            })}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('priorities', priority.id)}>
+                                                    <Save size={14} />
+                                                </button>
+                                                <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                    <X size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <IconComp size={16} style={{ color: priority.color }} />
+                                                <span className="field-item-label" style={{ color: priority.color }}>{priority.label}</span>
+                                                <span className="field-item-key">{priority.key}</span>
+                                                <div className="field-item-actions">
+                                                    <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('priorities', priority)}>
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('priorities', priority.id, priority.label)}>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </SettingSection>
+
+                    {/* Issue Types Section */}
+                    <SettingSection
+                        icon={Layers}
+                        title="Issue Types"
+                        description="Configure types of issues (Story, Bug, Task, etc.)"
+                    >
+                        <div className="field-manager-add">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Type name (e.g., Feature)"
+                                value={newFieldValue.issueTypes?.label || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    issueTypes: { ...newFieldValue.issueTypes, label: e.target.value, key: e.target.value.toLowerCase() }
+                                })}
+                            />
+                            <div className="color-picker-mini">
+                                {colorPresets.slice(0, 8).map(color => (
+                                    <button
+                                        key={color}
+                                        className={`color-dot ${newFieldValue.issueTypes?.color === color ? 'selected' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => setNewFieldValue({
+                                            ...newFieldValue,
+                                            issueTypes: { ...newFieldValue.issueTypes, color, bgColor: color + '22' }
+                                        })}
+                                    />
+                                ))}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleAddFieldItem('issueTypes', { icon: 'CheckSquare' })}
+                                disabled={!newFieldValue.issueTypes?.label}
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                        <div className="field-manager-list">
+                            {fieldConfig?.issueTypes?.map(type => {
+                                const IconComp = iconMap[type.icon] || CheckSquare
+                                return (
+                                    <div key={type.id} className="field-item">
+                                        {editingFieldItem === `issueTypes-${type.id}` ? (
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    value={editFieldValue.issueTypes?.label || ''}
+                                                    onChange={e => setEditFieldValue({
+                                                        ...editFieldValue,
+                                                        issueTypes: { ...editFieldValue.issueTypes, label: e.target.value }
+                                                    })}
+                                                    autoFocus
+                                                />
+                                                <div className="color-picker-mini">
+                                                    {colorPresets.slice(0, 8).map(color => (
+                                                        <button
+                                                            key={color}
+                                                            className={`color-dot ${editFieldValue.issueTypes?.color === color ? 'selected' : ''}`}
+                                                            style={{ backgroundColor: color }}
+                                                            onClick={() => setEditFieldValue({
+                                                                ...editFieldValue,
+                                                                issueTypes: { ...editFieldValue.issueTypes, color }
+                                                            })}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('issueTypes', type.id)}>
+                                                    <Save size={14} />
+                                                </button>
+                                                <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                    <X size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="field-item-icon" style={{ backgroundColor: type.bgColor || type.color + '22' }}>
+                                                    <IconComp size={14} style={{ color: type.color }} />
+                                                </div>
+                                                <span className="field-item-label">{type.label}</span>
+                                                <span className="field-item-key">{type.key}</span>
+                                                <div className="field-item-actions">
+                                                    <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('issueTypes', type)}>
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('issueTypes', type.id, type.label)}>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </SettingSection>
+
+                    {/* Departments Section */}
+                    <SettingSection
+                        icon={Building2}
+                        title="Departments"
+                        description="Configure departments for issue assignment"
+                    >
+                        <div className="field-manager-add">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Department name"
+                                value={newFieldValue.departments?.name || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    departments: { ...newFieldValue.departments, name: e.target.value }
+                                })}
+                            />
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Code"
+                                value={newFieldValue.departments?.code || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    departments: { ...newFieldValue.departments, code: e.target.value.toUpperCase() }
+                                })}
+                                style={{ width: 80 }}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleAddDepartment}
+                                disabled={!newFieldValue.departments?.name}
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                        <div className="field-manager-list">
+                            {departments?.map(dept => (
+                                <div key={dept.id} className="field-item">
+                                    {editingFieldItem === `departments-${dept.id}` ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                value={editFieldValue.departments?.name || ''}
+                                                onChange={e => setEditFieldValue({
+                                                    ...editFieldValue,
+                                                    departments: { ...editFieldValue.departments, name: e.target.value }
+                                                })}
+                                                autoFocus
+                                            />
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                value={editFieldValue.departments?.code || ''}
+                                                onChange={e => setEditFieldValue({
+                                                    ...editFieldValue,
+                                                    departments: { ...editFieldValue.departments, code: e.target.value.toUpperCase() }
+                                                })}
+                                                style={{ width: 80 }}
+                                            />
+                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveDepartment(dept.id)}>
+                                                <Save size={14} />
+                                            </button>
+                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                <X size={14} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Building2 size={16} style={{ color: 'var(--accent)' }} />
+                                            <span className="field-item-label">{dept.name}</span>
+                                            <span className="field-item-key">{dept.code}</span>
+                                            <div className="field-item-actions">
+                                                <button className="btn btn-sm btn-ghost" onClick={() => {
+                                                    setEditingFieldItem(`departments-${dept.id}`)
+                                                    setEditFieldValue({ departments: { ...dept } })
+                                                }}>
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => {
+                                                    if (confirm(`Delete department "${dept.name}"?`)) {
+                                                        deleteDepartment(dept.id)
+                                                    }
+                                                }}>
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </SettingSection>
+
+                    {/* Labels Section */}
+                    <SettingSection
+                        icon={Tag}
+                        title="Labels"
+                        description="Configure labels/tags for issues"
+                    >
+                        <div className="field-manager-add">
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Label name (e.g., documentation)"
+                                value={newFieldValue.labels?.name || ''}
+                                onChange={e => setNewFieldValue({
+                                    ...newFieldValue,
+                                    labels: { ...newFieldValue.labels, name: e.target.value }
+                                })}
+                            />
+                            <div className="color-picker-mini">
+                                {colorPresets.slice(0, 8).map(color => (
+                                    <button
+                                        key={color}
+                                        className={`color-dot ${newFieldValue.labels?.color === color ? 'selected' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => setNewFieldValue({
+                                            ...newFieldValue,
+                                            labels: { ...newFieldValue.labels, color }
+                                        })}
+                                    />
+                                ))}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleAddFieldItem('labels')}
+                                disabled={!newFieldValue.labels?.name}
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                        <div className="field-manager-list field-manager-labels">
+                            {fieldConfig?.labels?.map(label => (
+                                <div key={label.id} className="field-item-chip">
+                                    {editingFieldItem === `labels-${label.id}` ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                className="input input-sm"
+                                                value={editFieldValue.labels?.name || ''}
+                                                onChange={e => setEditFieldValue({
+                                                    ...editFieldValue,
+                                                    labels: { ...editFieldValue.labels, name: e.target.value }
+                                                })}
+                                                autoFocus
+                                            />
+                                            <button className="btn btn-sm btn-primary" onClick={() => handleSaveFieldItem('labels', label.id)}>
+                                                <Save size={12} />
+                                            </button>
+                                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingFieldItem(null)}>
+                                                <X size={12} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span
+                                                className="label-chip"
+                                                style={{ backgroundColor: label.color + '22', color: label.color, borderColor: label.color }}
+                                            >
+                                                {label.name}
+                                            </span>
+                                            <button className="chip-edit" onClick={() => handleEditFieldItem('labels', label)}>
+                                                <Pencil size={10} />
+                                            </button>
+                                            <button className="chip-delete" onClick={() => handleDeleteFieldItem('labels', label.id, label.name)}>
+                                                <X size={10} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </SettingSection>
+                </div>
             )}
 
             {activeTab === 'games' && (

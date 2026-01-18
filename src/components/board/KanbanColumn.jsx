@@ -2,9 +2,9 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import IssueCard from './IssueCard'
 
-export default function KanbanColumn({ status, issues, fieldConfig }) {
+export default function KanbanColumn({ id, status, issues, fieldConfig, compact = false }) {
     const { setNodeRef, isOver } = useDroppable({
-        id: status
+        id: id || status
     })
 
     // Get config from fieldConfig prop (dynamic from Settings)
@@ -17,25 +17,28 @@ export default function KanbanColumn({ status, issues, fieldConfig }) {
     return (
         <div
             ref={setNodeRef}
-            className={`kanban-column ${status} ${isOver ? 'drag-over' : ''}`}
+            className={`kanban-column ${status} ${isOver ? 'drag-over' : ''} ${compact ? 'compact' : ''}`}
             style={{
                 '--column-color': statusData.bgColor
             }}
         >
-            <div className="kanban-column-header">
-                <div className="kanban-column-title">
-                    <span
-                        className="kanban-column-label"
-                        style={{
-                            backgroundColor: statusData.bgColor,
-                            color: statusData.textColor
-                        }}
-                    >
-                        {statusData.label}
-                    </span>
+            {/* Only show column header in non-compact (non-swimlane) mode */}
+            {!compact && (
+                <div className="kanban-column-header">
+                    <div className="kanban-column-title">
+                        <span
+                            className="kanban-column-label"
+                            style={{
+                                backgroundColor: statusData.bgColor,
+                                color: statusData.textColor
+                            }}
+                        >
+                            {statusData.label}
+                        </span>
+                    </div>
+                    <span className="kanban-column-count">{issues.length}</span>
                 </div>
-                <span className="kanban-column-count">{issues.length}</span>
-            </div>
+            )}
 
             <div className="kanban-column-body">
                 <SortableContext
@@ -48,14 +51,7 @@ export default function KanbanColumn({ status, issues, fieldConfig }) {
                 </SortableContext>
 
                 {issues.length === 0 && (
-                    <div
-                        style={{
-                            padding: 'var(--space-4)',
-                            textAlign: 'center',
-                            color: 'var(--text-tertiary)',
-                            fontSize: 'var(--font-size-sm)'
-                        }}
-                    >
+                    <div className="kanban-column-empty">
                         No issues
                     </div>
                 )}
@@ -63,4 +59,3 @@ export default function KanbanColumn({ status, issues, fieldConfig }) {
         </div>
     )
 }
-

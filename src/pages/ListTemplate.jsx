@@ -25,7 +25,8 @@ import {
     ChevronsRight,
     AlertTriangle,
     User,
-    EyeOff
+    EyeOff,
+    CornerDownLeft
 } from 'lucide-react'
 
 // Type icons configuration
@@ -355,6 +356,10 @@ export default function ListTemplate() {
     // Inline create state
     const [creatingInGroup, setCreatingInGroup] = useState(null)
     const [newIssueSummary, setNewIssueSummary] = useState('')
+    const [quickCreateAssignee, setQuickCreateAssignee] = useState('')
+    const [quickCreateDueDate, setQuickCreateDueDate] = useState('')
+    const [showQuickAssignee, setShowQuickAssignee] = useState(null)
+    const [showQuickDate, setShowQuickDate] = useState(null)
 
     // Epic creation state for dropdown
     const [showEpicCreate, setShowEpicCreate] = useState(false)
@@ -588,14 +593,19 @@ export default function ListTemplate() {
             summary: newIssueSummary.trim(),
             description: '',
             sprintId: groupBy === 'sprint' && groupId !== 'backlog' ? groupId : null,
-            assigneeId: null,
+            assigneeId: quickCreateAssignee || null,
+            dueDate: quickCreateDueDate || null,
             storyPoints: null,
             labels: [],
             reporterId: 'user-1'
         })
 
         setNewIssueSummary('')
+        setQuickCreateAssignee('')
+        setQuickCreateDueDate('')
         setCreatingInGroup(null)
+        setShowQuickAssignee(null)
+        setShowQuickDate(null)
     }
 
     // Handle row selection
@@ -1681,37 +1691,107 @@ export default function ListTemplate() {
                                         )
                                     })}
 
-                                    {/* Inline Create Row */}
-                                    {creatingInGroup === group.id && (
-                                        <div className="list-template-row create-row">
-                                            <div className="pinned-columns">
-                                                <div className="cell checkbox" />
-                                                <div className="cell type">
-                                                    <TypeIcon type="story" />
-                                                </div>
-                                                <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
-                                                    <span className="new-key">NEW</span>
-                                                </div>
-                                                <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
-                                                    <input
-                                                        type="text"
-                                                        className="inline-create-input"
-                                                        placeholder="What needs to be done?"
-                                                        value={newIssueSummary}
-                                                        onChange={e => setNewIssueSummary(e.target.value)}
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter') handleCreateIssue(group.id)
-                                                            if (e.key === 'Escape') setCreatingInGroup(null)
-                                                        }}
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="scrollable-columns">
-                                                <div className="cell" style={{ width: 120 }} />
+                                    {/* Quick Create Footer */}
+                                    <div className="quick-create-footer">
+                                        <div className="quick-create-type">
+                                            <TypeIcon type="story" />
+                                        </div>
+                                        <div className="quick-create-input-wrapper">
+                                            <input
+                                                type="text"
+                                                className="quick-create-input"
+                                                placeholder="What needs to be done?"
+                                                value={creatingInGroup === group.id ? newIssueSummary : ''}
+                                                onChange={e => {
+                                                    setCreatingInGroup(group.id)
+                                                    setNewIssueSummary(e.target.value)
+                                                }}
+                                                onFocus={() => setCreatingInGroup(group.id)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') handleCreateIssue(group.id)
+                                                    if (e.key === 'Escape') {
+                                                        setCreatingInGroup(null)
+                                                        setNewIssueSummary('')
+                                                    }
+                                                }}
+                                            />
+                                            <div className="quick-create-actions">
+                                                {/* Due Date Picker */}
+                                                <button
+                                                    className={`quick-create-action-btn ${quickCreateDueDate ? 'active' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setShowQuickDate(showQuickDate === group.id ? null : group.id)
+                                                        setShowQuickAssignee(null)
+                                                    }}
+                                                    title="Set due date"
+                                                >
+                                                    <Calendar size={16} />
+                                                </button>
+                                                {showQuickDate === group.id && (
+                                                    <div className="quick-create-dropdown" onClick={e => e.stopPropagation()}>
+                                                        <input
+                                                            type="date"
+                                                            className="input"
+                                                            value={quickCreateDueDate}
+                                                            onChange={e => {
+                                                                setQuickCreateDueDate(e.target.value)
+                                                                setShowQuickDate(null)
+                                                            }}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {/* Assignee Picker */}
+                                                <button
+                                                    className={`quick-create-action-btn ${quickCreateAssignee ? 'active' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setShowQuickAssignee(showQuickAssignee === group.id ? null : group.id)
+                                                        setShowQuickDate(null)
+                                                    }}
+                                                    title="Assign to"
+                                                >
+                                                    <User size={16} />
+                                                </button>
+                                                {showQuickAssignee === group.id && (
+                                                    <div className="quick-create-dropdown assignee" onClick={e => e.stopPropagation()}>
+                                                        <button
+                                                            className={`quick-assign-option ${!quickCreateAssignee ? 'selected' : ''}`}
+                                                            onClick={() => {
+                                                                setQuickCreateAssignee('')
+                                                                setShowQuickAssignee(null)
+                                                            }}
+                                                        >
+                                                            Unassigned
+                                                        </button>
+                                                        {users.map(user => (
+                                                            <button
+                                                                key={user.id}
+                                                                className={`quick-assign-option ${quickCreateAssignee === user.id ? 'selected' : ''}`}
+                                                                onClick={() => {
+                                                                    setQuickCreateAssignee(user.id)
+                                                                    setShowQuickAssignee(null)
+                                                                }}
+                                                            >
+                                                                <span className="avatar xs">{user.name.charAt(0)}</span>
+                                                                {user.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
+                                        <button
+                                            className="quick-create-submit"
+                                            onClick={() => handleCreateIssue(group.id)}
+                                            disabled={creatingInGroup !== group.id || !newIssueSummary.trim()}
+                                        >
+                                            <CornerDownLeft size={14} />
+                                            Create
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

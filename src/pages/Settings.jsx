@@ -852,9 +852,6 @@ export default function Settings() {
                                                             <button className="btn btn-sm btn-ghost" onClick={() => handleEditFieldItem('issueTypes', type)}>
                                                                 <Pencil size={14} />
                                                             </button>
-                                                            <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => handleDeleteFieldItem('issueTypes', type.id, type.label)}>
-                                                                <Trash2 size={14} />
-                                                            </button>
                                                         </div>
                                                     </>
                                                 )}

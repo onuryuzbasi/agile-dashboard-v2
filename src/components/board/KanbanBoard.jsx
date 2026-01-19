@@ -1,11 +1,13 @@
 import {
     DndContext,
     DragOverlay,
+    pointerWithin,
     closestCorners,
     KeyboardSensor,
     PointerSensor,
     useSensor,
-    useSensors
+    useSensors,
+    MeasuringStrategy
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useState, useMemo } from 'react'
@@ -319,10 +321,15 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={pointerWithin}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            measuring={{
+                droppable: {
+                    strategy: MeasuringStrategy.Always
+                }
+            }}
         >
             <div className={`kanban-board ${groupBy !== 'none' ? 'with-swimlanes' : ''}`}>
                 {groupBy === 'none' ? (

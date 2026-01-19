@@ -356,6 +356,11 @@ export const useProjectStore = create(
                 return get().issues.filter(i => i.sprintId === sprintId)
             },
 
+            // Backlog issues (no sprint assigned)
+            getBacklogIssues: () => {
+                return get().issues.filter(i => !i.sprintId)
+            },
+
             // User actions
             getUserById: (userId) => {
                 return get().users.find(u => u.id === userId)

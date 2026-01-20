@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
+import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import {
     Plus,
     GripVertical,
@@ -72,7 +73,13 @@ export default function Backlog() {
         updateIssue,
         deleteIssue,
         addSprint,
-        softDeleteIssues
+        softDeleteIssues,
+        fieldConfig,
+        games,
+        departments,
+        savedFilters,
+        addSavedFilter,
+        deleteSavedFilter
     } = useProjectStore()
 
     // Filter state
@@ -93,6 +100,16 @@ export default function Backlog() {
     const [allEpicsSearchQuery, setAllEpicsSearchQuery] = useState('')
     const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('')
     const [sprintMenuOpen, setSprintMenuOpen] = useState(null)
+
+    // Global Faceted Filter state
+    const [showFilterMenu, setShowFilterMenu] = useState(false)
+    const [filterTypes, setFilterTypes] = useState(new Set())
+    const [filterStatuses, setFilterStatuses] = useState(new Set())
+    const [filterPriorities, setFilterPriorities] = useState(new Set())
+    const [filterGames, setFilterGames] = useState(new Set())
+    const [filterDepartments, setFilterDepartments] = useState(new Set())
+    const [filterLabels, setFilterLabels] = useState(new Set())
+    const [filterReporters, setFilterReporters] = useState(new Set())
 
     // Multi-select state
     const [selectedIssues, setSelectedIssues] = useState(new Set())
@@ -145,10 +162,43 @@ export default function Backlog() {
                     return false
                 }
             }
-            // Assignee filter
+            // Assignee filter (from avatar buttons)
             if (selectedAssignees.length > 0 && !selectedAssignees.includes(issue.assigneeId)) {
                 return false
             }
+
+            // === Faceted Filter criteria ===
+            // Type filter
+            if (filterTypes.size > 0 && !filterTypes.has(issue.type)) {
+                return false
+            }
+            // Status filter
+            if (filterStatuses.size > 0 && !filterStatuses.has(issue.status)) {
+                return false
+            }
+            // Priority filter
+            if (filterPriorities.size > 0 && !filterPriorities.has(issue.priority)) {
+                return false
+            }
+            // Game filter
+            if (filterGames.size > 0 && !filterGames.has(issue.gameId)) {
+                return false
+            }
+            // Department filter
+            if (filterDepartments.size > 0 && !filterDepartments.has(issue.departmentId)) {
+                return false
+            }
+            // Label filter
+            if (filterLabels.size > 0) {
+                const issueLabels = issue.labels || []
+                const hasMatchingLabel = [...filterLabels].some(label => issueLabels.includes(label))
+                if (!hasMatchingLabel) return false
+            }
+            // Reporter filter
+            if (filterReporters.size > 0 && !filterReporters.has(issue.reporterId)) {
+                return false
+            }
+
             return true
         })
     }
@@ -201,9 +251,21 @@ export default function Backlog() {
         setSearchQuery('')
         setSelectedEpics([])
         setSelectedAssignees([])
+        // Clear faceted filters
+        setFilterTypes(new Set())
+        setFilterStatuses(new Set())
+        setFilterPriorities(new Set())
+        setFilterGames(new Set())
+        setFilterDepartments(new Set())
+        setFilterLabels(new Set())
+        setFilterReporters(new Set())
     }
 
-    const hasFilters = searchQuery || selectedEpics.length > 0 || selectedAssignees.length > 0
+    // Count active faceted filters
+    const facetedFilterCount = filterTypes.size + filterStatuses.size + filterPriorities.size +
+        filterGames.size + filterDepartments.size + filterLabels.size + filterReporters.size
+
+    const hasFilters = searchQuery || selectedEpics.length > 0 || selectedAssignees.length > 0 || facetedFilterCount > 0
 
     // Handle inline issue creation
     const handleCreateIssue = (sprintId) => {
@@ -915,11 +977,66 @@ export default function Backlog() {
                         )}
                     </div>
 
-                    <button className="btn btn-sm btn-secondary">
-                        <Filter size={14} />
-                        Quick filters
-                        <ChevronDown size={14} />
-                    </button>
+                    {/* Global Faceted Filter Menu */}
+                    <div className="filter-popover-container" style={{ position: 'relative' }}>
+                        <button
+                            className={`btn btn-sm btn-secondary ${facetedFilterCount > 0 ? 'has-filters' : ''}`}
+                            onClick={() => setShowFilterMenu(!showFilterMenu)}
+                        >
+                            <Filter size={14} />
+                            Filter
+                            {facetedFilterCount > 0 && <span className="filter-count">{facetedFilterCount}</span>}
+                        </button>
+                        <FacetedFilterMenu
+                            isOpen={showFilterMenu}
+                            onClose={() => setShowFilterMenu(false)}
+                            issues={issues}
+                            users={users}
+                            sprints={sprints}
+                            games={games}
+                            departments={departments}
+                            fieldConfig={fieldConfig}
+                            filters={{
+                                type: filterTypes,
+                                status: filterStatuses,
+                                priority: filterPriorities,
+                                assignee: new Set(selectedAssignees),
+                                epic: new Set(selectedEpics),
+                                game: filterGames,
+                                department: filterDepartments,
+                                labels: filterLabels,
+                                reporter: filterReporters
+                            }}
+                            onFilterChange={(field, values) => {
+                                const arr = Array.from(values)
+                                if (field === 'type') setFilterTypes(values)
+                                else if (field === 'status') setFilterStatuses(values)
+                                else if (field === 'priority') setFilterPriorities(values)
+                                else if (field === 'assignee') setSelectedAssignees(arr)
+                                else if (field === 'epic') setSelectedEpics(arr)
+                                else if (field === 'game') setFilterGames(values)
+                                else if (field === 'department') setFilterDepartments(values)
+                                else if (field === 'labels') setFilterLabels(values)
+                                else if (field === 'reporter') setFilterReporters(values)
+                            }}
+                            onClearAll={clearFilters}
+                            savedFilters={savedFilters}
+                            onSaveFilter={addSavedFilter}
+                            onDeleteSavedFilter={deleteSavedFilter}
+                            onApplySavedFilter={(filterData) => {
+                                // Apply all filter criteria from saved filter
+                                setFilterTypes(new Set(filterData.type || []))
+                                setFilterStatuses(new Set(filterData.status || []))
+                                setFilterPriorities(new Set(filterData.priority || []))
+                                setSelectedAssignees(filterData.assignee || [])
+                                setSelectedEpics(filterData.epic || [])
+                                setFilterGames(new Set(filterData.game || []))
+                                setFilterDepartments(new Set(filterData.department || []))
+                                setFilterLabels(new Set(filterData.labels || []))
+                                setFilterReporters(new Set(filterData.reporter || []))
+                            }}
+                        />
+                    </div>
 
                     {hasFilters && (
                         <button

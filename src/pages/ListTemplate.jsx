@@ -1522,8 +1522,9 @@ export default function ListTemplate() {
     // Get label options - now uses dynamic config from store
     const getLabelOptions = () => {
         return (fieldConfig?.labels || []).map(label => ({
-            value: label.key,
-            label: label.label
+            value: label.name,
+            label: label.name,
+            color: label.color
         }))
     }
 

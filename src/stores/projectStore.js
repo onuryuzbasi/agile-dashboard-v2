@@ -668,6 +668,9 @@ export const useProjectStore = create(
 
             // UI state
             setTheme: (theme) => set({ theme }),
+            toggleTheme: () => set((state) => ({
+                theme: state.theme === 'dark' ? 'light' : 'dark'
+            })),
             toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),
             openCreateIssueModal: (defaultType = 'story') => set({

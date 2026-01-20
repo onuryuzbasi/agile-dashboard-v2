@@ -2,24 +2,38 @@
 
 /* ===== CSS Variables (Design Tokens) ===== */
 :root {
-  /* Colors - Light Mode */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-hover: #e2e8f0;
+  /* Colors - Light Mode (Refined with 3-Layer Depth) */
+  /* Layer 0: Canvas - Main background (NOT pure white) */
+  --bg-canvas: #F4F5F7;
+  /* Layer 1: Surface - Sidebar, Header, Cards */
+  --bg-surface: #FFFFFF;
+  /* Layer 2: Elevated - Modals, Dropdowns, Hover states */
+  --bg-elevated: #FFFFFF;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #ffffff;
+  /* Legacy aliases (for backwards compatibility) */
+  --bg-primary: var(--bg-canvas);
+  --bg-secondary: var(--bg-surface);
+  --bg-tertiary: #E4E6EB;
+  --bg-hover: #EBECF0;
 
-  --border-primary: #e2e8f0;
-  --border-secondary: #cbd5e1;
+  /* Typography - Navy (NOT pure black) */
+  --text-primary: #172B4D;
+  --text-secondary: #5E6C84;
+  --text-tertiary: #97A0AF;
+  --text-inverse: #FFFFFF;
+
+  /* Borders - Refined for depth */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: #DFE1E6;
+  --border-strong: #C1C7D0;
+  /* Legacy aliases */
+  --border-primary: var(--border-default);
+  --border-secondary: var(--border-strong);
 
   /* Accent Colors */
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-light: #e0e7ff;
+  --accent: #0052CC;
+  --accent-hover: #0747A6;
+  --accent-light: #DEEBFF;
 
   /* Semantic Colors */
   --success: #22c55e;
@@ -51,11 +65,11 @@
   --status-review: #a855f7;
   --status-done: #22c55e;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  /* Shadows - Softer for light mode */
+  --shadow-sm: 0 1px 2px 0 rgba(9, 30, 66, 0.08);
+  --shadow-md: 0 4px 8px -2px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
+  --shadow-lg: 0 8px 16px -4px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31);
+  --shadow-xl: 0 12px 24px -6px rgba(9, 30, 66, 0.18), 0 0 1px rgba(9, 30, 66, 0.31);
 
   /* Spacing */
   --space-1: 4px;
@@ -96,7 +110,7 @@
   --header-height: 64px;
 
   /* Accent RGB for rgba usage */
-  --accent-rgb: 99, 102, 241;
+  --accent-rgb: 0, 82, 204;
 }
 
 /* App Loading Screen */
@@ -126,28 +140,46 @@
   }
 }
 
-/* Dark Mode */
+/* Dark Mode - 3-Layer Depth System */
 [data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-hover: #475569;
+  /* Layer 0: Canvas - Deep, cool gray/blue base */
+  --bg-canvas: #0d1117;
+  /* Layer 1: Surface - Sidebar, Header (distinct from canvas) */
+  --bg-surface: #161b22;
+  /* Layer 2: Elevated - Cards, Table rows, Modals */
+  --bg-elevated: #21262d;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #64748b;
-  --text-inverse: #0f172a;
+  /* Legacy aliases */
+  --bg-primary: var(--bg-canvas);
+  --bg-secondary: var(--bg-surface);
+  --bg-tertiary: var(--bg-elevated);
+  --bg-hover: #30363d;
 
-  --border-primary: #334155;
-  --border-secondary: #475569;
+  /* Typography */
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-tertiary: #6e7681;
+  --text-inverse: #0d1117;
 
-  --accent: #818cf8;
-  --accent-hover: #a5b4fc;
-  --accent-light: #312e81;
+  /* Borders - Increased contrast for visibility */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: #30363d;
+  --border-strong: #484f58;
+  /* Legacy aliases */
+  --border-primary: var(--border-default);
+  --border-secondary: var(--border-strong);
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  /* Accent Colors */
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --accent-light: #1f3a5f;
+  --accent-rgb: 88, 166, 255;
+
+  /* Shadows - Stronger for dark mode depth */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-xl: 0 12px 24px -6px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* ===== Reset & Base ===== */
@@ -248,6 +280,7 @@ h4 {
   flex-direction: column;
   transition: margin-left var(--transition-normal);
   overflow: hidden;
+  background: var(--bg-canvas);
 }
 
 .main-content.collapsed {
@@ -360,8 +393,8 @@ h4 {
 
 /* Card */
 .card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   transition: all var(--transition-fast);
@@ -1548,8 +1581,8 @@ h4 {
 
 /* Issue Card */
 .issue-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   cursor: grab;
@@ -1621,6 +1654,7 @@ h4 {
   margin-bottom: var(--space-3);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1654,8 +1688,8 @@ h4 {
   top: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-primary);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   z-index: 40;
@@ -3786,13 +3820,13 @@ h4 {
   display: flex;
   align-items: center;
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-default);
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   cursor: pointer;
   transition: background var(--transition-fast);
   min-width: max-content;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-elevated);
   min-height: 48px;
   isolation: isolate;
 }

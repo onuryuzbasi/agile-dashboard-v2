@@ -731,12 +731,13 @@ export const useProjectStore = create(
         }),
         {
             name: 'agile-dashboard-store',
-            // Only persist UI state, not data (data comes from Supabase)
+            // Persist UI state and saved filters (data comes from Supabase)
             partialize: (state) => ({
                 theme: state.theme,
                 sidebarCollapsed: state.sidebarCollapsed,
                 currentProjectId: state.currentProjectId,
-                currentSprintId: state.currentSprintId
+                currentSprintId: state.currentSprintId,
+                savedFilters: state.savedFilters // Persist saved filters for offline access
             })
         }
     )

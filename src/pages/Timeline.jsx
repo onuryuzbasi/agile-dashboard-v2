@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useProjectStore } from '../stores/projectStore'
+import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import {
     ChevronRight,
     ChevronDown,
@@ -14,7 +15,8 @@ import {
     Square,
     Search,
     ChevronLeft,
-    ListTree
+    ListTree,
+    Bookmark
 } from 'lucide-react'
 import { getIconByName } from '../config/fieldConfig'
 
@@ -111,7 +113,10 @@ export default function Timeline() {
     const {
         issues, sprints, users, games, departments,
         fieldConfig,
-        setSelectedIssue, updateIssue
+        setSelectedIssue, updateIssue,
+        savedFilters,
+        addSavedFilter,
+        deleteSavedFilter
     } = useProjectStore()
 
     // Build dynamic configs from fieldConfig
@@ -158,6 +163,7 @@ export default function Timeline() {
     const [zoomLevel, setZoomLevel] = useState('weeks')
     const [timelineOffset, setTimelineOffset] = useState(0)
     const [dragState, setDragState] = useState(null)
+    const [showFilterMenu, setShowFilterMenu] = useState(false)
 
     // Refs for synchronized scrolling
     const headerScrollRef = useRef(null)
@@ -553,6 +559,72 @@ export default function Timeline() {
                     <input type="text" placeholder="Search issues..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     {searchQuery && <button onClick={() => setSearchQuery('')}><X size={14} /></button>}
                 </div>
+                <div className="filter-divider" />
+
+                {/* Saved Filters / FacetedFilterMenu Button */}
+                <div className="timeline-saved-filters-container" style={{ position: 'relative' }}>
+                    <button
+                        className={`btn btn-secondary timeline-saved-btn ${savedFilters?.length > 0 ? 'has-saved' : ''}`}
+                        onClick={() => setShowFilterMenu(!showFilterMenu)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px' }}
+                    >
+                        <Bookmark size={14} />
+                        Saved Filters
+                        {savedFilters?.length > 0 && <span className="filter-count">{savedFilters.length}</span>}
+                    </button>
+                    <FacetedFilterMenu
+                        issues={activeIssues}
+                        users={users}
+                        sprints={sprints}
+                        games={games}
+                        departments={departments}
+                        fieldConfig={fieldConfig}
+                        filters={{
+                            type: new Set(),
+                            status: new Set(statusFilter),
+                            priority: new Set(priorityFilter),
+                            assignee: new Set(assigneeFilter),
+                            sprint: new Set(sprintFilter),
+                            game: new Set(gameFilter),
+                            department: new Set(departmentFilter),
+                            epic: new Set(epicFilter)
+                        }}
+                        onFilterChange={(field, values) => {
+                            const arr = Array.from(values)
+                            if (field === 'status') setStatusFilter(arr)
+                            else if (field === 'priority') setPriorityFilter(arr)
+                            else if (field === 'assignee') setAssigneeFilter(arr)
+                            else if (field === 'sprint') setSprintFilter(arr)
+                            else if (field === 'game') setGameFilter(arr)
+                            else if (field === 'department') setDepartmentFilter(arr)
+                            else if (field === 'epic') setEpicFilter(arr)
+                        }}
+                        onClearAll={() => {
+                            setEpicFilter([])
+                            setStatusFilter([])
+                            setPriorityFilter([])
+                            setAssigneeFilter([])
+                            setSprintFilter([])
+                            setGameFilter([])
+                            setDepartmentFilter([])
+                        }}
+                        isOpen={showFilterMenu}
+                        onClose={() => setShowFilterMenu(false)}
+                        savedFilters={savedFilters || []}
+                        onSaveFilter={(name, filterData) => addSavedFilter?.({ name, filters: filterData })}
+                        onDeleteSavedFilter={(filterId) => deleteSavedFilter?.(filterId)}
+                        onApplySavedFilter={(filterData) => {
+                            setEpicFilter(filterData.epic || [])
+                            setStatusFilter(filterData.status || [])
+                            setPriorityFilter(filterData.priority || [])
+                            setAssigneeFilter(filterData.assignee || [])
+                            setSprintFilter(filterData.sprint || [])
+                            setGameFilter(filterData.game || [])
+                            setDepartmentFilter(filterData.department || [])
+                        }}
+                    />
+                </div>
+
                 <div className="filter-divider" />
                 <Filter size={16} className="filter-icon" />
                 <MultiSelectDropdown label="Epic" options={epicOptions} selected={epicFilter} onChange={setEpicFilter} />

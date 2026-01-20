@@ -228,7 +228,8 @@ export default function FacetedFilterMenu({
                 serializedFilters[key] = Array.from(set)
             }
         })
-        onSaveFilter?.(filterName.trim(), serializedFilters)
+        // Pass as object with name and filters properties
+        onSaveFilter?.({ name: filterName.trim(), filters: serializedFilters })
         setFilterName('')
         setShowSaveModal(false)
     }

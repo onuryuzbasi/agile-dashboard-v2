@@ -22,7 +22,7 @@ export default function CreateIssueModal() {
     const {
         createIssueModalOpen,
         createIssueDefaultType,
-        closeCreateModal,
+        closeCreateIssueModal,
         addIssue,
         users,
         sprints,
@@ -35,28 +35,30 @@ export default function CreateIssueModal() {
         description: '',
         priority: 'medium',
         assigneeId: '',
+        reporterId: '',
         sprintId: '',
-        parentId: '',
-        storyPoints: ''
+        parentId: ''
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Default reporter to first user (or could be current logged-in user)
+    const defaultReporterId = users?.[0]?.id || ''
 
     // Reset form when modal opens with default type
     useEffect(() => {
         if (createIssueModalOpen) {
-            setFormData(prev => ({
-                ...prev,
-                type: createIssueDefaultType,
+            setFormData({
+                type: createIssueDefaultType || 'story',
                 summary: '',
                 description: '',
                 priority: 'medium',
                 assigneeId: '',
+                reporterId: defaultReporterId,
                 sprintId: '',
-                parentId: '',
-                storyPoints: ''
-            }))
+                parentId: ''
+            })
         }
-    }, [createIssueModalOpen, createIssueDefaultType])
+    }, [createIssueModalOpen, createIssueDefaultType, defaultReporterId])
 
     if (!createIssueModalOpen) return null
 
@@ -68,37 +70,51 @@ export default function CreateIssueModal() {
 
         setIsSubmitting(true)
 
-        const newIssue = {
-            type: formData.type,
-            summary: formData.summary.trim(),
-            description: formData.description.trim(),
-            priority: formData.priority,
-            status: 'todo',
-            assigneeId: formData.assigneeId || null,
-            sprintId: formData.sprintId || null,
-            parentId: formData.type !== 'epic' && formData.parentId ? formData.parentId : null,
-            storyPoints: formData.storyPoints ? parseInt(formData.storyPoints) : null,
-            startDate: new Date().toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        }
+        try {
+            const newIssue = {
+                type: formData.type,
+                summary: formData.summary.trim(),
+                description: formData.description.trim(),
+                priority: formData.priority,
+                status: 'todo',
+                assigneeId: formData.assigneeId || null,
+                reporterId: formData.reporterId || null,
+                sprintId: formData.sprintId || null,
+                parentId: formData.type !== 'epic' && formData.parentId ? formData.parentId : null,
+                startDate: new Date().toISOString().split('T')[0],
+                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            }
 
-        addIssue(newIssue)
-        setIsSubmitting(false)
-        closeCreateModal()
+            // Await the async addIssue call
+            await addIssue(newIssue)
+
+            // Close modal after successful creation
+            closeCreateIssueModal()
+        } catch (error) {
+            console.error('Failed to create issue:', error)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleClose = () => {
+        if (!isSubmitting) {
+            closeCreateIssueModal()
+        }
     }
 
     const selectedType = typeOptions.find(t => t.value === formData.type)
     const TypeIcon = selectedType?.icon || BookOpen
 
     return (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeCreateModal()}>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && handleClose()}>
             <div className="create-issue-modal">
                 <div className="modal-header">
                     <div className="modal-title-row">
                         <TypeIcon size={20} style={{ color: selectedType?.color }} />
                         <h2>Create Issue</h2>
                     </div>
-                    <button className="btn btn-icon btn-ghost" onClick={closeCreateModal}>
+                    <button className="btn btn-icon btn-ghost" onClick={handleClose} disabled={isSubmitting}>
                         <X size={20} />
                     </button>
                 </div>
@@ -117,6 +133,7 @@ export default function CreateIssueModal() {
                                         className={`type-option ${formData.type === opt.value ? 'selected' : ''}`}
                                         onClick={() => setFormData(prev => ({ ...prev, type: opt.value }))}
                                         style={{ '--type-color': opt.color }}
+                                        disabled={isSubmitting}
                                     >
                                         <Icon size={16} />
                                         {opt.label}
@@ -136,6 +153,7 @@ export default function CreateIssueModal() {
                             value={formData.summary}
                             onChange={(e) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
                             autoFocus
+                            disabled={isSubmitting}
                         />
                     </div>
 
@@ -148,10 +166,11 @@ export default function CreateIssueModal() {
                             rows={3}
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            disabled={isSubmitting}
                         />
                     </div>
 
-                    {/* Two Column Layout */}
+                    {/* Two Column Layout: Priority & Reporter */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Priority</label>
@@ -159,6 +178,7 @@ export default function CreateIssueModal() {
                                 className="input"
                                 value={formData.priority}
                                 onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+                                disabled={isSubmitting}
                             >
                                 {priorityOptions.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -167,15 +187,18 @@ export default function CreateIssueModal() {
                         </div>
 
                         <div className="form-group">
-                            <label>Story Points</label>
-                            <input
-                                type="number"
+                            <label>Reporter</label>
+                            <select
                                 className="input"
-                                placeholder="Points"
-                                min="0"
-                                value={formData.storyPoints}
-                                onChange={(e) => setFormData(prev => ({ ...prev, storyPoints: e.target.value }))}
-                            />
+                                value={formData.reporterId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, reporterId: e.target.value }))}
+                                disabled={isSubmitting}
+                            >
+                                <option value="">Select Reporter</option>
+                                {users.map(user => (
+                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -186,6 +209,7 @@ export default function CreateIssueModal() {
                                 className="input"
                                 value={formData.assigneeId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, assigneeId: e.target.value }))}
+                                disabled={isSubmitting}
                             >
                                 <option value="">Unassigned</option>
                                 {users.map(user => (
@@ -200,6 +224,7 @@ export default function CreateIssueModal() {
                                 className="input"
                                 value={formData.sprintId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, sprintId: e.target.value }))}
+                                disabled={isSubmitting}
                             >
                                 <option value="">Backlog</option>
                                 {sprints.map(sprint => (
@@ -217,6 +242,7 @@ export default function CreateIssueModal() {
                                 className="input"
                                 value={formData.parentId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
+                                disabled={isSubmitting}
                             >
                                 <option value="">None</option>
                                 {epics.map(epic => (
@@ -228,7 +254,7 @@ export default function CreateIssueModal() {
 
                     {/* Actions */}
                     <div className="modal-actions">
-                        <button type="button" className="btn btn-secondary" onClick={closeCreateModal}>
+                        <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={isSubmitting}>
                             Cancel
                         </button>
                         <button

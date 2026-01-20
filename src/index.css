@@ -6596,11 +6596,117 @@ h4 {
 
 .list-template-row .cell.key {
   width: 100px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
   flex-shrink: 0;
+}
+
+/* Epic row styling */
+.list-template-row.epic-row {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.05) 0%, transparent 100%);
+}
+
+[data-theme="dark"] .list-template-row.epic-row {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, transparent 100%);
+}
+
+.list-template-row.epic-row .pinned-columns {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.08) 0%, #FFFFFF 100%);
+}
+
+[data-theme="dark"] .list-template-row.epic-row .pinned-columns {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, var(--bg-primary) 100%);
+}
+
+/* Epic expand button */
+.epic-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.epic-expand-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Child count badge */
+.child-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6B778C;
+  background: #DFE1E6;
+  border-radius: 8px;
+  margin-left: 4px;
+}
+
+[data-theme="dark"] .child-count-badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Child issues container */
+.child-issues-container {
+  margin-left: 0;
+}
+
+/* Child row styling - indented */
+.list-template-row.child-row {
+  background: #FAFBFC;
+}
+
+[data-theme="dark"] .list-template-row.child-row {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.list-template-row.child-row .pinned-columns {
+  background: #FAFBFC;
+}
+
+[data-theme="dark"] .list-template-row.child-row .pinned-columns {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Child row checkbox with indentation */
+.list-template-row.child-row .cell.checkbox.child-indent {
+  padding-left: 20px;
+}
+
+/* Child row left border indicator */
+.list-template-row.child-row::before {
+  content: '';
+  position: absolute;
+  left: 40px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--epic);
+  opacity: 0.5;
+}
+
+.list-template-row.child-row:hover {
+  background: #F4F5F7;
+}
+
+[data-theme="dark"] .list-template-row.child-row:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .list-template-row .cell.summary {

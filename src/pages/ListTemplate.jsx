@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import {
@@ -409,6 +409,9 @@ export default function ListTemplate() {
     const [activeDatePicker, setActiveDatePicker] = useState(null)
     const [showCompleted, setShowCompleted] = useState(false)
 
+    // Expanded epics for tree-grid hierarchy
+    const [expandedEpics, setExpandedEpics] = useState(new Set())
+
     // Filter state
     const [showFilterMenu, setShowFilterMenu] = useState(false)
     const [filterAssignees, setFilterAssignees] = useState(new Set())
@@ -499,17 +502,53 @@ export default function ListTemplate() {
         return () => document.removeEventListener('click', handler)
     }, [])
 
-    // Get active (non-deleted, non-epic) issues
-    const activeIssues = useMemo(() =>
-        issues.filter(i => !i.isDeleted && i.type !== 'epic'),
+    // Get ALL active (non-deleted) issues including epics for tree-grid
+    const allActiveIssues = useMemo(() =>
+        issues.filter(i => !i.isDeleted),
         [issues]
     )
 
-    // Get epics for parent lookup
+    // Get epics for parent lookup and tree hierarchy
     const epics = useMemo(() =>
         issues.filter(i => !i.isDeleted && i.type === 'epic'),
         [issues]
     )
+
+    // Get child issues (non-epics) for hierarchical rendering
+    const nonEpicIssues = useMemo(() =>
+        issues.filter(i => !i.isDeleted && i.type !== 'epic'),
+        [issues]
+    )
+
+    // For backwards compatibility, use allActiveIssues
+    const activeIssues = allActiveIssues
+
+    // Toggle epic expansion
+    const toggleEpicExpansion = (epicId) => {
+        setExpandedEpics(prev => {
+            const next = new Set(prev)
+            if (next.has(epicId)) {
+                next.delete(epicId)
+            } else {
+                next.add(epicId)
+            }
+            return next
+        })
+    }
+
+    // Get child issues for an epic
+    const getChildIssues = (epicId) => {
+        return nonEpicIssues.filter(i => i.parentId === epicId)
+    }
+
+    // Check if issue is a top-level item (epic or orphan issue without parent)
+    const isTopLevelIssue = (issue) => {
+        if (issue.type === 'epic') return true
+        // Non-epic without parent or with non-existent parent
+        if (!issue.parentId) return true
+        const parentExists = epics.some(e => e.id === issue.parentId)
+        return !parentExists
+    }
 
     // Calculate total scrollable columns width dynamically
     const scrollableWidth = useMemo(() => {
@@ -542,9 +581,12 @@ export default function ListTemplate() {
         })
     }
 
-    // Get grouped issues
+    // Get grouped issues (only top-level: epics and orphan issues without parent)
     const getGroupedIssues = () => {
         const groups = []
+
+        // Get top-level issues only
+        const topLevelIssues = activeIssues.filter(issue => isTopLevelIssue(issue))
 
         if (groupBy === 'sprint') {
             // Always show non-closed sprints first
@@ -557,7 +599,7 @@ export default function ListTemplate() {
             })
 
             sortedSprints.forEach(sprint => {
-                const sprintIssues = activeIssues.filter(i => i.sprintId === sprint.id)
+                const sprintIssues = topLevelIssues.filter(i => i.sprintId === sprint.id)
                 groups.push({
                     id: sprint.id,
                     name: sprint.name,
@@ -568,7 +610,7 @@ export default function ListTemplate() {
             })
 
             // Always show backlog
-            const backlogIssues = activeIssues.filter(i => !i.sprintId)
+            const backlogIssues = topLevelIssues.filter(i => !i.sprintId)
             groups.push({
                 id: 'backlog',
                 name: 'Backlog',
@@ -580,7 +622,7 @@ export default function ListTemplate() {
             if (showCompleted) {
                 const closedSprints = sprints.filter(s => s.state === 'closed')
                 const closedSprintIds = closedSprints.map(s => s.id)
-                const completedIssues = activeIssues.filter(i => closedSprintIds.includes(i.sprintId))
+                const completedIssues = topLevelIssues.filter(i => closedSprintIds.includes(i.sprintId))
 
                 if (completedIssues.length > 0) {
                     groups.push({
@@ -1793,94 +1835,203 @@ export default function ListTemplate() {
                                         const parentIssue = getParentIssue(issue)
                                         const assignee = getUserById(issue.assigneeId)
                                         const reporter = getUserById(issue.reporterId)
+                                        const isEpic = issue.type === 'epic'
+                                        const childIssues = isEpic ? getChildIssues(issue.id) : []
+                                        const hasChildren = childIssues.length > 0
+                                        const isExpanded = expandedEpics.has(issue.id)
 
                                         return (
-                                            <div
-                                                key={issue.id}
-                                                className={`list-template-row ${selectedIssues.has(issue.id) ? 'selected' : ''}`}
-                                                style={{ minWidth: totalRowWidth }}
-                                            >
-                                                <div className="pinned-columns">
-                                                    <div className="cell checkbox">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedIssues.has(issue.id)}
-                                                            onChange={() => toggleIssueSelection(issue.id)}
-                                                        />
-                                                    </div>
-                                                    <div
-                                                        className="cell type"
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setActiveDropdown({ issueId: issue.id, field: 'type' })
-                                                        }}
-                                                    >
-                                                        <TypeIcon type={issue.type} />
-                                                        {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'type' && (
-                                                            <SearchableDropdown
-                                                                options={getTypeOptions()}
-                                                                value={issue.type}
-                                                                onChange={val => handleFieldUpdate(issue.id, 'type', val)}
-                                                                onClose={() => setActiveDropdown(null)}
+                                            <React.Fragment key={issue.id}>
+                                                {/* Main Issue Row */}
+                                                <div
+                                                    className={`list-template-row ${selectedIssues.has(issue.id) ? 'selected' : ''} ${isEpic ? 'epic-row' : ''}`}
+                                                    style={{ minWidth: totalRowWidth }}
+                                                >
+                                                    <div className="pinned-columns">
+                                                        <div className="cell checkbox">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedIssues.has(issue.id)}
+                                                                onChange={() => toggleIssueSelection(issue.id)}
                                                             />
-                                                        )}
-                                                    </div>
-                                                    <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
-                                                        {parentIssue && (
-                                                            <span
-                                                                className="parent-key-link"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    setSelectedIssue(parentIssue)
-                                                                }}
-                                                            >
-                                                                {parentIssue.key}
-                                                            </span>
-                                                        )}
-                                                        {parentIssue && <span className="key-separator">&gt;</span>}
-                                                        <span
-                                                            className="issue-key-link"
-                                                            onClick={(e) => {
+                                                        </div>
+                                                        <div
+                                                            className="cell type"
+                                                            onClick={e => {
                                                                 e.stopPropagation()
-                                                                setSelectedIssue(issue)
+                                                                setActiveDropdown({ issueId: issue.id, field: 'type' })
                                                             }}
                                                         >
-                                                            {issue.key}
-                                                        </span>
-                                                    </div>
-                                                    <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
-                                                        {editingSummary === issue.id ? (
-                                                            <input
-                                                                type="text"
-                                                                className="summary-edit-input"
-                                                                value={editingSummaryText}
-                                                                onChange={e => setEditingSummaryText(e.target.value)}
-                                                                onBlur={() => handleSummaryEdit(issue.id, editingSummaryText)}
-                                                                onKeyDown={e => {
-                                                                    if (e.key === 'Enter') handleSummaryEdit(issue.id, editingSummaryText)
-                                                                    if (e.key === 'Escape') { setEditingSummary(null); setEditingSummaryText(''); }
-                                                                }}
-                                                                autoFocus
-                                                            />
-                                                        ) : (
+                                                            <TypeIcon type={issue.type} />
+                                                            {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'type' && (
+                                                                <SearchableDropdown
+                                                                    options={getTypeOptions()}
+                                                                    value={issue.type}
+                                                                    onChange={val => handleFieldUpdate(issue.id, 'type', val)}
+                                                                    onClose={() => setActiveDropdown(null)}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
+                                                            {/* Epic expand/collapse toggle */}
+                                                            {isEpic && hasChildren && (
+                                                                <button
+                                                                    className="epic-expand-btn"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        toggleEpicExpansion(issue.id)
+                                                                    }}
+                                                                >
+                                                                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                                                </button>
+                                                            )}
+                                                            {/* Non-epic parent key link */}
+                                                            {parentIssue && (
+                                                                <span
+                                                                    className="parent-key-link"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setSelectedIssue(parentIssue)
+                                                                    }}
+                                                                >
+                                                                    {parentIssue.key}
+                                                                </span>
+                                                            )}
+                                                            {parentIssue && <span className="key-separator">&gt;</span>}
                                                             <span
-                                                                className="summary-text"
-                                                                onClick={() => {
-                                                                    setEditingSummary(issue.id)
-                                                                    setEditingSummaryText(issue.summary)
+                                                                className="issue-key-link"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    setSelectedIssue(issue)
                                                                 }}
                                                             >
-                                                                {issue.summary}
+                                                                {issue.key}
                                                             </span>
-                                                        )}
+                                                            {isEpic && hasChildren && (
+                                                                <span className="child-count-badge">{childIssues.length}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
+                                                            {editingSummary === issue.id ? (
+                                                                <input
+                                                                    type="text"
+                                                                    className="summary-edit-input"
+                                                                    value={editingSummaryText}
+                                                                    onChange={e => setEditingSummaryText(e.target.value)}
+                                                                    onBlur={() => handleSummaryEdit(issue.id, editingSummaryText)}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') handleSummaryEdit(issue.id, editingSummaryText)
+                                                                        if (e.key === 'Escape') { setEditingSummary(null); setEditingSummaryText(''); }
+                                                                    }}
+                                                                    autoFocus
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    className="summary-text"
+                                                                    onClick={() => {
+                                                                        setEditingSummary(issue.id)
+                                                                        setEditingSummaryText(issue.summary)
+                                                                    }}
+                                                                >
+                                                                    {issue.summary}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
+                                                        {columns.map(col => renderCell(col.id, issue, col, parentIssue, assignee, reporter))}
+                                                        {/* Spacer to match header add-column button */}
+                                                        <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>
                                                     </div>
                                                 </div>
-                                                <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
-                                                    {columns.map(col => renderCell(col.id, issue, col, parentIssue, assignee, reporter))}
-                                                    {/* Spacer to match header add-column button */}
-                                                    <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>
-                                                </div>
-                                            </div>
+
+                                                {/* Child Issues (nested under epic) */}
+                                                {isEpic && isExpanded && childIssues.length > 0 && (
+                                                    <div className="child-issues-container">
+                                                        {filterIssues(childIssues).map(childIssue => {
+                                                            const childAssignee = getUserById(childIssue.assigneeId)
+                                                            const childReporter = getUserById(childIssue.reporterId)
+
+                                                            return (
+                                                                <div
+                                                                    key={childIssue.id}
+                                                                    className={`list-template-row child-row ${selectedIssues.has(childIssue.id) ? 'selected' : ''}`}
+                                                                    style={{ minWidth: totalRowWidth }}
+                                                                >
+                                                                    <div className="pinned-columns">
+                                                                        <div className="cell checkbox child-indent">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedIssues.has(childIssue.id)}
+                                                                                onChange={() => toggleIssueSelection(childIssue.id)}
+                                                                            />
+                                                                        </div>
+                                                                        <div
+                                                                            className="cell type"
+                                                                            onClick={e => {
+                                                                                e.stopPropagation()
+                                                                                setActiveDropdown({ issueId: childIssue.id, field: 'type' })
+                                                                            }}
+                                                                        >
+                                                                            <TypeIcon type={childIssue.type} />
+                                                                            {activeDropdown?.issueId === childIssue.id && activeDropdown?.field === 'type' && (
+                                                                                <SearchableDropdown
+                                                                                    options={getTypeOptions()}
+                                                                                    value={childIssue.type}
+                                                                                    onChange={val => handleFieldUpdate(childIssue.id, 'type', val)}
+                                                                                    onClose={() => setActiveDropdown(null)}
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="cell key" style={{ width: keyWidth, minWidth: keyWidth }}>
+                                                                            <span
+                                                                                className="issue-key-link"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    setSelectedIssue(childIssue)
+                                                                                }}
+                                                                            >
+                                                                                {childIssue.key}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="cell summary" style={{ width: summaryWidth, minWidth: summaryWidth }}>
+                                                                            {editingSummary === childIssue.id ? (
+                                                                                <input
+                                                                                    type="text"
+                                                                                    className="summary-edit-input"
+                                                                                    value={editingSummaryText}
+                                                                                    onChange={e => setEditingSummaryText(e.target.value)}
+                                                                                    onBlur={() => handleSummaryEdit(childIssue.id, editingSummaryText)}
+                                                                                    onKeyDown={e => {
+                                                                                        if (e.key === 'Enter') handleSummaryEdit(childIssue.id, editingSummaryText)
+                                                                                        if (e.key === 'Escape') { setEditingSummary(null); setEditingSummaryText(''); }
+                                                                                    }}
+                                                                                    autoFocus
+                                                                                />
+                                                                            ) : (
+                                                                                <span
+                                                                                    className="summary-text"
+                                                                                    onClick={() => {
+                                                                                        setEditingSummary(childIssue.id)
+                                                                                        setEditingSummaryText(childIssue.summary)
+                                                                                    }}
+                                                                                >
+                                                                                    {childIssue.summary}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="scrollable-columns" style={{ minWidth: scrollableWidth }}>
+                                                                        {columns.map(col => renderCell(col.id, childIssue, col, issue, childAssignee, childReporter))}
+                                                                        {/* Spacer to match header add-column button */}
+                                                                        <div className="cell spacer" style={{ width: 40, minWidth: 40 }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
                                         )
                                     })}
 

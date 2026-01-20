@@ -172,10 +172,22 @@ export const useProjectStore = create(
             addIssue: async (issue) => {
                 const state = get()
                 const project = state.projects.find(p => p.id === state.currentProjectId)
-                const issueCount = state.issues.filter(i => i.projectId === state.currentProjectId).length
+                const projectPrefix = project?.key || 'AGILE'
+
+                // Get max key number from existing issues to avoid conflicts
+                const projectIssues = state.issues.filter(i => i.projectId === state.currentProjectId)
+                const maxKeyNum = projectIssues.reduce((max, issue) => {
+                    if (!issue.key) return max
+                    const match = issue.key.match(/-(\d+)$/)
+                    if (match) {
+                        const num = parseInt(match[1], 10)
+                        return num > max ? num : max
+                    }
+                    return max
+                }, 0)
 
                 const newIssue = {
-                    key: `${project?.key || 'AGILE'}-${issueCount + 1}`,
+                    key: `${projectPrefix}-${maxKeyNum + 1}`,
                     project_id: state.currentProjectId,
                     type: issue.type || 'story',
                     status: issue.status || 'todo',

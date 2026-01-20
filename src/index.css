@@ -5082,6 +5082,51 @@ h4 {
   color: #ef4444;
 }
 
+/* Empty State for Saved Filters */
+.faceted-saved-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  gap: 4px;
+  text-align: center;
+}
+
+.faceted-saved-empty span:first-child {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.faceted-saved-hint {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Divider between Saved Filters and Filter Categories */
+.faceted-divider {
+  height: 1px;
+  background: var(--border-default);
+  margin: 8px 0;
+}
+
+/* Disabled Save Button */
+.faceted-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.faceted-save-btn:disabled:hover {
+  background: transparent;
+}
+
+/* Filter count badge on save button */
+.save-filter-count {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--accent);
+}
+
 /* Screen reader only */
 .sr-only {
   position: absolute;

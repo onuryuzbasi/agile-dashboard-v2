@@ -255,27 +255,30 @@ export default function FacetedFilterMenu({
 
             {/* Scrollable Content */}
             <div className="faceted-content">
-                {/* SAVED FILTERS Section */}
-                {savedFilters.length > 0 && (
-                    <div className="faceted-section faceted-saved-section">
-                        <button
-                            className="faceted-section-header"
-                            onClick={() => setSavedFiltersCollapsed(!savedFiltersCollapsed)}
-                        >
-                            <span className="faceted-section-toggle">
-                                {savedFiltersCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                            </span>
-                            <Bookmark size={14} className="faceted-saved-icon" />
-                            <span className="faceted-section-title">Saved Filters</span>
+                {/* SAVED FILTERS Section - Always visible */}
+                <div className="faceted-section faceted-saved-section">
+                    <button
+                        className="faceted-section-header"
+                        onClick={() => setSavedFiltersCollapsed(!savedFiltersCollapsed)}
+                    >
+                        <span className="faceted-section-toggle">
+                            {savedFiltersCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                        </span>
+                        <Bookmark size={14} className="faceted-saved-icon" />
+                        <span className="faceted-section-title">Saved Filters</span>
+                        {savedFilters.length > 0 && (
                             <span className="faceted-section-count">{savedFilters.length}</span>
-                        </button>
-                        {!savedFiltersCollapsed && (
-                            <div className="faceted-saved-list">
-                                {savedFilters.map(saved => (
+                        )}
+                    </button>
+                    {!savedFiltersCollapsed && (
+                        <div className="faceted-saved-list">
+                            {savedFilters.length > 0 ? (
+                                savedFilters.map(saved => (
                                     <div key={saved.id} className="faceted-saved-item">
                                         <button
                                             className="faceted-saved-name"
                                             onClick={() => handleApplySavedFilter(saved)}
+                                            title={`Apply: ${saved.name}`}
                                         >
                                             <Bookmark size={12} />
                                             {saved.name}
@@ -291,11 +294,21 @@ export default function FacetedFilterMenu({
                                             <Trash2 size={12} />
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                ))
+                            ) : (
+                                <div className="faceted-saved-empty">
+                                    <span>No saved filters yet</span>
+                                    <span className="faceted-saved-hint">
+                                        Select filters below, then click "Save Current View"
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Divider between Saved Filters and Filter Categories */}
+                <div className="faceted-divider" />
 
                 {/* TYPE Section */}
                 <div className="faceted-section">
@@ -534,17 +547,18 @@ export default function FacetedFilterMenu({
                 )}
             </div>
 
-            {/* Footer with Save Filter button */}
+            {/* Footer with Save Current View button */}
             <div className="faceted-footer">
-                {activeCount > 0 && (
-                    <button
-                        className="faceted-save-btn"
-                        onClick={() => setShowSaveModal(true)}
-                    >
-                        <Save size={14} />
-                        Save Filter
-                    </button>
-                )}
+                <button
+                    className="faceted-save-btn"
+                    onClick={() => setShowSaveModal(true)}
+                    disabled={activeCount === 0}
+                    title={activeCount === 0 ? 'Select filters first' : 'Save current filter settings'}
+                >
+                    <Save size={14} />
+                    Save Current View
+                    {activeCount > 0 && <span className="save-filter-count">({activeCount})</span>}
+                </button>
                 <span className="faceted-hint">
                     OR within groups • AND between groups
                 </span>

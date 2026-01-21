@@ -164,15 +164,24 @@ export default function Backlog() {
 
     // Filter issues (exclude epics from backlog list)
     const filterIssues = (issueList) => {
+        if (!issueList || !Array.isArray(issueList)) return []
+
         return issueList.filter(issue => {
+            // Defensive null check
+            if (!issue) return false
+
             // Hide epics from the backlog list
             if (issue.type === 'epic') {
                 return false
             }
-            // Search filter
-            if (searchQuery && !issue.summary.toLowerCase().includes(searchQuery.toLowerCase()) &&
-                !issue.key.toLowerCase().includes(searchQuery.toLowerCase())) {
-                return false
+            // Search filter (with null checks)
+            if (searchQuery) {
+                const summary = issue.summary || ''
+                const key = issue.key || ''
+                if (!summary.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                    !key.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    return false
+                }
             }
             // Epic filter (multi-select)
             if (selectedEpics.length > 0) {
@@ -193,16 +202,16 @@ export default function Backlog() {
             }
 
             // === Faceted Filter criteria ===
-            // Type filter
-            if (filterTypes.size > 0 && !filterTypes.has(issue.type)) {
+            // Type filter (with null check)
+            if (filterTypes.size > 0 && !filterTypes.has(issue.type || '')) {
                 return false
             }
-            // Status filter
-            if (filterStatuses.size > 0 && !filterStatuses.has(issue.status)) {
+            // Status filter (with null check)
+            if (filterStatuses.size > 0 && !filterStatuses.has(issue.status || '')) {
                 return false
             }
-            // Priority filter
-            if (filterPriorities.size > 0 && !filterPriorities.has(issue.priority)) {
+            // Priority filter (with null check)
+            if (filterPriorities.size > 0 && !filterPriorities.has(issue.priority || '')) {
                 return false
             }
             // Game filter
@@ -292,21 +301,28 @@ export default function Backlog() {
 
     const hasFilters = searchQuery || selectedEpics.length > 0 || selectedAssignees.length > 0 || facetedFilterCount > 0
 
-    // Handle inline issue creation
+    // Handle inline issue creation with context-aware defaults from active filters
     const handleCreateIssue = (sprintId) => {
         if (!newIssueSummary.trim()) return
 
+        // Get first value from each filter set for smart defaults
+        const defaultStatus = filterStatuses.size === 1 ? [...filterStatuses][0] : 'todo'
+        const defaultPriority = filterPriorities.size === 1 ? [...filterPriorities][0] : 'medium'
+        const defaultAssignee = selectedAssignees.length === 1 ? selectedAssignees[0] : newIssueAssignee
+        const defaultEpic = selectedEpics.length === 1 && selectedEpics[0] !== 'no-epic' ? selectedEpics[0] : null
+
         addIssue({
             type: newIssueType,
-            status: 'todo',
-            priority: 'medium',
+            status: defaultStatus,
+            priority: defaultPriority,
             summary: newIssueSummary.trim(),
             description: '',
             sprintId: sprintId || null,
             storyPoints: null,
             labels: [],
-            assigneeId: newIssueAssignee,
-            reporterId: users[0]?.id || null
+            assigneeId: defaultAssignee,
+            reporterId: users[0]?.id || null,
+            epicId: defaultEpic
         })
 
         setNewIssueSummary('')

@@ -509,12 +509,19 @@ export const useProjectStore = create(
 
             // Delete sprint (move issues to backlog first)
             deleteSprint: async (sprintId) => {
+                console.log('🗑️ deleteSprint called with:', sprintId)
                 const state = get()
                 const sprintToDelete = state.sprints.find(s => s.id === sprintId)
-                if (!sprintToDelete) return
+                if (!sprintToDelete) {
+                    console.error('❌ Sprint not found:', sprintId)
+                    return false
+                }
+
+                console.log('📋 Found sprint to delete:', sprintToDelete.name)
 
                 // Move all issues from this sprint to backlog
                 const issuesInSprint = state.issues.filter(i => i.sprintId === sprintId)
+                console.log(`📦 ${issuesInSprint.length} issues will be moved to backlog`)
 
                 // Optimistic update - remove sprint and clear sprintId from issues
                 set({
@@ -523,26 +530,44 @@ export const useProjectStore = create(
                         i.sprintId === sprintId ? { ...i, sprintId: null } : i
                     )
                 })
+                console.log('✅ Local state updated optimistically')
 
                 try {
                     // Update issues to remove sprint reference
                     if (issuesInSprint.length > 0) {
-                        await supabase
+                        console.log('📤 Updating issues in Supabase...')
+                        const { error: issueError } = await supabase
                             .from('issues')
                             .update({ sprint_id: null })
                             .eq('sprint_id', sprintId)
+
+                        if (issueError) {
+                            console.error('❌ Failed to update issues:', issueError)
+                        } else {
+                            console.log('✅ Issues updated in Supabase')
+                        }
                     }
 
                     // Delete the sprint
+                    console.log('📤 Deleting sprint from Supabase...')
                     const { error } = await supabase
                         .from('sprints')
                         .delete()
                         .eq('id', sprintId)
 
-                    if (error) throw error
+                    if (error) {
+                        console.error('❌ Supabase delete error:', error)
+                        throw error
+                    }
+
+                    console.log('✅ Sprint deleted successfully from Supabase')
+                    return true
                 } catch (error) {
-                    console.error('Failed to delete sprint:', error)
+                    console.error('❌ Failed to delete sprint:', error)
+                    // Rollback optimistic update
                     set({ sprints: state.sprints, issues: state.issues })
+                    console.log('🔄 Rolled back local state')
+                    return false
                 }
             },
 

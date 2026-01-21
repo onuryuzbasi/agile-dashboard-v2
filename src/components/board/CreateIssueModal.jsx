@@ -30,7 +30,9 @@ export default function CreateIssueModal() {
         users,
         sprints,
         issues,
-        fieldConfig
+        fieldConfig,
+        departments,
+        games
     } = useProjectStore()
 
     // Build dynamic options from fieldConfig (Supabase) or use fallbacks
@@ -294,6 +296,39 @@ export default function CreateIssueModal() {
                             </select>
                         </div>
                     )}
+
+                    {/* Department and Game Row */}
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Department</label>
+                            <select
+                                className="input"
+                                value={formData.departmentId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                                disabled={isSubmitting}
+                            >
+                                <option value="">No Department</option>
+                                {(departments || []).map(dept => (
+                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Game</label>
+                            <select
+                                className="input"
+                                value={formData.gameId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, gameId: e.target.value }))}
+                                disabled={isSubmitting}
+                            >
+                                <option value="">No Game</option>
+                                {(games || []).map(game => (
+                                    <option key={game.id} value={game.id}>{game.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
                     {/* Actions */}
                     <div className="modal-actions">

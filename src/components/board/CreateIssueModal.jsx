@@ -73,11 +73,33 @@ export default function CreateIssueModal() {
     // Reset form when modal opens with default type and context defaults
     useEffect(() => {
         if (createIssueModalOpen) {
-            // Debug logging as requested
-            console.log('📋 CreateIssueModal - Applying Defaults from Filters:', {
-                createIssueDefaultType,
-                createIssueDefaults
-            })
+            // COMPREHENSIVE DEBUG: Log everything to trace the issue
+            console.log('=== CREATE ISSUE MODAL DEBUG START ===')
+            console.log('📋 Raw createIssueDefaults:', createIssueDefaults)
+            console.log('📋 createIssueDefaultType:', createIssueDefaultType)
+
+            // Log available options
+            console.log('🏢 Available Departments:', (departments || []).map(d => ({ id: d.id, name: d.name })))
+            console.log('🎮 Available Games:', (games || []).map(g => ({ id: g.id, name: g.name })))
+            console.log('👥 Available Users:', (users || []).map(u => ({ id: u.id, name: u.name })))
+
+            // Log what we're trying to set
+            const targetDeptId = createIssueDefaults?.departmentId
+            const targetGameId = createIssueDefaults?.gameId
+            const targetAssigneeId = createIssueDefaults?.assigneeId
+
+            console.log('🎯 Target departmentId:', targetDeptId, '| Type:', typeof targetDeptId)
+            console.log('🎯 Target gameId:', targetGameId, '| Type:', typeof targetGameId)
+            console.log('🎯 Target assigneeId:', targetAssigneeId, '| Type:', typeof targetAssigneeId)
+
+            // Check if targets exist in options
+            const deptMatch = (departments || []).find(d => d.id === targetDeptId)
+            const gameMatch = (games || []).find(g => g.id === targetGameId)
+            const userMatch = (users || []).find(u => u.id === targetAssigneeId)
+
+            console.log('✅ Department Match:', deptMatch ? deptMatch.name : '❌ NOT FOUND')
+            console.log('✅ Game Match:', gameMatch ? gameMatch.name : '❌ NOT FOUND')
+            console.log('✅ User Match:', userMatch ? userMatch.name : '❌ NOT FOUND')
 
             // Determine type: use defaults.type if set, otherwise use createIssueDefaultType, fallback to 'story'
             const resolvedType = createIssueDefaults?.type || createIssueDefaultType || 'story'
@@ -98,10 +120,11 @@ export default function CreateIssueModal() {
                 gameId: createIssueDefaults?.gameId || ''
             }
 
-            console.log('✅ CreateIssueModal - Form initialized with:', newFormData)
+            console.log('📝 Final newFormData:', newFormData)
+            console.log('=== CREATE ISSUE MODAL DEBUG END ===')
             setFormData(newFormData)
         }
-    }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
+    }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId, departments, games, users])
 
     if (!createIssueModalOpen) return null
 

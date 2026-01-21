@@ -826,7 +826,7 @@ export default function List() {
             assigneeId: newIssueAssignee || (groupBy === 'assignee' && groupId !== 'unassigned' ? groupId : null),
             storyPoints: null,
             labels: [],
-            reporterId: 'user-1'
+            reporterId: users[0]?.id || null
         })
 
         setNewIssueSummary('')

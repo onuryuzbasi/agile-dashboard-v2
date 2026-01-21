@@ -196,7 +196,7 @@ export const useProjectStore = create(
                     description: issue.description || '',
                     assignee_id: issue.assigneeId || null,
                     reporter_id: issue.reporterId || null,
-                    sprint_id: issue.sprintId || state.currentSprintId,
+                    sprint_id: issue.sprintId !== undefined ? issue.sprintId : state.currentSprintId,
                     parent_id: issue.parentId || null,
                     story_points: issue.storyPoints || null,
                     original_estimate: issue.originalEstimate || null,
@@ -371,6 +371,147 @@ export const useProjectStore = create(
             // Backlog issues (no sprint assigned)
             getBacklogIssues: () => {
                 return get().issues.filter(i => !i.sprintId)
+            },
+
+            // Add new sprint
+            addSprint: async (sprintData) => {
+                const state = get()
+                const tempId = `temp-${Date.now()}`
+                const newSprint = {
+                    id: tempId,
+                    name: sprintData.name || `Sprint ${state.sprints.length + 1}`,
+                    goal: sprintData.goal || '',
+                    startDate: sprintData.startDate || new Date().toISOString(),
+                    endDate: sprintData.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    state: 'future',
+                    projectId: state.currentProjectId
+                }
+
+                // Optimistic update
+                set({ sprints: [...state.sprints, newSprint] })
+
+                try {
+                    const { data, error } = await supabase
+                        .from('sprints')
+                        .insert({
+                            name: newSprint.name,
+                            goal: newSprint.goal,
+                            start_date: newSprint.startDate,
+                            end_date: newSprint.endDate,
+                            state: newSprint.state,
+                            project_id: newSprint.projectId
+                        })
+                        .select()
+                        .single()
+
+                    if (error) throw error
+
+                    // Replace temp ID with real ID
+                    set({
+                        sprints: get().sprints.map(s =>
+                            s.id === tempId ? toCamelCase(data) : s
+                        )
+                    })
+                    return toCamelCase(data)
+                } catch (error) {
+                    console.error('Failed to create sprint:', error)
+                    // Rollback on error
+                    set({ sprints: state.sprints })
+                    return null
+                }
+            },
+
+            // Start sprint (change state to 'active')
+            startSprint: async (sprintId) => {
+                const state = get()
+
+                // First, complete any currently active sprint
+                const activeSprint = state.sprints.find(s => s.state === 'active')
+                if (activeSprint) {
+                    await get().completeSprint(activeSprint.id)
+                }
+
+                // Optimistic update
+                set({
+                    sprints: get().sprints.map(s =>
+                        s.id === sprintId ? { ...s, state: 'active' } : s
+                    )
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('sprints')
+                        .update({ state: 'active' })
+                        .eq('id', sprintId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to start sprint:', error)
+                    set({ sprints: state.sprints })
+                }
+            },
+
+            // Complete sprint (change state to 'closed')
+            completeSprint: async (sprintId) => {
+                const state = get()
+
+                // Optimistic update
+                set({
+                    sprints: get().sprints.map(s =>
+                        s.id === sprintId ? { ...s, state: 'closed' } : s
+                    )
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('sprints')
+                        .update({ state: 'closed' })
+                        .eq('id', sprintId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to complete sprint:', error)
+                    set({ sprints: state.sprints })
+                }
+            },
+
+            // Delete sprint (move issues to backlog first)
+            deleteSprint: async (sprintId) => {
+                const state = get()
+                const sprintToDelete = state.sprints.find(s => s.id === sprintId)
+                if (!sprintToDelete) return
+
+                // Move all issues from this sprint to backlog
+                const issuesInSprint = state.issues.filter(i => i.sprintId === sprintId)
+
+                // Optimistic update - remove sprint and clear sprintId from issues
+                set({
+                    sprints: state.sprints.filter(s => s.id !== sprintId),
+                    issues: state.issues.map(i =>
+                        i.sprintId === sprintId ? { ...i, sprintId: null } : i
+                    )
+                })
+
+                try {
+                    // Update issues to remove sprint reference
+                    if (issuesInSprint.length > 0) {
+                        await supabase
+                            .from('issues')
+                            .update({ sprint_id: null })
+                            .eq('sprint_id', sprintId)
+                    }
+
+                    // Delete the sprint
+                    const { error } = await supabase
+                        .from('sprints')
+                        .delete()
+                        .eq('id', sprintId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to delete sprint:', error)
+                    set({ sprints: state.sprints, issues: state.issues })
+                }
             },
 
             // User actions

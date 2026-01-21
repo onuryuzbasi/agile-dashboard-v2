@@ -729,7 +729,7 @@ export default function IssueModal({ issue, onClose }) {
                                                     timeSpent: hours * 60 + minutes, // Store in minutes
                                                     description: workLogDescription,
                                                     date: workLogDate,
-                                                    userId: formData.assigneeId || 'user-1'
+                                                    userId: formData.assigneeId || users[0]?.id || null
                                                 })
                                                 setWorkLogHours('')
                                                 setWorkLogMinutes('')

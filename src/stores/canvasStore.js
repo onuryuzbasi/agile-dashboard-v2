@@ -145,7 +145,7 @@ export const useCanvasStore = create(
                         storyPoints: null,
                         labels: ['whiteboard'],
                         assigneeId: overrides.assigneeId || null,
-                        reporterId: 'user-1'
+                        reporterId: projectStore.users?.[0]?.id || null
                     })
 
                     // Link the element to the issue

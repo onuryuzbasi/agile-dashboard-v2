@@ -824,7 +824,7 @@ export default function ListTemplate() {
             dueDate: quickCreateDueDate || null,
             storyPoints: null,
             labels: [],
-            reporterId: 'user-1'
+            reporterId: users[0]?.id || null
         })
 
         setNewIssueSummary('')

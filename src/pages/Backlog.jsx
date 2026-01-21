@@ -281,7 +281,7 @@ export default function Backlog() {
             storyPoints: null,
             labels: [],
             assigneeId: newIssueAssignee,
-            reporterId: 'user-1'
+            reporterId: users[0]?.id || null
         })
 
         setNewIssueSummary('')
@@ -765,7 +765,7 @@ export default function Backlog() {
                                 storyPoints: null,
                                 labels: [],
                                 assigneeId: null,
-                                reporterId: 'user-1'
+                                reporterId: users[0]?.id || null
                             })
                             setSelectedIssue(newEpic)
                         }}

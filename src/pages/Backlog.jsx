@@ -348,15 +348,58 @@ export default function Backlog() {
     }
 
     // Build defaults from current filter state for context-aware issue creation
-    const getCreateDefaults = () => ({
-        epicId: selectedEpics.length === 1 && selectedEpics[0] !== 'no-epic' ? selectedEpics[0] : null,
-        priority: filterPriorities.size === 1 ? [...filterPriorities][0] : null,
-        assigneeId: selectedAssignees.length === 1 ? selectedAssignees[0] : null
-    })
+    // Reads ALL active filters and maps them to form default values
+    const getCreateDefaults = () => {
+        // Get first value from faceted assignee filter, or from avatar buttons
+        const facetedAssignee = filters => {
+            // Check faceted filter first (from FacetedFilterMenu)
+            // Get assignees from filters object that's built for FacetedFilterMenu
+            const assigneeSet = new Set(selectedAssignees)
+            if (assigneeSet.size === 1) {
+                const firstAssignee = [...assigneeSet][0]
+                // Don't return 'unassigned' as a default
+                return firstAssignee !== 'unassigned' ? firstAssignee : null
+            }
+            return null
+        }
+
+        const defaults = {
+            // Epic from sidebar selection
+            epicId: selectedEpics.length === 1 && selectedEpics[0] !== 'no-epic' ? selectedEpics[0] : null,
+            // Priority from faceted filter
+            priority: filterPriorities.size === 1 ? [...filterPriorities][0] : null,
+            // Status from faceted filter
+            status: filterStatuses.size === 1 ? [...filterStatuses][0] : null,
+            // Type from faceted filter (don't override if user selects from type dropdown)
+            type: filterTypes.size === 1 ? [...filterTypes][0] : null,
+            // Assignee from avatar buttons OR faceted filter
+            assigneeId: facetedAssignee(),
+            // Department from faceted filter
+            departmentId: filterDepartments.size === 1 ? [...filterDepartments][0] : null,
+            // Game from faceted filter  
+            gameId: filterGames.size === 1 ? [...filterGames][0] : null
+        }
+
+        // Debug logging as requested
+        console.log('📋 Context-Aware Defaults from Active Filters:', {
+            selectedEpics,
+            filterPriorities: [...filterPriorities],
+            filterStatuses: [...filterStatuses],
+            filterTypes: [...filterTypes],
+            selectedAssignees,
+            filterDepartments: [...filterDepartments],
+            filterGames: [...filterGames],
+            calculatedDefaults: defaults
+        })
+
+        return defaults
+    }
 
     // Handle opening create modal with filter context
     const handleOpenCreateModal = (type = 'story') => {
-        openCreateModal(type, getCreateDefaults())
+        const defaults = getCreateDefaults()
+        console.log('🚀 Opening Create Modal with defaults:', defaults)
+        openCreateModal(type, defaults)
     }
 
     // DnD Handlers

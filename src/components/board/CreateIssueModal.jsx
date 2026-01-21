@@ -58,7 +58,10 @@ export default function CreateIssueModal() {
         assigneeId: '',
         reporterId: '',
         sprintId: '',
-        parentId: ''
+        parentId: '',
+        status: 'todo',
+        departmentId: '',
+        gameId: ''
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -68,16 +71,33 @@ export default function CreateIssueModal() {
     // Reset form when modal opens with default type and context defaults
     useEffect(() => {
         if (createIssueModalOpen) {
-            setFormData({
-                type: createIssueDefaultType || 'story',
+            // Debug logging as requested
+            console.log('📋 CreateIssueModal - Applying Defaults from Filters:', {
+                createIssueDefaultType,
+                createIssueDefaults
+            })
+
+            // Determine type: use defaults.type if set, otherwise use createIssueDefaultType, fallback to 'story'
+            const resolvedType = createIssueDefaults?.type || createIssueDefaultType || 'story'
+
+            const newFormData = {
+                type: resolvedType,
                 summary: '',
                 description: '',
                 priority: createIssueDefaults?.priority || 'medium',
                 assigneeId: createIssueDefaults?.assigneeId || '',
                 reporterId: defaultReporterId,
                 sprintId: createIssueDefaults?.sprintId || '',
-                parentId: createIssueDefaults?.epicId || ''
-            })
+                parentId: createIssueDefaults?.epicId || '',
+                // NEW: Status from filters (for inline create status alignment)
+                status: createIssueDefaults?.status || 'todo',
+                // NEW: Department and Game from filters
+                departmentId: createIssueDefaults?.departmentId || '',
+                gameId: createIssueDefaults?.gameId || ''
+            }
+
+            console.log('✅ CreateIssueModal - Form initialized with:', newFormData)
+            setFormData(newFormData)
         }
     }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
 
@@ -97,11 +117,13 @@ export default function CreateIssueModal() {
                 summary: formData.summary.trim(),
                 description: formData.description.trim(),
                 priority: formData.priority,
-                status: 'todo',
+                status: formData.status || 'todo', // Use form status from filter defaults
                 assigneeId: formData.assigneeId || null,
                 reporterId: formData.reporterId || null,
                 sprintId: formData.sprintId || null,
                 parentId: formData.type !== 'epic' && formData.parentId ? formData.parentId : null,
+                departmentId: formData.departmentId || null,
+                gameId: formData.gameId || null,
                 startDate: new Date().toISOString().split('T')[0],
                 dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }

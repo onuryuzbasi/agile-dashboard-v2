@@ -174,17 +174,39 @@ export const useProjectStore = create(
                 const project = state.projects.find(p => p.id === state.currentProjectId)
                 const projectPrefix = project?.key || 'AGILE'
 
-                // Get max key number from existing issues to avoid conflicts
-                const projectIssues = state.issues.filter(i => i.projectId === state.currentProjectId)
-                const maxKeyNum = projectIssues.reduce((max, issue) => {
-                    if (!issue.key) return max
-                    const match = issue.key.match(/-(\d+)$/)
-                    if (match) {
-                        const num = parseInt(match[1], 10)
-                        return num > max ? num : max
+                // Query Supabase for max key number (including deleted issues) to avoid conflicts
+                let maxKeyNum = 0
+                try {
+                    const { data: allIssues } = await supabase
+                        .from('issues')
+                        .select('key')
+                        .eq('project_id', state.currentProjectId)
+
+                    if (allIssues) {
+                        maxKeyNum = allIssues.reduce((max, issue) => {
+                            if (!issue.key) return max
+                            const match = issue.key.match(/-(\d+)$/)
+                            if (match) {
+                                const num = parseInt(match[1], 10)
+                                return num > max ? num : max
+                            }
+                            return max
+                        }, 0)
                     }
-                    return max
-                }, 0)
+                } catch (error) {
+                    console.error('Failed to query max key, falling back to local state:', error)
+                    // Fallback to local state
+                    const projectIssues = state.issues.filter(i => i.projectId === state.currentProjectId)
+                    maxKeyNum = projectIssues.reduce((max, issue) => {
+                        if (!issue.key) return max
+                        const match = issue.key.match(/-(\d+)$/)
+                        if (match) {
+                            const num = parseInt(match[1], 10)
+                            return num > max ? num : max
+                        }
+                        return max
+                    }, 0)
+                }
 
                 const newIssue = {
                     key: `${projectPrefix}-${maxKeyNum + 1}`,

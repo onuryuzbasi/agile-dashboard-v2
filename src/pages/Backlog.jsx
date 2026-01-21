@@ -491,9 +491,9 @@ export default function Backlog() {
                                         </button>
                                         <button
                                             className="delete-btn"
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 if (window.confirm(`Delete "${sprint.name}"? Issues will be moved to backlog.`)) {
-                                                    deleteSprint(sprint.id)
+                                                    await deleteSprint(sprint.id)
                                                 }
                                                 setSprintMenuOpen(null)
                                             }}
@@ -754,8 +754,8 @@ export default function Backlog() {
                 <div className="epic-sidebar-footer">
                     <button
                         className="create-epic-btn"
-                        onClick={() => {
-                            const newEpic = addIssue({
+                        onClick={async () => {
+                            const newEpic = await addIssue({
                                 type: 'epic',
                                 status: 'todo',
                                 priority: 'medium',
@@ -767,7 +767,9 @@ export default function Backlog() {
                                 assigneeId: null,
                                 reporterId: users[0]?.id || null
                             })
-                            setSelectedIssue(newEpic)
+                            if (newEpic) {
+                                setSelectedIssue(newEpic)
+                            }
                         }}
                     >
                         <Plus size={14} />

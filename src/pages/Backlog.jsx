@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
+import ViewSettingsMenu from '../components/common/ViewSettingsMenu'
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragOverlay
+} from '@dnd-kit/core'
 import {
     Plus,
     GripVertical,
@@ -25,7 +34,8 @@ import {
     Edit,
     Trash2,
     MoreHorizontal,
-    Eye
+    Eye,
+    MoveRight
 } from 'lucide-react'
 
 const typeIcons = {
@@ -79,7 +89,9 @@ export default function Backlog() {
         departments,
         savedFilters,
         addSavedFilter,
-        deleteSavedFilter
+        deleteSavedFilter,
+        openCreateModal,
+        cardFieldVisibility
     } = useProjectStore()
 
     // Filter state
@@ -114,6 +126,19 @@ export default function Backlog() {
     // Multi-select state
     const [selectedIssues, setSelectedIssues] = useState(new Set())
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+    // Drag and Drop state
+    const [activeId, setActiveId] = useState(null)
+    const [issueContextMenu, setIssueContextMenu] = useState(null) // { issueId, x, y }
+
+    // DnD sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // 8px movement before drag starts
+            },
+        })
+    )
 
     // Refs for click-outside detection
     const typeDropdownRef = useRef(null)
@@ -305,8 +330,65 @@ export default function Backlog() {
         })
     }
 
+    // Build defaults from current filter state for context-aware issue creation
+    const getCreateDefaults = () => ({
+        epicId: selectedEpics.length === 1 && selectedEpics[0] !== 'no-epic' ? selectedEpics[0] : null,
+        priority: filterPriorities.size === 1 ? [...filterPriorities][0] : null,
+        assigneeId: selectedAssignees.length === 1 ? selectedAssignees[0] : null
+    })
+
+    // Handle opening create modal with filter context
+    const handleOpenCreateModal = (type = 'story') => {
+        openCreateModal(type, getCreateDefaults())
+    }
+
+    // DnD Handlers
+    const handleDragStart = (event) => {
+        setActiveId(event.active.id)
+    }
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event
+        setActiveId(null)
+
+        if (!over || active.id === over.id) return
+
+        // Get the target sprint ID (null for backlog)
+        const targetSprintId = over.id === 'backlog' ? null : over.id
+
+        // Get current issue
+        const issue = issues.find(i => i.id === active.id)
+        if (!issue || issue.sprintId === targetSprintId) return
+
+        // Update issue's sprintId
+        await updateIssue(active.id, { sprintId: targetSprintId })
+    }
+
+    // Handle Move to Sprint from context menu
+    const handleMoveToSprint = async (issueId, targetSprintId) => {
+        await updateIssue(issueId, { sprintId: targetSprintId })
+        setIssueContextMenu(null)
+    }
+
+    // Handle right-click on issue
+    const handleIssueContextMenu = (e, issueId) => {
+        e.preventDefault()
+        setIssueContextMenu({
+            issueId,
+            x: e.clientX,
+            y: e.clientY
+        })
+    }
+
+    // Close context menu when clicking elsewhere
+    useEffect(() => {
+        const handleClick = () => setIssueContextMenu(null)
+        document.addEventListener('click', handleClick)
+        return () => document.removeEventListener('click', handleClick)
+    }, [])
+
     // Issue Row Component
-    const IssueRow = ({ issue }) => {
+    const IssueRow = ({ issue, isDragging = false }) => {
         const TypeIcon = typeIcons[issue.type] || CheckSquare
         const PriorityIcon = priorityConfig[issue.priority]?.icon || Minus
         const priorityColor = priorityConfig[issue.priority]?.color
@@ -328,8 +410,10 @@ export default function Backlog() {
 
         return (
             <div
-                className={`backlog-issue-row ${isSelected ? 'selected' : ''}`}
+                className={`backlog-issue-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
                 onClick={() => setSelectedIssue(issue)}
+                onContextMenu={(e) => handleIssueContextMenu(e, issue.id)}
+                data-issue-id={issue.id}
             >
                 {/* Checkbox for multi-select */}
                 <input
@@ -350,8 +434,8 @@ export default function Backlog() {
 
                 <span className="issue-summary">{issue.summary}</span>
 
-                {/* Labels */}
-                {issue.labels && issue.labels.length > 0 && (
+                {/* Labels - respects visibility setting */}
+                {cardFieldVisibility.labels && issue.labels && issue.labels.length > 0 && (
                     <div className="issue-labels">
                         {issue.labels.slice(0, 2).map(label => (
                             <span key={label} className="issue-label">{label}</span>
@@ -362,39 +446,62 @@ export default function Backlog() {
                     </div>
                 )}
 
-                {/* Status badge */}
-                <span className={`issue-status-badge ${issue.status}`}>
-                    {issue.status === 'todo' ? 'TO DO' :
-                        issue.status === 'progress' ? 'IN PROGRESS' :
-                            issue.status === 'review' ? 'IN REVIEW' : 'DONE'}
-                </span>
+                {/* Status badge - respects visibility setting */}
+                {cardFieldVisibility.status && (
+                    <span className={`issue-status-badge ${issue.status}`}>
+                        {issue.status === 'todo' ? 'TO DO' :
+                            issue.status === 'progress' ? 'IN PROGRESS' :
+                                issue.status === 'review' ? 'IN REVIEW' : 'DONE'}
+                    </span>
+                )}
 
-                {/* Due date */}
-                {issue.dueDate && (
+                {/* Due date - respects visibility setting */}
+                {cardFieldVisibility.dueDate && issue.dueDate && (
                     <span className="issue-due-date">
                         <Calendar size={12} />
                         {formatDate(issue.dueDate)}
                     </span>
                 )}
 
-                {/* Time estimate */}
-                <span className="issue-estimate">
-                    {issue.storyPoints ? `${issue.storyPoints}pt` : '0m'}
-                </span>
-
-                {/* Priority */}
-                <span className="issue-priority" style={{ color: priorityColor }}>
-                    <PriorityIcon size={14} />
-                </span>
-
-                {/* Assignee */}
-                {assignee ? (
-                    <div className="avatar sm" title={assignee.name}>
-                        {assignee.name.charAt(0)}
-                    </div>
-                ) : (
-                    <div className="avatar sm unassigned" title="Unassigned">?</div>
+                {/* Time estimate - respects visibility setting */}
+                {cardFieldVisibility.estimate && (
+                    <span className="issue-estimate">
+                        {issue.storyPoints ? `${issue.storyPoints}pt` : '0m'}
+                    </span>
                 )}
+
+                {/* Priority - respects visibility setting */}
+                {cardFieldVisibility.priority && (
+                    <span className="issue-priority" style={{ color: priorityColor }}>
+                        <PriorityIcon size={14} />
+                    </span>
+                )}
+
+                {/* Assignee - respects visibility setting */}
+                {cardFieldVisibility.assignee && (
+                    assignee ? (
+                        <div className="avatar sm" title={assignee.name}>
+                            {assignee.name.charAt(0)}
+                        </div>
+                    ) : (
+                        <div className="avatar sm unassigned" title="Unassigned">?</div>
+                    )
+                )}
+            </div>
+        )
+    }
+
+    // Draggable Issue Row wrapper
+    const DraggableIssueRow = ({ issue }) => {
+        return (
+            <div
+                draggable
+                onDragStart={(e) => {
+                    e.dataTransfer.setData('issueId', issue.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                }}
+            >
+                <IssueRow issue={issue} />
             </div>
         )
     }
@@ -516,10 +623,28 @@ export default function Backlog() {
 
                 {/* Sprint Body */}
                 {!isCollapsed && (
-                    <div className="sprint-body">
+                    <div
+                        className={`sprint-body droppable`}
+                        onDragOver={(e) => {
+                            e.preventDefault()
+                            e.currentTarget.classList.add('drag-over')
+                        }}
+                        onDragLeave={(e) => {
+                            e.currentTarget.classList.remove('drag-over')
+                        }}
+                        onDrop={async (e) => {
+                            e.preventDefault()
+                            e.currentTarget.classList.remove('drag-over')
+                            const issueId = e.dataTransfer.getData('issueId')
+                            if (issueId) {
+                                const targetSprintId = isBacklog ? null : sprint.id
+                                await updateIssue(issueId, { sprintId: targetSprintId })
+                            }
+                        }}
+                    >
                         {filteredIssues.length > 0 ? (
                             filteredIssues.map(issue => (
-                                <IssueRow key={issue.id} issue={issue} />
+                                <DraggableIssueRow key={issue.id} issue={issue} />
                             ))
                         ) : (
                             <div className="sprint-empty">
@@ -1049,6 +1174,9 @@ export default function Backlog() {
                         </button>
                     )}
 
+                    {/* View Settings Menu */}
+                    <ViewSettingsMenu />
+
                     {/* Create Sprint Button */}
                     <div className="toolbar-spacer" />
                     <button
@@ -1137,6 +1265,41 @@ export default function Backlog() {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Issue Context Menu (right-click) */}
+            {issueContextMenu && (
+                <div
+                    className="issue-context-menu"
+                    style={{
+                        position: 'fixed',
+                        left: issueContextMenu.x,
+                        top: issueContextMenu.y,
+                        zIndex: 1000
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="context-menu-header">
+                        <MoveRight size={14} />
+                        Move to Sprint
+                    </div>
+                    <button
+                        className="context-menu-item"
+                        onClick={() => handleMoveToSprint(issueContextMenu.issueId, null)}
+                    >
+                        Backlog
+                    </button>
+                    {sprints.filter(s => s.state !== 'closed').map(sprint => (
+                        <button
+                            key={sprint.id}
+                            className="context-menu-item"
+                            onClick={() => handleMoveToSprint(issueContextMenu.issueId, sprint.id)}
+                        >
+                            {sprint.name}
+                            {sprint.state === 'active' && <span className="sprint-badge active">Active</span>}
+                        </button>
+                    ))}
                 </div>
             )}
         </div>

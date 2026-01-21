@@ -13,7 +13,8 @@ import {
     ArrowUp,
     ArrowDown,
     Minus,
-    Circle
+    Circle,
+    Zap
 } from 'lucide-react'
 
 // Icon mapping for dynamic icon rendering from string names
@@ -26,7 +27,8 @@ export const iconMap = {
     ArrowUp,
     ArrowDown,
     Minus,
-    Circle
+    Circle,
+    Zap
 }
 
 /**

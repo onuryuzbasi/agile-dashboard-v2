@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { X, Zap, BookOpen, Bug, CheckSquare, Layers } from 'lucide-react'
+import { getIconByName } from '../../config/fieldConfig'
 
-const typeOptions = [
+// Fallback options if fieldConfig not loaded yet
+const fallbackTypeOptions = [
     { value: 'epic', label: 'Epic', icon: Zap, color: '#a855f7' },
     { value: 'story', label: 'Story', icon: BookOpen, color: '#22c55e' },
     { value: 'bug', label: 'Bug', icon: Bug, color: '#ef4444' },
@@ -10,7 +12,7 @@ const typeOptions = [
     { value: 'subtask', label: 'Subtask', icon: Layers, color: '#64748b' }
 ]
 
-const priorityOptions = [
+const fallbackPriorityOptions = [
     { value: 'highest', label: 'Highest' },
     { value: 'high', label: 'High' },
     { value: 'medium', label: 'Medium' },
@@ -22,12 +24,31 @@ export default function CreateIssueModal() {
     const {
         createIssueModalOpen,
         createIssueDefaultType,
+        createIssueDefaults,
         closeCreateIssueModal,
         addIssue,
         users,
         sprints,
-        issues
+        issues,
+        fieldConfig
     } = useProjectStore()
+
+    // Build dynamic options from fieldConfig (Supabase) or use fallbacks
+    const typeOptions = (fieldConfig.issueTypes?.length > 0)
+        ? fieldConfig.issueTypes.map(t => ({
+            value: t.key,
+            label: t.label,
+            icon: getIconByName(t.icon, CheckSquare),
+            color: t.color || t.bgColor || '#64748b'
+        }))
+        : fallbackTypeOptions
+
+    const priorityOptions = (fieldConfig.priorities?.length > 0)
+        ? fieldConfig.priorities.map(p => ({
+            value: p.key,
+            label: p.label
+        }))
+        : fallbackPriorityOptions
 
     const [formData, setFormData] = useState({
         type: 'story',
@@ -44,21 +65,21 @@ export default function CreateIssueModal() {
     // Default reporter to first user (or could be current logged-in user)
     const defaultReporterId = users?.[0]?.id || ''
 
-    // Reset form when modal opens with default type
+    // Reset form when modal opens with default type and context defaults
     useEffect(() => {
         if (createIssueModalOpen) {
             setFormData({
                 type: createIssueDefaultType || 'story',
                 summary: '',
                 description: '',
-                priority: 'medium',
-                assigneeId: '',
+                priority: createIssueDefaults?.priority || 'medium',
+                assigneeId: createIssueDefaults?.assigneeId || '',
                 reporterId: defaultReporterId,
-                sprintId: '',
-                parentId: ''
+                sprintId: createIssueDefaults?.sprintId || '',
+                parentId: createIssueDefaults?.epicId || ''
             })
         }
-    }, [createIssueModalOpen, createIssueDefaultType, defaultReporterId])
+    }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
 
     if (!createIssueModalOpen) return null
 

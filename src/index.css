@@ -9691,3 +9691,162 @@ h4 {
 .timeline-zoom-btn.active:hover {
   background: var(--accent-hover);
 }
+
+/* ===== View Settings Menu ===== */
+.view-settings-menu {
+  position: relative;
+}
+
+.view-settings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-1);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 200;
+  min-width: 180px;
+}
+
+.view-settings-header {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.view-settings-options {
+  padding: var(--space-2) 0;
+}
+
+.view-settings-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.view-settings-option:hover {
+  background: var(--bg-tertiary);
+}
+
+.view-settings-option .option-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+
+.view-settings-option.active .option-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* ===== Issue Context Menu ===== */
+.issue-context-menu {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  min-width: 180px;
+  overflow: hidden;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.context-menu-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.context-menu-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.sprint-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.sprint-badge.active {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+/* ===== Drag and Drop Styling ===== */
+.sprint-body.droppable {
+  min-height: 60px;
+  transition: all var(--transition-fast);
+}
+
+.sprint-body.drag-over {
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.backlog-issue-row.dragging {
+  opacity: 0.5;
+  background: var(--bg-tertiary);
+}
+
+.backlog-issue-row[draggable="true"] {
+  cursor: grab;
+}
+
+.backlog-issue-row[draggable="true"]:active {
+  cursor: grabbing;
+}

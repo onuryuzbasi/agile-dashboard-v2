@@ -23,6 +23,15 @@ const emptyState = {
     selectedIssue: null,
     createIssueModalOpen: false,
     createIssueDefaultType: 'story',
+    createIssueDefaults: {},
+    cardFieldVisibility: {
+        labels: true,
+        status: true,
+        dueDate: true,
+        estimate: true,
+        priority: true,
+        assignee: true
+    },
     savedFilters: [],
     isLoading: true,
     isInitialized: false
@@ -163,9 +172,10 @@ export const useProjectStore = create(
             },
 
             // Alias for openCreateIssueModal (used by Header)
-            openCreateModal: (defaultType = 'story') => set({
+            openCreateModal: (defaultType = 'story', defaults = {}) => set({
                 createIssueModalOpen: true,
-                createIssueDefaultType: defaultType
+                createIssueDefaultType: defaultType,
+                createIssueDefaults: defaults
             }),
 
             // Issue actions
@@ -836,11 +846,18 @@ export const useProjectStore = create(
             })),
             toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),
-            openCreateIssueModal: (defaultType = 'story') => set({
+            openCreateIssueModal: (defaultType = 'story', defaults = {}) => set({
                 createIssueModalOpen: true,
-                createIssueDefaultType: defaultType
+                createIssueDefaultType: defaultType,
+                createIssueDefaults: defaults
             }),
-            closeCreateIssueModal: () => set({ createIssueModalOpen: false }),
+            closeCreateIssueModal: () => set({ createIssueModalOpen: false, createIssueDefaults: {} }),
+            setCardFieldVisibility: (field, visible) => set((state) => ({
+                cardFieldVisibility: {
+                    ...state.cardFieldVisibility,
+                    [field]: visible
+                }
+            })),
 
             // Work Log
             addWorkLog: async (issueId, workLog) => {
@@ -903,7 +920,8 @@ export const useProjectStore = create(
                 sidebarCollapsed: state.sidebarCollapsed,
                 currentProjectId: state.currentProjectId,
                 currentSprintId: state.currentSprintId,
-                savedFilters: state.savedFilters // Persist saved filters for offline access
+                savedFilters: state.savedFilters,
+                cardFieldVisibility: state.cardFieldVisibility
             })
         }
     )

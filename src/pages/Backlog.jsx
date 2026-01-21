@@ -143,6 +143,7 @@ export default function Backlog() {
     // Refs for click-outside detection
     const typeDropdownRef = useRef(null)
     const assigneeDropdownRef = useRef(null)
+    const filterButtonRef = useRef(null) // Anchor for FacetedFilterMenu portal
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -1123,6 +1124,7 @@ export default function Backlog() {
                     {/* Global Faceted Filter Menu */}
                     <div className="filter-popover-container" style={{ position: 'relative' }}>
                         <button
+                            ref={filterButtonRef}
                             className={`btn btn-sm btn-secondary ${facetedFilterCount > 0 ? 'has-filters' : ''}`}
                             onClick={() => setShowFilterMenu(!showFilterMenu)}
                         >
@@ -1133,6 +1135,7 @@ export default function Backlog() {
                         <FacetedFilterMenu
                             isOpen={showFilterMenu}
                             onClose={() => setShowFilterMenu(false)}
+                            anchorRef={filterButtonRef}
                             issues={issues}
                             users={users}
                             sprints={sprints}

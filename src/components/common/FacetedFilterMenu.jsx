@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
     ChevronDown,
     ChevronRight,
@@ -27,6 +28,8 @@ import { getIconByName } from '../../config/fieldConfig'
 /**
  * FacetedFilterMenu - A comprehensive faceted filter dropdown
  * 
+ * Uses React Portal to render OUTSIDE the DOM tree, preventing layout shifts.
+ * 
  * Props:
  * - issues: Array of issue objects to extract filter options from
  * - users: Array of user objects
@@ -39,6 +42,7 @@ import { getIconByName } from '../../config/fieldConfig'
  * - onClearAll: Callback to clear all filters
  * - isOpen: Boolean controlling visibility
  * - onClose: Callback to close menu
+ * - anchorRef: Ref to the button that opens the menu (for positioning)
  */
 export default function FacetedFilterMenu({
     issues = [],
@@ -55,26 +59,46 @@ export default function FacetedFilterMenu({
     savedFilters = [],
     onSaveFilter,
     onDeleteSavedFilter,
-    onApplySavedFilter
+    onApplySavedFilter,
+    anchorRef
 }) {
     const menuRef = useRef(null)
     const [collapsedSections, setCollapsedSections] = useState(new Set())
     const [showSaveModal, setShowSaveModal] = useState(false)
     const [filterName, setFilterName] = useState('')
     const [savedFiltersCollapsed, setSavedFiltersCollapsed] = useState(false)
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
 
-    // Close menu on outside click
+    // Calculate position based on anchor element
+    useEffect(() => {
+        if (isOpen && anchorRef?.current) {
+            const rect = anchorRef.current.getBoundingClientRect()
+            setMenuPosition({
+                top: rect.bottom + 4, // 4px below the button
+                left: Math.max(8, rect.left) // Ensure at least 8px from left edge
+            })
+        }
+    }, [isOpen, anchorRef])
+
+    // Close menu on outside click (works with portal)
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) {
+            // Check if click is outside both the menu AND the anchor button
+            const isOutsideMenu = menuRef.current && !menuRef.current.contains(e.target)
+            const isOutsideAnchor = anchorRef?.current && !anchorRef.current.contains(e.target)
+
+            if (isOutsideMenu && isOutsideAnchor) {
                 onClose?.()
             }
         }
         if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside)
+            // Use setTimeout to avoid immediate closing on the click that opened the menu
+            setTimeout(() => {
+                document.addEventListener('mousedown', handleClickOutside)
+            }, 0)
         }
         return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [isOpen, onClose])
+    }, [isOpen, onClose, anchorRef])
 
     // Toggle section collapse
     const toggleSection = (section) => {
@@ -239,8 +263,19 @@ export default function FacetedFilterMenu({
         onApplySavedFilter?.(savedFilter.filters)
     }
 
-    return (
-        <div className="faceted-filter-menu" ref={menuRef} onClick={e => e.stopPropagation()}>
+    // Use portal to render outside DOM tree, preventing layout shifts
+    return createPortal(
+        <div
+            className="faceted-filter-menu faceted-filter-portal"
+            ref={menuRef}
+            onClick={e => e.stopPropagation()}
+            style={{
+                position: 'fixed',
+                top: menuPosition.top,
+                left: menuPosition.left,
+                zIndex: 9999
+            }}
+        >
             {/* Header */}
             <div className="faceted-header">
                 <span className="faceted-title">Filters</span>
@@ -593,7 +628,8 @@ export default function FacetedFilterMenu({
                     </div>
                 </div>
             )}
-        </div>
+        </div>,
+        document.body
     )
 }
 

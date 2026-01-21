@@ -347,50 +347,91 @@ export default function Backlog() {
         })
     }
 
-    // Build defaults from current filter state for context-aware issue creation
-    // Reads ALL active filters and maps them to form default values
-    const getCreateDefaults = () => {
-        // Get first value from faceted assignee filter, or from avatar buttons
-        const facetedAssignee = filters => {
-            // Check faceted filter first (from FacetedFilterMenu)
-            // Get assignees from filters object that's built for FacetedFilterMenu
-            const assigneeSet = new Set(selectedAssignees)
-            if (assigneeSet.size === 1) {
-                const firstAssignee = [...assigneeSet][0]
-                // Don't return 'unassigned' as a default
-                return firstAssignee !== 'unassigned' ? firstAssignee : null
-            }
+    // Helper: Safely extract FIRST value from Set or Array, returns STRING or null
+    const getFirstValue = (collection, excludeValues = []) => {
+        let arr = []
+
+        // Handle Set
+        if (collection instanceof Set) {
+            arr = [...collection]
+        }
+        // Handle Array
+        else if (Array.isArray(collection)) {
+            arr = collection
+        }
+        // Already a string or primitive
+        else if (typeof collection === 'string' && collection) {
+            return collection
+        }
+        else {
             return null
         }
 
+        // Filter out excluded values and get first
+        const filtered = arr.filter(v => v && !excludeValues.includes(v))
+        const result = filtered.length === 1 ? String(filtered[0]) : null
+
+        return result
+    }
+
+    // Build defaults from current filter state for context-aware issue creation
+    // CRITICAL: All values must be STRINGS, not Arrays or Sets
+    const getCreateDefaults = () => {
+        // Debug: Log raw filter states BEFORE conversion
+        console.log('🔍 DEBUG - Raw Filter States (BEFORE conversion):', {
+            selectedAssignees_type: Array.isArray(selectedAssignees) ? 'Array' : typeof selectedAssignees,
+            selectedAssignees_value: selectedAssignees,
+            filterPriorities_type: filterPriorities instanceof Set ? 'Set' : typeof filterPriorities,
+            filterPriorities_value: [...filterPriorities],
+            filterStatuses_type: filterStatuses instanceof Set ? 'Set' : typeof filterStatuses,
+            filterStatuses_value: [...filterStatuses],
+            filterTypes_type: filterTypes instanceof Set ? 'Set' : typeof filterTypes,
+            filterTypes_value: [...filterTypes],
+            filterDepartments_type: filterDepartments instanceof Set ? 'Set' : typeof filterDepartments,
+            filterDepartments_value: [...filterDepartments],
+            selectedEpics_type: Array.isArray(selectedEpics) ? 'Array' : typeof selectedEpics,
+            selectedEpics_value: selectedEpics
+        })
+
+        // Convert each filter to a SINGLE STRING value
         const defaults = {
-            // Epic from sidebar selection
-            epicId: selectedEpics.length === 1 && selectedEpics[0] !== 'no-epic' ? selectedEpics[0] : null,
-            // Priority from faceted filter
-            priority: filterPriorities.size === 1 ? [...filterPriorities][0] : null,
-            // Status from faceted filter
-            status: filterStatuses.size === 1 ? [...filterStatuses][0] : null,
-            // Type from faceted filter (don't override if user selects from type dropdown)
-            type: filterTypes.size === 1 ? [...filterTypes][0] : null,
-            // Assignee from avatar buttons OR faceted filter
-            assigneeId: facetedAssignee(),
-            // Department from faceted filter
-            departmentId: filterDepartments.size === 1 ? [...filterDepartments][0] : null,
-            // Game from faceted filter  
-            gameId: filterGames.size === 1 ? [...filterGames][0] : null
+            // Epic: from sidebar array (exclude 'no-epic')
+            epicId: getFirstValue(selectedEpics, ['no-epic']),
+
+            // Priority: from Set -> single string
+            priority: getFirstValue(filterPriorities),
+
+            // Status: from Set -> single string
+            status: getFirstValue(filterStatuses),
+
+            // Type: from Set -> single string
+            type: getFirstValue(filterTypes),
+
+            // Assignee: from Array (exclude 'unassigned') -> single string
+            assigneeId: getFirstValue(selectedAssignees, ['unassigned']),
+
+            // Department: from Set -> single string
+            departmentId: getFirstValue(filterDepartments, ['no-department']),
+
+            // Game: from Set -> single string
+            gameId: getFirstValue(filterGames, ['no-game'])
         }
 
-        // Debug logging as requested
-        console.log('📋 Context-Aware Defaults from Active Filters:', {
-            selectedEpics,
-            filterPriorities: [...filterPriorities],
-            filterStatuses: [...filterStatuses],
-            filterTypes: [...filterTypes],
-            selectedAssignees,
-            filterDepartments: [...filterDepartments],
-            filterGames: [...filterGames],
-            calculatedDefaults: defaults
+        // Debug: Log converted values AFTER conversion with type verification
+        console.log('✅ DEBUG - Converted Defaults (AFTER conversion):', {
+            epicId: { value: defaults.epicId, type: typeof defaults.epicId },
+            priority: { value: defaults.priority, type: typeof defaults.priority },
+            status: { value: defaults.status, type: typeof defaults.status },
+            type: { value: defaults.type, type: typeof defaults.type },
+            assigneeId: { value: defaults.assigneeId, type: typeof defaults.assigneeId },
+            departmentId: { value: defaults.departmentId, type: typeof defaults.departmentId },
+            gameId: { value: defaults.gameId, type: typeof defaults.gameId }
         })
+
+        // Final assertion log
+        if (defaults.assigneeId && typeof defaults.assigneeId !== 'string') {
+            console.error('❌ TYPE ERROR: assigneeId is not a string!', typeof defaults.assigneeId)
+        }
 
         return defaults
     }
@@ -398,7 +439,8 @@ export default function Backlog() {
     // Handle opening create modal with filter context
     const handleOpenCreateModal = (type = 'story') => {
         const defaults = getCreateDefaults()
-        console.log('🚀 Opening Create Modal with defaults:', defaults)
+        console.log('🚀 Opening Create Modal with FINAL defaults:', defaults)
+        console.log('📋 Test: assigneeId type is:', typeof defaults.assigneeId, '| value:', defaults.assigneeId)
         openCreateModal(type, defaults)
     }
 

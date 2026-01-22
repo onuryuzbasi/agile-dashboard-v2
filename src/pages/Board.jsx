@@ -1,10 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import KanbanBoard from '../components/board/KanbanBoard'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import { useProjectStore } from '../stores/projectStore'
+import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
 import { Filter, Layers, ChevronDown, User, Building2, Zap } from 'lucide-react'
 
 export default function Board() {
+    // Single Source of Truth: Global normalized filter options
+    const { filterOptions } = useGlobalFilterOptions()
     const {
         sprints,
         currentSprintId,
@@ -16,7 +19,8 @@ export default function Board() {
         fieldConfig,
         savedFilters,
         addSavedFilter,
-        deleteSavedFilter
+        deleteSavedFilter,
+        setActiveFilterDefaults  // Sync filter state to global store
     } = useProjectStore()
 
     // Filter state
@@ -28,6 +32,28 @@ export default function Board() {
     const [showGroupByMenu, setShowGroupByMenu] = useState(false)
 
     const activeSprints = sprints.filter(s => s.state !== 'closed')
+
+    // CRITICAL: Sync filter state to global store so Header Create button can use it
+    useEffect(() => {
+        const getFirst = (filterSet, exclude = []) => {
+            if (!filterSet || filterSet.size === 0) return null
+            const arr = [...filterSet].filter(v => v && !exclude.includes(v))
+            return arr.length === 1 ? String(arr[0]) : null
+        }
+
+        const defaults = {
+            priority: getFirst(filters.priority),
+            status: getFirst(filters.status),
+            type: getFirst(filters.type),
+            assigneeId: getFirst(filters.assignee, ['unassigned']),
+            departmentId: getFirst(filters.department, ['no-department']),
+            gameId: getFirst(filters.game, ['no-game']),
+            epicId: getFirst(filters.epic, ['no-epic'])
+        }
+
+        const hasDefaults = Object.values(defaults).some(v => v !== null)
+        setActiveFilterDefaults(hasDefaults ? defaults : {})
+    }, [filters, setActiveFilterDefaults])
 
     // Handle filter change
     const handleFilterChange = (field, values) => {
@@ -74,6 +100,7 @@ export default function Board() {
     ]
 
     const selectedGroupBy = groupByOptions.find(g => g.value === groupBy)
+
 
     return (
         <div className="animate-fade-in">
@@ -155,6 +182,7 @@ export default function Board() {
                             games={games}
                             departments={departments}
                             fieldConfig={fieldConfig}
+                            filterOptions={filterOptions}
                             filters={filters}
                             onFilterChange={handleFilterChange}
                             onClearAll={handleClearAllFilters}

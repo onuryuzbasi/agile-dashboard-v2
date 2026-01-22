@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
+import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
 import ViewSettingsMenu from '../components/common/ViewSettingsMenu'
 import {
     DndContext,
@@ -68,6 +69,9 @@ const formatDateRange = (startDate, endDate) => {
 }
 
 export default function Backlog() {
+    // Single Source of Truth: Global normalized filter options
+    const { filterOptions } = useGlobalFilterOptions()
+
     const {
         issues,
         getBacklogIssues,
@@ -91,7 +95,8 @@ export default function Backlog() {
         addSavedFilter,
         deleteSavedFilter,
         openCreateModal,
-        cardFieldVisibility
+        cardFieldVisibility,
+        setActiveFilterDefaults  // Sync filter state to global store
     } = useProjectStore()
 
     // Filter state
@@ -159,6 +164,31 @@ export default function Backlog() {
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+    // CRITICAL: Sync filter state to global store so Header Create button can use it
+    useEffect(() => {
+        // Helper to get first value from Set or Array as string
+        const getFirst = (setOrArr, exclude = []) => {
+            const arr = setOrArr instanceof Set ? [...setOrArr] : (Array.isArray(setOrArr) ? setOrArr : [])
+            const filtered = arr.filter(v => v && !exclude.includes(v))
+            return filtered.length === 1 ? String(filtered[0]) : null
+        }
+
+        const defaults = {
+            epicId: getFirst(selectedEpics, ['no-epic']),
+            priority: getFirst(filterPriorities),
+            status: getFirst(filterStatuses),
+            type: getFirst(filterTypes),
+            assigneeId: getFirst(selectedAssignees, ['unassigned']),
+            departmentId: getFirst(filterDepartments, ['no-department']),
+            gameId: getFirst(filterGames, ['no-game'])
+        }
+
+        // Only update if we have at least one non-null default
+        const hasDefaults = Object.values(defaults).some(v => v !== null)
+        setActiveFilterDefaults(hasDefaults ? defaults : {})
+    }, [selectedEpics, selectedAssignees, filterTypes, filterStatuses, filterPriorities,
+        filterDepartments, filterGames, setActiveFilterDefaults])
 
     // Get all epics for filter
     const epics = issues.filter(i => i.type === 'epic')
@@ -1227,6 +1257,7 @@ export default function Backlog() {
                             games={games}
                             departments={departments}
                             fieldConfig={fieldConfig}
+                            filterOptions={filterOptions}
                             filters={{
                                 type: filterTypes,
                                 status: filterStatuses,

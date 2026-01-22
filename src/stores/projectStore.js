@@ -24,6 +24,8 @@ const emptyState = {
     createIssueModalOpen: false,
     createIssueDefaultType: 'story',
     createIssueDefaults: {},
+    // Global filter defaults for Create Issue modal (populated by active page)
+    activeFilterDefaults: {},
     cardFieldVisibility: {
         labels: true,
         status: true,
@@ -172,11 +174,19 @@ export const useProjectStore = create(
             },
 
             // Alias for openCreateIssueModal (used by Header)
-            openCreateModal: (defaultType = 'story', defaults = {}) => set({
-                createIssueModalOpen: true,
-                createIssueDefaultType: defaultType,
-                createIssueDefaults: defaults
-            }),
+            // When defaults not passed explicitly, uses activeFilterDefaults from current page
+            openCreateModal: (defaultType = 'story', defaults = null) => {
+                const state = get()
+                const finalDefaults = defaults || state.activeFilterDefaults || {}
+                set({
+                    createIssueModalOpen: true,
+                    createIssueDefaultType: defaultType,
+                    createIssueDefaults: finalDefaults
+                })
+            },
+
+            // Set active filter defaults (called by pages when filters change)
+            setActiveFilterDefaults: (defaults) => set({ activeFilterDefaults: defaults || {} }),
 
             // Issue actions
             addIssue: async (issue) => {

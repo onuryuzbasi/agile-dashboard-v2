@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
+import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
 import {
     ChevronRight,
     ChevronDown,
@@ -109,6 +110,9 @@ function MultiSelectDropdown({ label, options, selected, onChange }) {
 }
 
 export default function Timeline() {
+    // Single Source of Truth: Global normalized filter options
+    const { filterOptions } = useGlobalFilterOptions()
+
     // GLOBAL DATA - Single Source of Truth
     const {
         issues, sprints, users, games, departments,
@@ -579,6 +583,7 @@ export default function Timeline() {
                         games={games}
                         departments={departments}
                         fieldConfig={fieldConfig}
+                        filterOptions={filterOptions}
                         filters={{
                             type: new Set(),
                             status: new Set(statusFilter),

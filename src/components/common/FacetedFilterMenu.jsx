@@ -60,7 +60,10 @@ export default function FacetedFilterMenu({
     onSaveFilter,
     onDeleteSavedFilter,
     onApplySavedFilter,
-    anchorRef
+    anchorRef,
+    // NEW: Pre-normalized filter options from useGlobalFilterOptions
+    // When provided, these take precedence over dynamically extracted options
+    filterOptions = null
 }) {
     const menuRef = useRef(null)
     const [collapsedSections, setCollapsedSections] = useState(new Set())
@@ -125,8 +128,10 @@ export default function FacetedFilterMenu({
         onFilterChange?.(field, newSet)
     }
 
-    // Extract unique values dynamically from issues
-    const dynamicOptions = useMemo(() => {
+    // Extract unique values dynamically from issues (legacy fallback)
+    const legacyDynamicOptions = useMemo(() => {
+        if (filterOptions) return null // Skip if using normalized options
+
         const typeSet = new Set()
         const statusSet = new Set()
         const prioritySet = new Set()
@@ -182,7 +187,28 @@ export default function FacetedFilterMenu({
             reporters: Array.from(reporterSet),
             epics: Array.from(epicSet).filter(id => id !== 'no-epic' || epicSet.has('no-epic'))
         }
-    }, [issues])
+    }, [issues, filterOptions])
+
+    // SINGLE SOURCE OF TRUTH: Use normalized filterOptions when available
+    // This ensures IDs are strings matching CreateIssueModal dropdowns exactly
+    const dynamicOptions = useMemo(() => {
+        if (filterOptions) {
+            // Convert {id, name} format to ID arrays for rendering
+            return {
+                types: (fieldConfig?.issueTypes || []).map(t => t.key),
+                statuses: (fieldConfig?.statuses || []).map(s => s.key),
+                priorities: (fieldConfig?.priorities || []).map(p => p.key),
+                assignees: filterOptions.assignees?.map(a => a.id) || [],
+                sprints: filterOptions.sprints?.map(s => s.id) || [],
+                games: filterOptions.games?.map(g => g.id) || [],
+                departments: filterOptions.departments?.map(d => d.id) || [],
+                labels: (fieldConfig?.labels || []).map(l => l.name || l.id),
+                reporters: filterOptions.reporters?.map(r => r.id) || [],
+                epics: filterOptions.epics?.map(e => e.id) || []
+            }
+        }
+        return legacyDynamicOptions
+    }, [filterOptions, fieldConfig, legacyDynamicOptions])
 
     // Count active filters
     const activeCount = Object.values(filters).reduce((sum, set) => sum + (set?.size || 0), 0)

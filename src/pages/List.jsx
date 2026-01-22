@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
+import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
 import {
     Plus,
     ChevronDown,
@@ -338,6 +339,9 @@ function EpicCreateModal({ onSave, onCancel }) {
 }
 
 export default function List() {
+    // Single Source of Truth: Global normalized filter options
+    const { filterOptions } = useGlobalFilterOptions()
+
     const {
         issues,
         sprints,
@@ -1509,6 +1513,7 @@ export default function List() {
                             games={games}
                             departments={departments}
                             fieldConfig={fieldConfig}
+                            filterOptions={filterOptions}
                             filters={filters}
                             onFilterChange={handleFilterChange}
                             onClearAll={clearAllFilters}

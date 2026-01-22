@@ -20,6 +20,18 @@ const fallbackPriorityOptions = [
     { value: 'lowest', label: 'Lowest' }
 ]
 
+// Fibonacci sequence for Story Points
+const storyPointOptions = [
+    { value: '', label: 'None' },
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+    { value: '5', label: '5' },
+    { value: '8', label: '8' },
+    { value: '13', label: '13' },
+    { value: '21', label: '21' }
+]
+
 export default function CreateIssueModal() {
     const {
         createIssueModalOpen,
@@ -63,7 +75,8 @@ export default function CreateIssueModal() {
         parentId: '',
         status: 'todo',
         departmentId: '',
-        gameId: ''
+        gameId: '',
+        storyPoints: ''  // Fibonacci: 1, 2, 3, 5, 8, 13, 21
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -117,7 +130,8 @@ export default function CreateIssueModal() {
                 status: createIssueDefaults?.status || 'todo',
                 // NEW: Department and Game from filters
                 departmentId: createIssueDefaults?.departmentId || '',
-                gameId: createIssueDefaults?.gameId || ''
+                gameId: createIssueDefaults?.gameId || '',
+                storyPoints: ''  // Story points not pre-filled from filters
             }
 
             console.log('📝 Final newFormData:', newFormData)
@@ -149,6 +163,7 @@ export default function CreateIssueModal() {
                 parentId: formData.type !== 'epic' && formData.parentId ? formData.parentId : null,
                 departmentId: formData.departmentId || null,
                 gameId: formData.gameId || null,
+                storyPoints: formData.storyPoints ? parseInt(formData.storyPoints) : null,
                 startDate: new Date().toISOString().split('T')[0],
                 dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
@@ -351,6 +366,21 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    {/* Story Points */}
+                    <div className="form-group">
+                        <label>Story Points</label>
+                        <select
+                            className="input"
+                            value={formData.storyPoints}
+                            onChange={(e) => setFormData(prev => ({ ...prev, storyPoints: e.target.value }))}
+                            disabled={isSubmitting}
+                        >
+                            {storyPointOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Actions */}

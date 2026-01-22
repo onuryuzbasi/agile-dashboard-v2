@@ -1681,6 +1681,91 @@ h4 {
   font-weight: 600;
 }
 
+/* Issue Card Labels */
+.issue-card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: var(--space-2);
+}
+
+.issue-label-mini {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.issue-label-more {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 4px;
+  color: var(--text-tertiary);
+}
+
+/* Issue Status Mini Badge */
+.issue-status-mini {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Issue Due Date Mini */
+.issue-due-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.issue-due-mini.overdue {
+  color: var(--danger);
+  background: var(--danger-light);
+}
+
+/* Issue Department Mini */
+.issue-dept-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.issue-dept-mini span {
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Issue Game Mini */
+.issue-game-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.issue-game-mini span {
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
   position: fixed;

@@ -9,7 +9,10 @@ import {
     ListTree,
     ArrowUp,
     ArrowDown,
-    Minus
+    Minus,
+    Gamepad2,
+    Building2,
+    Calendar
 } from 'lucide-react'
 
 const typeIcons = {
@@ -29,7 +32,14 @@ const priorityConfig = {
 }
 
 export default function IssueCard({ issue, isDragging = false }) {
-    const { setSelectedIssue, getUserById } = useProjectStore()
+    const {
+        setSelectedIssue,
+        getUserById,
+        cardFieldVisibility,
+        games,
+        departments,
+        fieldConfig
+    } = useProjectStore()
 
     const {
         attributes,
@@ -50,12 +60,32 @@ export default function IssueCard({ issue, isDragging = false }) {
     const priorityColor = priorityConfig[issue.priority]?.color || 'var(--text-tertiary)'
     const assignee = issue.assigneeId ? getUserById(issue.assigneeId) : null
 
+    // Get game and department names
+    const game = issue.gameId ? games?.find(g => g.id === issue.gameId) : null
+    const department = issue.departmentId ? departments?.find(d => d.id === issue.departmentId) : null
+
+    // Get status config for display
+    const statusConfig = fieldConfig?.statuses?.find(s => s.key === issue.status)
+
     const handleClick = (e) => {
         // Don't open modal if dragging
         if (!isSortableDragging && !isDragging) {
             setSelectedIssue(issue)
         }
     }
+
+    // Format due date
+    const formatDueDate = (dateStr) => {
+        if (!dateStr) return null
+        const date = new Date(dateStr)
+        const now = new Date()
+        const isOverdue = date < now && issue.status !== 'done'
+        const month = date.toLocaleDateString('en-US', { month: 'short' })
+        const day = date.getDate()
+        return { text: `${month} ${day}`, isOverdue }
+    }
+
+    const dueDate = formatDueDate(issue.dueDate)
 
     return (
         <div
@@ -77,26 +107,79 @@ export default function IssueCard({ issue, isDragging = false }) {
             {/* Title */}
             <div className="issue-title">{issue.summary}</div>
 
+            {/* Labels */}
+            {cardFieldVisibility?.labels && issue.labels?.length > 0 && (
+                <div className="issue-card-labels">
+                    {issue.labels.slice(0, 3).map((label, idx) => (
+                        <span key={idx} className="issue-label-mini">
+                            {typeof label === 'string' ? label : label.name}
+                        </span>
+                    ))}
+                    {issue.labels.length > 3 && (
+                        <span className="issue-label-more">+{issue.labels.length - 3}</span>
+                    )}
+                </div>
+            )}
+
             {/* Footer with meta info */}
             <div className="issue-card-footer">
                 <div className="issue-meta">
-                    {/* Priority */}
-                    <span
-                        className="tooltip"
-                        data-tooltip={priorityConfig[issue.priority]?.label}
-                        style={{ color: priorityColor }}
-                    >
-                        <PriorityIcon size={14} />
-                    </span>
+                    {/* Status Badge */}
+                    {cardFieldVisibility?.status && statusConfig && (
+                        <span
+                            className="issue-status-mini"
+                            style={{
+                                backgroundColor: statusConfig.bgColor,
+                                color: statusConfig.textColor
+                            }}
+                        >
+                            {statusConfig.label}
+                        </span>
+                    )}
 
-                    {/* Story Points */}
+                    {/* Priority */}
+                    {cardFieldVisibility?.priority && (
+                        <span
+                            className="tooltip"
+                            data-tooltip={priorityConfig[issue.priority]?.label}
+                            style={{ color: priorityColor }}
+                        >
+                            <PriorityIcon size={14} />
+                        </span>
+                    )}
+
+                    {/* Story Points - Always show when set */}
                     {issue.storyPoints && (
                         <span className="story-points">{issue.storyPoints}</span>
+                    )}
+
+                    {/* Due Date */}
+                    {cardFieldVisibility?.dueDate && dueDate && (
+                        <span className={`issue-due-mini ${dueDate.isOverdue ? 'overdue' : ''}`}>
+                            <Calendar size={12} />
+                            {dueDate.text}
+                        </span>
+                    )}
+
+                    {/* Department */}
+                    {cardFieldVisibility?.department && department && (
+                        <span className="issue-dept-mini tooltip" data-tooltip={department.name}>
+                            <Building2 size={12} />
+                            <span>{department.code || department.name.substring(0, 3)}</span>
+                        </span>
+                    )}
+
+                    {/* Game */}
+                    {cardFieldVisibility?.game && game && (
+                        <span className="issue-game-mini tooltip" data-tooltip={game.name}>
+                            <Gamepad2 size={12} />
+                            <span>{game.code || game.name.substring(0, 3)}</span>
+                        </span>
                     )}
                 </div>
 
                 {/* Assignee */}
-                {assignee && (
+                {cardFieldVisibility?.assignee && assignee && (
                     <div className="avatar sm" title={assignee.name}>
                         {assignee.avatar ? (
                             <img src={assignee.avatar} alt={assignee.name} />

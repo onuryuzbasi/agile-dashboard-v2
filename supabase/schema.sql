@@ -122,6 +122,16 @@ CREATE TABLE IF NOT EXISTS saved_filters (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Team Settings (shared view preferences, card field visibility, etc.)
+CREATE TABLE IF NOT EXISTS team_settings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  setting_key TEXT NOT NULL,
+  setting_value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(project_id, setting_key)
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_issues_project_id ON issues(project_id);
 CREATE INDEX IF NOT EXISTS idx_issues_sprint_id ON issues(sprint_id);

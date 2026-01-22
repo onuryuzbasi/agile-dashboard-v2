@@ -26,13 +26,20 @@ const emptyState = {
     createIssueDefaults: {},
     // Global filter defaults for Create Issue modal (populated by active page)
     activeFilterDefaults: {},
+    // Team defaults for card field visibility (fetched from Supabase team_settings)
+    teamCardFieldDefaults: null,
+    // Current card field visibility (merged from personal > team > defaults)
     cardFieldVisibility: {
         labels: true,
         status: true,
         dueDate: true,
         estimate: true,
         priority: true,
-        assignee: true
+        assignee: true,
+        game: false,      // Custom field from games table
+        department: false, // Custom field from departments table
+        reporter: false,   // Standard field
+        startDate: false   // Standard field
     },
     savedFilters: [],
     isLoading: true,
@@ -887,12 +894,115 @@ export const useProjectStore = create(
                 createIssueDefaults: defaults
             }),
             closeCreateIssueModal: () => set({ createIssueModalOpen: false, createIssueDefaults: {} }),
+
+            // Card Field Visibility - local toggle (immediate UI feedback)
             setCardFieldVisibility: (field, visible) => set((state) => ({
                 cardFieldVisibility: {
                     ...state.cardFieldVisibility,
                     [field]: visible
                 }
             })),
+
+            // Set all card field visibility at once
+            setAllCardFieldVisibility: (visibility) => set({ cardFieldVisibility: visibility }),
+
+            // Save personal card field preferences to localStorage
+            savePersonalCardFields: () => {
+                const state = get()
+                localStorage.setItem('cardFieldVisibility', JSON.stringify(state.cardFieldVisibility))
+            },
+
+            // Load personal card fields from localStorage, falling back to team defaults
+            loadCardFieldPreferences: async () => {
+                const state = get()
+
+                // Try localStorage first (personal preference)
+                const personal = localStorage.getItem('cardFieldVisibility')
+                if (personal) {
+                    try {
+                        const parsed = JSON.parse(personal)
+                        set({ cardFieldVisibility: { ...state.cardFieldVisibility, ...parsed } })
+                        return
+                    } catch (e) {
+                        console.warn('Invalid personal card field preferences in localStorage')
+                    }
+                }
+
+                // Fall back to team defaults if loaded
+                if (state.teamCardFieldDefaults) {
+                    set({ cardFieldVisibility: { ...state.cardFieldVisibility, ...state.teamCardFieldDefaults } })
+                }
+            },
+
+            // Load team card field defaults from Supabase
+            loadTeamSettings: async () => {
+                const state = get()
+                if (!state.currentProjectId) return
+
+                const { data, error } = await supabase
+                    .from('team_settings')
+                    .select('setting_value')
+                    .eq('project_id', state.currentProjectId)
+                    .eq('setting_key', 'cardFieldVisibility')
+                    .single()
+
+                if (!error && data?.setting_value) {
+                    set({ teamCardFieldDefaults: data.setting_value })
+
+                    // If no personal preference, apply team defaults
+                    const personal = localStorage.getItem('cardFieldVisibility')
+                    if (!personal) {
+                        set({ cardFieldVisibility: { ...state.cardFieldVisibility, ...data.setting_value } })
+                    }
+                }
+            },
+
+            // Save card field visibility as team default to Supabase
+            saveTeamCardFieldDefaults: async () => {
+                const state = get()
+                if (!state.currentProjectId) return
+
+                const { error } = await supabase
+                    .from('team_settings')
+                    .upsert({
+                        project_id: state.currentProjectId,
+                        setting_key: 'cardFieldVisibility',
+                        setting_value: state.cardFieldVisibility,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'project_id,setting_key' })
+
+                if (error) {
+                    console.error('Failed to save team card field defaults:', error)
+                    throw error
+                }
+
+                set({ teamCardFieldDefaults: state.cardFieldVisibility })
+            },
+
+            // Get list of available card fields dynamically
+            getAvailableCardFields: () => {
+                const state = get()
+                const fields = [
+                    { key: 'labels', label: 'Labels', category: 'standard' },
+                    { key: 'status', label: 'Status', category: 'standard' },
+                    { key: 'dueDate', label: 'Due Date', category: 'standard' },
+                    { key: 'startDate', label: 'Start Date', category: 'standard' },
+                    { key: 'estimate', label: 'Story Points', category: 'standard' },
+                    { key: 'priority', label: 'Priority', category: 'standard' },
+                    { key: 'assignee', label: 'Assignee', category: 'standard' },
+                    { key: 'reporter', label: 'Reporter', category: 'standard' }
+                ]
+
+                // Add custom fields from games/departments if they exist
+                if (state.games?.length > 0) {
+                    fields.push({ key: 'game', label: 'Game', category: 'custom' })
+                }
+                if (state.departments?.length > 0) {
+                    fields.push({ key: 'department', label: 'Department', category: 'custom' })
+                }
+
+                return fields
+            },
 
             // Work Log
             addWorkLog: async (issueId, workLog) => {

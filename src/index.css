@@ -9772,6 +9772,85 @@ h4 {
   color: white;
 }
 
+.view-settings-option .option-label {
+  flex: 1;
+}
+
+.view-settings-option .option-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.view-settings-divider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: var(--space-1) 0;
+}
+
+.view-settings-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+
+.view-settings-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.view-settings-save-btn.personal {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.view-settings-save-btn.personal:hover {
+  background: var(--bg-hover);
+}
+
+.view-settings-save-btn.team {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.view-settings-save-btn.team:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.view-settings-save-btn.team.confirm {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.view-settings-save-btn.saving {
+  background: var(--success-light);
+  color: var(--success);
+  pointer-events: none;
+}
+
+.view-settings-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ===== Issue Context Menu ===== */
 .issue-context-menu {
   background: var(--bg-primary);

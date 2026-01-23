@@ -194,21 +194,64 @@ export default function Backlog() {
     const typeDropdownRef = useRef(null)
     const assigneeDropdownRef = useRef(null)
     const filterButtonRef = useRef(null) // Anchor for FacetedFilterMenu portal
+    const epicDropdownRef = useRef(null)
+    const epicMenuRef = useRef(null)
+    const sprintMenuRef = useRef(null)
 
-    // Close dropdowns when clicking outside
+    // Global click-outside handler for ALL dropdowns and menus
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Close type dropdown
             if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target)) {
                 setShowTypeDropdown(false)
             }
+            // Close assignee dropdown
             if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target)) {
                 setShowAssigneeDropdown(false)
+            }
+            // Close epic filter dropdown (top bar)
+            if (epicDropdownRef.current && !epicDropdownRef.current.contains(event.target)) {
+                setEpicDropdownOpen(false)
+            }
+            // Close epic 3-dot menu (sidebar)
+            if (epicMenuOpen !== null) {
+                // Check if click is outside the currently open menu
+                const menuElements = document.querySelectorAll('.epic-dropdown-menu')
+                let clickedInsideMenu = false
+                menuElements.forEach(el => {
+                    if (el.contains(event.target)) clickedInsideMenu = true
+                })
+                // Also check if click was on a dots button
+                const dotsButtons = document.querySelectorAll('.epic-dots-btn')
+                let clickedOnDots = false
+                dotsButtons.forEach(el => {
+                    if (el.contains(event.target)) clickedOnDots = true
+                })
+                if (!clickedInsideMenu && !clickedOnDots) {
+                    setEpicMenuOpen(null)
+                }
+            }
+            // Close sprint menu
+            if (sprintMenuOpen !== null) {
+                const menuElements = document.querySelectorAll('.sprint-menu')
+                let clickedInsideMenu = false
+                menuElements.forEach(el => {
+                    if (el.contains(event.target)) clickedInsideMenu = true
+                })
+                const menuButtons = document.querySelectorAll('.sprint-menu-container button')
+                let clickedOnButton = false
+                menuButtons.forEach(el => {
+                    if (el.contains(event.target)) clickedOnButton = true
+                })
+                if (!clickedInsideMenu && !clickedOnButton) {
+                    setSprintMenuOpen(null)
+                }
             }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+    }, [epicMenuOpen, sprintMenuOpen])
 
     // CRITICAL: Sync filter state to global store so Header Create button can use it
     useEffect(() => {
@@ -1208,7 +1251,7 @@ export default function Backlog() {
                     {/* Epic Dropdown */}
                     <div className="toolbar-divider" />
 
-                    <div className="epic-filter-dropdown-container">
+                    <div className="epic-filter-dropdown-container" ref={epicDropdownRef}>
                         <button
                             className={`btn btn-sm btn-secondary ${epicDropdownOpen ? 'active' : ''}`}
                             onClick={() => setEpicDropdownOpen(!epicDropdownOpen)}

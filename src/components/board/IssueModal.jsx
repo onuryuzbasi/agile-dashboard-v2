@@ -152,6 +152,41 @@ export default function IssueModal({ issue, onClose }) {
     // Activity log state
     const [activityLogExpanded, setActivityLogExpanded] = useState(false)
 
+    // Helper to resolve display labels for history entries (handles missing or UUID labels)
+    const resolveHistoryLabel = (entry, labelType) => {
+        const label = labelType === 'old' ? entry.oldLabel : entry.newLabel
+        const value = labelType === 'old' ? entry.oldValue : entry.newValue
+
+        // If label exists and is not a UUID, use it
+        if (label && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(label)) {
+            return label
+        }
+
+        // Otherwise, resolve from value
+        if (value === null || value === undefined || value === '') return 'None'
+
+        switch (entry.field) {
+            case 'sprintId':
+                const sprint = sprints.find(s => s.id === value)
+                return sprint?.name || 'Backlog'
+            case 'assigneeId':
+            case 'reporterId':
+                const user = users.find(u => u.id === value)
+                return user?.name || 'Unassigned'
+            case 'parentId':
+                const parent = issues.find(i => i.id === value)
+                return parent?.key || 'None'
+            case 'gameId':
+                const game = games?.find(g => g.id === value)
+                return game?.name || 'None'
+            case 'departmentId':
+                const dept = departments?.find(d => d.id === value)
+                return dept?.name || 'None'
+            default:
+                return label || String(value)
+        }
+    }
+
     // Delete confirmation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -903,11 +938,11 @@ export default function IssueModal({ issue, onClose }) {
                                                                 </span>
                                                                 {' from '}
                                                                 <span className="activity-log-value old">
-                                                                    '{entry.oldLabel}'
+                                                                    '{resolveHistoryLabel(entry, 'old')}'
                                                                 </span>
                                                                 {' to '}
                                                                 <span className="activity-log-value new">
-                                                                    '{entry.newLabel}'
+                                                                    '{resolveHistoryLabel(entry, 'new')}'
                                                                 </span>
                                                             </div>
                                                         </div>

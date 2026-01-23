@@ -141,7 +141,8 @@ export default function Backlog() {
         deleteSavedFilter,
         openCreateModal,
         cardFieldVisibility,
-        setActiveFilterDefaults  // Sync filter state to global store
+        setActiveFilterDefaults,  // Sync filter state to global store
+        showConfirmModal
     } = useProjectStore()
 
     // Filter state
@@ -1080,9 +1081,17 @@ export default function Backlog() {
                                             <button
                                                 className="delete-btn"
                                                 onClick={() => {
-                                                    deleteIssue(epic.id)
+                                                    showConfirmModal({
+                                                        title: `Delete Epic "${epic.summary}"?`,
+                                                        message: 'This will delete the epic. Child issues will remain but lose their parent reference.',
+                                                        variant: 'danger',
+                                                        confirmText: 'Delete Epic',
+                                                        onConfirm: () => {
+                                                            deleteIssue(epic.id)
+                                                            setSelectedEpics(prev => prev.filter(id => id !== epic.id))
+                                                        }
+                                                    })
                                                     setEpicMenuOpen(null)
-                                                    setSelectedEpics(prev => prev.filter(id => id !== epic.id))
                                                 }}
                                             >
                                                 <Trash2 size={14} />

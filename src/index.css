@@ -1019,10 +1019,33 @@ h4 {
   gap: var(--space-2);
   padding: var(--space-3);
   border-top: 1px solid var(--border-primary);
+  flex-wrap: wrap;
+}
+
+.add-child-row.enhanced {
+  align-items: center;
 }
 
 .add-child-row .input {
   flex: 1;
+  min-width: 0;
+}
+
+.add-child-type-select {
+  width: 90px;
+  flex-shrink: 0;
+  flex-grow: 0 !important;
+}
+
+.add-child-summary-input {
+  flex: 1 !important;
+  min-width: 120px;
+}
+
+.add-child-assignee-select {
+  width: 120px;
+  flex-shrink: 0;
+  flex-grow: 0 !important;
 }
 
 .child-items-empty {

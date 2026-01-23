@@ -132,6 +132,8 @@ export default function IssueModal({ issue, onClose }) {
     const [isEditing, setIsEditing] = useState(false)
     const [childItemsExpanded, setChildItemsExpanded] = useState(true)
     const [newChildSummary, setNewChildSummary] = useState('')
+    const [newChildType, setNewChildType] = useState('story')
+    const [newChildAssigneeId, setNewChildAssigneeId] = useState('')
     const [showAddChild, setShowAddChild] = useState(false)
     const [showParentDropdown, setShowParentDropdown] = useState(false)
     const [newEpicName, setNewEpicName] = useState('')
@@ -184,24 +186,27 @@ export default function IssueModal({ issue, onClose }) {
         }
     }
 
-    const handleAddChild = () => {
+    const handleAddChild = async () => {
         if (!newChildSummary.trim()) return
 
-        addIssue({
-            type: 'task',
+        await addIssue({
+            type: newChildType,
             status: 'todo',
             priority: 'medium',
             summary: newChildSummary.trim(),
             description: '',
             parentId: issue.id,
             sprintId: formData.sprintId,
-            assigneeId: null,
+            assigneeId: newChildAssigneeId || null,
             storyPoints: null,
             labels: [],
             reporterId: issue.reporterId
         })
 
+        // Reset form
         setNewChildSummary('')
+        setNewChildType('story')
+        setNewChildAssigneeId('')
         setShowAddChild(false)
     }
 
@@ -609,13 +614,23 @@ export default function IssueModal({ issue, onClose }) {
                                         </div>
                                     )}
 
-                                    {/* Add child input */}
+                                    {/* Add child input - Enhanced inline form */}
                                     {showAddChild && (
-                                        <div className="add-child-row">
+                                        <div className="add-child-row enhanced">
+                                            <select
+                                                className="input add-child-type-select"
+                                                value={newChildType}
+                                                onChange={(e) => setNewChildType(e.target.value)}
+                                                title="Issue Type"
+                                            >
+                                                <option value="story">Story</option>
+                                                <option value="task">Task</option>
+                                                <option value="bug">Bug</option>
+                                            </select>
                                             <input
                                                 type="text"
-                                                className="input"
-                                                placeholder="Enter task summary..."
+                                                className="input add-child-summary-input"
+                                                placeholder="Enter issue summary..."
                                                 value={newChildSummary}
                                                 onChange={(e) => setNewChildSummary(e.target.value)}
                                                 onKeyDown={(e) => {
@@ -623,10 +638,23 @@ export default function IssueModal({ issue, onClose }) {
                                                     if (e.key === 'Escape') {
                                                         setShowAddChild(false)
                                                         setNewChildSummary('')
+                                                        setNewChildType('story')
+                                                        setNewChildAssigneeId('')
                                                     }
                                                 }}
                                                 autoFocus
                                             />
+                                            <select
+                                                className="input add-child-assignee-select"
+                                                value={newChildAssigneeId}
+                                                onChange={(e) => setNewChildAssigneeId(e.target.value)}
+                                                title="Assignee"
+                                            >
+                                                <option value="">Unassigned</option>
+                                                {users.map(user => (
+                                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                                ))}
+                                            </select>
                                             <button className="btn btn-sm btn-primary" onClick={handleAddChild}>
                                                 Add
                                             </button>
@@ -635,6 +663,8 @@ export default function IssueModal({ issue, onClose }) {
                                                 onClick={() => {
                                                     setShowAddChild(false)
                                                     setNewChildSummary('')
+                                                    setNewChildType('story')
+                                                    setNewChildAssigneeId('')
                                                 }}
                                             >
                                                 Cancel

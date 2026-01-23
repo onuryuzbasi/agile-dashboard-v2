@@ -1868,7 +1868,7 @@ export default function ListTemplate() {
                                                                 setActiveDropdown({ issueId: issue.id, field: 'type' })
                                                             }}
                                                         >
-                                                            <TypeIcon type={issue.type} />
+                                                            <TypeIcon type={issue.type} typeConfig={dynamicTypeConfig[issue.type]} />
                                                             {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'type' && (
                                                                 <SearchableDropdown
                                                                     options={getTypeOptions()}
@@ -1979,7 +1979,7 @@ export default function ListTemplate() {
                                                                                 setActiveDropdown({ issueId: childIssue.id, field: 'type' })
                                                                             }}
                                                                         >
-                                                                            <TypeIcon type={childIssue.type} />
+                                                                            <TypeIcon type={childIssue.type} typeConfig={dynamicTypeConfig[childIssue.type]} />
                                                                             {activeDropdown?.issueId === childIssue.id && activeDropdown?.field === 'type' && (
                                                                                 <SearchableDropdown
                                                                                     options={getTypeOptions()}
@@ -2045,7 +2045,7 @@ export default function ListTemplate() {
                                     {creatingInGroup === group.id ? (
                                         <div className="quick-create-footer expanded">
                                             <div className="quick-create-type">
-                                                <TypeIcon type="story" />
+                                                <TypeIcon type="story" typeConfig={dynamicTypeConfig.story} />
                                             </div>
                                             <div className="quick-create-input-wrapper">
                                                 <input

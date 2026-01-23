@@ -233,7 +233,7 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
         if (targetStatus && activeIssueData.status !== targetStatus) {
             // Check for incomplete checklist items
             const checklist = activeIssueData.checklist || []
-            const incompleteItems = checklist.filter(item => !item.completed)
+            const incompleteItems = checklist.filter(item => !item.checked)
 
             if (incompleteItems.length > 0) {
                 // Store the pending action and show warning
@@ -463,7 +463,7 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
                             <div className="delete-confirm-body">
                                 <p>Checklistte tamamlanmayan maddeler var.</p>
                                 <p className="delete-note" style={{ marginTop: '8px' }}>
-                                    {pendingDragAction?.activeIssueData?.checklist?.filter(item => !item.completed).length || 0} tamamlanmamış madde bulunuyor.
+                                    {pendingDragAction?.activeIssueData?.checklist?.filter(item => !item.checked).length || 0} tamamlanmamış madde bulunuyor.
                                 </p>
                             </div>
                             <div className="delete-confirm-actions">

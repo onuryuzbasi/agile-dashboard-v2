@@ -224,7 +224,7 @@ export default function IssueModal({ issue, onClose }) {
         // Check for incomplete checklist items when status is being changed
         if (field === 'status' && value !== formData.status) {
             const checklist = issue.checklist || []
-            const incompleteItems = checklist.filter(item => !item.completed)
+            const incompleteItems = checklist.filter(item => !item.checked)
 
             if (incompleteItems.length > 0) {
                 // Store the pending status change and show warning
@@ -1175,7 +1175,7 @@ export default function IssueModal({ issue, onClose }) {
                         <div className="delete-confirm-body">
                             <p>Checklistte tamamlanmayan maddeler var.</p>
                             <p className="delete-note" style={{ marginTop: '8px' }}>
-                                {(issue.checklist || []).filter(item => !item.completed).length} tamamlanmamış madde bulunuyor.
+                                {(issue.checklist || []).filter(item => !item.checked).length} tamamlanmamış madde bulunuyor.
                             </p>
                         </div>
                         <div className="delete-confirm-actions">

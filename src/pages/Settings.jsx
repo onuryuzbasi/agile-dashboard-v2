@@ -241,10 +241,15 @@ export default function Settings() {
             key: value.key || value.name?.toLowerCase().replace(/\s+/g, '_') || `item-${Date.now()}`,
             label: value.label || value.name,
             name: value.name,
-            color: value.color || colorPresets[Math.floor(Math.random() * colorPresets.length)],
             ...defaults,
             ...value
         }
+
+        // Add color only for field types that use it (not statuses which use bgColor/textColor)
+        if (fieldType !== 'statuses' && !item.color && !item.bgColor) {
+            item.color = colorPresets[Math.floor(Math.random() * colorPresets.length)]
+        }
+
         addFieldConfigItem(fieldType, item)
         setNewFieldValue({ ...newFieldValue, [fieldType]: {} })
     }

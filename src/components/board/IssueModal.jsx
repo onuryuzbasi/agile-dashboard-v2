@@ -22,7 +22,9 @@ import {
     Building2,
     Gamepad2,
     Link2,
-    History
+    History,
+    ListChecks,
+    Check
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 
@@ -42,6 +44,9 @@ export default function IssueModal({ issue, onClose }) {
         addIssue,
         addWorkLog,
         removeWorkLog,
+        addChecklistItem,
+        updateChecklistItem,
+        removeChecklistItem,
         users,
         sprints,
         issues,
@@ -151,6 +156,10 @@ export default function IssueModal({ issue, onClose }) {
 
     // Activity log state
     const [activityLogExpanded, setActivityLogExpanded] = useState(false)
+
+    // Checklist state
+    const [checklistExpanded, setChecklistExpanded] = useState(true)
+    const [newChecklistItem, setNewChecklistItem] = useState('')
 
     // Helper to resolve display labels for history entries (handles missing or UUID labels)
     const resolveHistoryLabel = (entry, labelType) => {
@@ -725,6 +734,103 @@ export default function IssueModal({ issue, onClose }) {
                             )}
                         </div>
                     )}
+
+                    {/* Checklist Section */}
+                    <div className="checklist-section">
+                        <div
+                            className="checklist-header"
+                            onClick={() => setChecklistExpanded(!checklistExpanded)}
+                        >
+                            <div className="checklist-title">
+                                {checklistExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                <ListChecks size={16} />
+                                <span>Checklist</span>
+                                <span className="checklist-count">
+                                    {(currentIssue.checklist || []).filter(i => i.checked).length}/{(currentIssue.checklist || []).length}
+                                </span>
+                            </div>
+                        </div>
+
+                        {checklistExpanded && (
+                            <div className="checklist-content">
+                                {/* Progress bar */}
+                                {(currentIssue.checklist || []).length > 0 && (
+                                    <div className="checklist-progress">
+                                        <div className="progress-bar">
+                                            <div
+                                                className="progress-fill"
+                                                style={{
+                                                    width: `${Math.round(
+                                                        ((currentIssue.checklist || []).filter(i => i.checked).length /
+                                                            (currentIssue.checklist || []).length) * 100
+                                                    )}%`
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="progress-text">
+                                            {Math.round(
+                                                ((currentIssue.checklist || []).filter(i => i.checked).length /
+                                                    (currentIssue.checklist || []).length) * 100
+                                            )}%
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Checklist items */}
+                                <div className="checklist-list">
+                                    {(currentIssue.checklist || []).map(item => (
+                                        <div key={item.id} className={`checklist-item ${item.checked ? 'checked' : ''}`}>
+                                            <button
+                                                className="checklist-checkbox"
+                                                onClick={() => updateChecklistItem(issue.id, item.id, { checked: !item.checked })}
+                                                aria-label={item.checked ? 'Uncheck item' : 'Check item'}
+                                            >
+                                                {item.checked && <Check size={12} />}
+                                            </button>
+                                            <span className="checklist-item-text">{item.text}</span>
+                                            <button
+                                                className="btn btn-icon btn-ghost btn-sm checklist-item-remove"
+                                                onClick={() => removeChecklistItem(issue.id, item.id)}
+                                                title="Remove item"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add new item */}
+                                <div className="checklist-add">
+                                    <input
+                                        type="text"
+                                        className="input checklist-add-input"
+                                        placeholder="Add an item..."
+                                        value={newChecklistItem}
+                                        onChange={(e) => setNewChecklistItem(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && newChecklistItem.trim()) {
+                                                addChecklistItem(issue.id, newChecklistItem)
+                                                setNewChecklistItem('')
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        className="btn btn-sm btn-secondary"
+                                        onClick={() => {
+                                            if (newChecklistItem.trim()) {
+                                                addChecklistItem(issue.id, newChecklistItem)
+                                                setNewChecklistItem('')
+                                            }
+                                        }}
+                                        disabled={!newChecklistItem.trim()}
+                                    >
+                                        <Plus size={14} />
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Work Log Section */}
                     <div className="work-log-section">

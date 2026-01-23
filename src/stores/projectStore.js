@@ -270,7 +270,8 @@ export const useProjectStore = create(
                     start_date: issue.startDate || null,
                     due_date: issue.dueDate || null,
                     work_logs: [],
-                    history: []
+                    history: [],
+                    checklist: []
                 }
 
                 // Optimistic update
@@ -1209,6 +1210,87 @@ export const useProjectStore = create(
 
                 if (error) {
                     console.error('Failed to remove work log:', error)
+                }
+            },
+
+            // Checklist Management
+            addChecklistItem: async (issueId, text) => {
+                const state = get()
+                const issue = state.issues.find(i => i.id === issueId)
+                if (!issue) return
+
+                const newItem = {
+                    id: `cl-${Date.now()}`,
+                    text: text.trim(),
+                    checked: false,
+                    createdAt: new Date().toISOString()
+                }
+
+                const newChecklist = [...(issue.checklist || []), newItem]
+
+                set({
+                    issues: state.issues.map(i =>
+                        i.id === issueId ? { ...i, checklist: newChecklist } : i
+                    )
+                })
+
+                const { error } = await supabase
+                    .from('issues')
+                    .update({ checklist: newChecklist })
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to add checklist item:', error)
+                }
+
+                return newItem
+            },
+
+            updateChecklistItem: async (issueId, itemId, updates) => {
+                const state = get()
+                const issue = state.issues.find(i => i.id === issueId)
+                if (!issue) return
+
+                const newChecklist = (issue.checklist || []).map(item =>
+                    item.id === itemId ? { ...item, ...updates } : item
+                )
+
+                set({
+                    issues: state.issues.map(i =>
+                        i.id === issueId ? { ...i, checklist: newChecklist } : i
+                    )
+                })
+
+                const { error } = await supabase
+                    .from('issues')
+                    .update({ checklist: newChecklist })
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to update checklist item:', error)
+                }
+            },
+
+            removeChecklistItem: async (issueId, itemId) => {
+                const state = get()
+                const issue = state.issues.find(i => i.id === issueId)
+                if (!issue) return
+
+                const newChecklist = (issue.checklist || []).filter(item => item.id !== itemId)
+
+                set({
+                    issues: state.issues.map(i =>
+                        i.id === issueId ? { ...i, checklist: newChecklist } : i
+                    )
+                })
+
+                const { error } = await supabase
+                    .from('issues')
+                    .update({ checklist: newChecklist })
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to remove checklist item:', error)
                 }
             }
         }),

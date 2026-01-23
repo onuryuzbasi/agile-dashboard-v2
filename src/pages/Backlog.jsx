@@ -1099,23 +1099,7 @@ export default function Backlog() {
                 <div className="epic-sidebar-footer">
                     <button
                         className="create-epic-btn"
-                        onClick={async () => {
-                            const newEpic = await addIssue({
-                                type: 'epic',
-                                status: 'todo',
-                                priority: 'medium',
-                                summary: 'New Epic',
-                                description: '',
-                                sprintId: null,
-                                storyPoints: null,
-                                labels: [],
-                                assigneeId: null,
-                                reporterId: users[0]?.id || null
-                            })
-                            if (newEpic) {
-                                setSelectedIssue(newEpic)
-                            }
-                        }}
+                        onClick={() => openCreateModal('epic')}
                     >
                         <Plus size={14} />
                         Create epic

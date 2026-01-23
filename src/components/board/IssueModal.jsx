@@ -24,7 +24,8 @@ import {
     Link2,
     History,
     ListChecks,
-    Check
+    Check,
+    AlertTriangle
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 
@@ -199,6 +200,10 @@ export default function IssueModal({ issue, onClose }) {
     // Delete confirmation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+    // Checklist warning state (for status change with incomplete items)
+    const [showChecklistWarning, setShowChecklistWarning] = useState(false)
+    const [pendingStatusChange, setPendingStatusChange] = useState(null)
+
     // Helper function for relative time display
     const getRelativeTime = (timestamp) => {
         const now = new Date()
@@ -216,8 +221,37 @@ export default function IssueModal({ issue, onClose }) {
     }
 
     const handleChange = (field, value) => {
+        // Check for incomplete checklist items when status is being changed
+        if (field === 'status' && value !== formData.status) {
+            const checklist = issue.checklist || []
+            const incompleteItems = checklist.filter(item => !item.completed)
+
+            if (incompleteItems.length > 0) {
+                // Store the pending status change and show warning
+                setPendingStatusChange(value)
+                setShowChecklistWarning(true)
+                return // Don't apply the change yet
+            }
+        }
+
         setFormData(prev => ({ ...prev, [field]: value }))
         setIsEditing(true)
+    }
+
+    // Handle confirming status change despite incomplete checklist
+    const confirmStatusChange = () => {
+        if (pendingStatusChange) {
+            setFormData(prev => ({ ...prev, status: pendingStatusChange }))
+            setIsEditing(true)
+        }
+        setShowChecklistWarning(false)
+        setPendingStatusChange(null)
+    }
+
+    // Cancel the pending status change
+    const cancelStatusChange = () => {
+        setShowChecklistWarning(false)
+        setPendingStatusChange(null)
     }
 
     const handleSave = () => {
@@ -1124,6 +1158,34 @@ export default function IssueModal({ issue, onClose }) {
                             <button className="btn btn-danger" onClick={confirmDelete}>
                                 <Trash2 size={14} />
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Checklist Warning Modal */}
+            {showChecklistWarning && (
+                <div className="delete-confirm-overlay" onClick={cancelStatusChange}>
+                    <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="delete-confirm-header" style={{ color: 'var(--warning)' }}>
+                            <AlertTriangle size={24} style={{ color: 'var(--warning)' }} />
+                            <h3>Tamamlanmamış Maddeler</h3>
+                        </div>
+                        <div className="delete-confirm-body">
+                            <p>Checklistte tamamlanmayan maddeler var.</p>
+                            <p className="delete-note" style={{ marginTop: '8px' }}>
+                                {(issue.checklist || []).filter(item => !item.completed).length} tamamlanmamış madde bulunuyor.
+                            </p>
+                        </div>
+                        <div className="delete-confirm-actions">
+                            <button className="btn btn-secondary" onClick={cancelStatusChange}>
+                                <ListChecks size={14} />
+                                Kontrol Et
+                            </button>
+                            <button className="btn btn-primary" onClick={confirmStatusChange}>
+                                <Check size={14} />
+                                Devam Et
                             </button>
                         </div>
                     </div>

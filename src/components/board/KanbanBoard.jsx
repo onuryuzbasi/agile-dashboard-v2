@@ -14,7 +14,7 @@ import { useState, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import KanbanColumn from './KanbanColumn'
 import IssueCard from './IssueCard'
-import { ChevronDown, ChevronRight, User, Zap, Building2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, User, Zap, Building2, AlertTriangle, ListChecks, Check } from 'lucide-react'
 
 export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     const {
@@ -30,6 +30,10 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
 
     const [activeIssue, setActiveIssue] = useState(null)
     const [collapsedSwimlanes, setCollapsedSwimlanes] = useState(new Set())
+
+    // Checklist warning state for drag-drop
+    const [showChecklistWarning, setShowChecklistWarning] = useState(false)
+    const [pendingDragAction, setPendingDragAction] = useState(null)
 
     // Get status keys dynamically from fieldConfig
     const statuses = useMemo(() => {
@@ -227,6 +231,22 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
 
         // Update status if changed
         if (targetStatus && activeIssueData.status !== targetStatus) {
+            // Check for incomplete checklist items
+            const checklist = activeIssueData.checklist || []
+            const incompleteItems = checklist.filter(item => !item.completed)
+
+            if (incompleteItems.length > 0) {
+                // Store the pending action and show warning
+                setPendingDragAction({
+                    issueId: active.id,
+                    targetStatus,
+                    targetSwimlane,
+                    activeIssueData
+                })
+                setShowChecklistWarning(true)
+                return // Don't apply the change yet
+            }
+
             updates.status = targetStatus
             needsUpdate = true
         }
@@ -274,6 +294,52 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
         // Could add hover feedback here
     }
 
+    // Confirm drag action despite incomplete checklist
+    const confirmDragAction = () => {
+        if (pendingDragAction) {
+            const { issueId, targetStatus, targetSwimlane, activeIssueData } = pendingDragAction
+            const updates = { status: targetStatus }
+
+            // Handle swimlane updates if applicable
+            if (targetSwimlane && groupBy !== 'none') {
+                switch (groupBy) {
+                    case 'assignee':
+                        const currentAssignee = activeIssueData.assigneeId || 'unassigned'
+                        if (currentAssignee !== targetSwimlane) {
+                            updates.assigneeId = targetSwimlane === 'unassigned' ? null : targetSwimlane
+                        }
+                        break
+                    case 'epic':
+                        const currentEpic = activeIssueData.parentId || 'no-epic'
+                        if (currentEpic !== targetSwimlane) {
+                            updates.parentId = targetSwimlane === 'no-epic' ? null : targetSwimlane
+                        }
+                        break
+                    case 'department':
+                        const currentDept = activeIssueData.department || 'no-department'
+                        if (currentDept !== targetSwimlane) {
+                            updates.department = targetSwimlane === 'no-department' ? null : targetSwimlane
+                        }
+                        break
+                }
+            }
+
+            if (Object.keys(updates).length === 1 && updates.status) {
+                moveIssue(issueId, updates.status)
+            } else {
+                updateIssue(issueId, updates)
+            }
+        }
+        setShowChecklistWarning(false)
+        setPendingDragAction(null)
+    }
+
+    // Cancel drag action
+    const cancelDragAction = () => {
+        setShowChecklistWarning(false)
+        setPendingDragAction(null)
+    }
+
     // Render a single swimlane
     const renderSwimlane = (lane) => {
         const isCollapsed = collapsedSwimlanes.has(lane.key)
@@ -319,69 +385,101 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     }
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={pointerWithin}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            measuring={{
-                droppable: {
-                    strategy: MeasuringStrategy.Always
-                }
-            }}
-        >
-            <div className={`kanban-board ${groupBy !== 'none' ? 'with-swimlanes' : ''}`}>
-                {groupBy === 'none' ? (
-                    // No grouping - render simple columns
-                    <>
-                        {statuses.map((status) => {
-                            const columnIssues = filteredIssues.filter(issue => issue.status === status)
-                            return (
-                                <KanbanColumn
-                                    key={status}
-                                    id={status}
-                                    status={status}
-                                    issues={columnIssues}
-                                    fieldConfig={fieldConfig}
-                                />
-                            )
-                        })}
-                    </>
-                ) : (
-                    // With grouping - render swimlanes
-                    <>
-                        {/* Column Headers (show once at top) */}
-                        <div className="kanban-swimlane-column-headers">
-                            <div className="kanban-swimlane-header-spacer" />
-                            {statuses.map(status => {
-                                const statusConfig = fieldConfig?.statuses?.find(s => s.key === status)
+        <>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={pointerWithin}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                measuring={{
+                    droppable: {
+                        strategy: MeasuringStrategy.Always
+                    }
+                }}
+            >
+                <div className={`kanban-board ${groupBy !== 'none' ? 'with-swimlanes' : ''}`}>
+                    {groupBy === 'none' ? (
+                        // No grouping - render simple columns
+                        <>
+                            {statuses.map((status) => {
+                                const columnIssues = filteredIssues.filter(issue => issue.status === status)
                                 return (
-                                    <div key={status} className="kanban-column-header-cell">
-                                        <span
-                                            className="status-badge"
-                                            style={{ backgroundColor: statusConfig?.bgColor, color: statusConfig?.textColor }}
-                                        >
-                                            {statusConfig?.label || status}
-                                        </span>
-                                    </div>
+                                    <KanbanColumn
+                                        key={status}
+                                        id={status}
+                                        status={status}
+                                        issues={columnIssues}
+                                        fieldConfig={fieldConfig}
+                                    />
                                 )
                             })}
-                        </div>
+                        </>
+                    ) : (
+                        // With grouping - render swimlanes
+                        <>
+                            {/* Column Headers (show once at top) */}
+                            <div className="kanban-swimlane-column-headers">
+                                <div className="kanban-swimlane-header-spacer" />
+                                {statuses.map(status => {
+                                    const statusConfig = fieldConfig?.statuses?.find(s => s.key === status)
+                                    return (
+                                        <div key={status} className="kanban-column-header-cell">
+                                            <span
+                                                className="status-badge"
+                                                style={{ backgroundColor: statusConfig?.bgColor, color: statusConfig?.textColor }}
+                                            >
+                                                {statusConfig?.label || status}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
 
-                        {/* Swimlane Rows */}
-                        <div className="kanban-swimlanes">
-                            {swimlanes.map(lane => renderSwimlane(lane))}
-                        </div>
-                    </>
-                )}
-            </div>
+                            {/* Swimlane Rows */}
+                            <div className="kanban-swimlanes">
+                                {swimlanes.map(lane => renderSwimlane(lane))}
+                            </div>
+                        </>
+                    )}
+                </div>
 
-            <DragOverlay>
-                {activeIssue ? (
-                    <IssueCard issue={activeIssue} isDragging />
-                ) : null}
-            </DragOverlay>
-        </DndContext>
+                <DragOverlay>
+                    {activeIssue ? (
+                        <IssueCard issue={activeIssue} isDragging />
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+
+            {/* Checklist Warning Modal */}
+            {
+                showChecklistWarning && (
+                    <div className="delete-confirm-overlay" onClick={cancelDragAction}>
+                        <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="delete-confirm-header" style={{ color: 'var(--warning)' }}>
+                                <AlertTriangle size={24} style={{ color: 'var(--warning)' }} />
+                                <h3>Tamamlanmamış Maddeler</h3>
+                            </div>
+                            <div className="delete-confirm-body">
+                                <p>Checklistte tamamlanmayan maddeler var.</p>
+                                <p className="delete-note" style={{ marginTop: '8px' }}>
+                                    {pendingDragAction?.activeIssueData?.checklist?.filter(item => !item.completed).length || 0} tamamlanmamış madde bulunuyor.
+                                </p>
+                            </div>
+                            <div className="delete-confirm-actions">
+                                <button className="btn btn-secondary" onClick={cancelDragAction}>
+                                    <ListChecks size={14} />
+                                    Kontrol Et
+                                </button>
+                                <button className="btn btn-primary" onClick={confirmDragAction}>
+                                    <Check size={14} />
+                                    Devam Et
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </>
     )
 }

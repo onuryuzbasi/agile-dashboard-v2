@@ -449,6 +449,27 @@ export default function List() {
         setDraggingColumn(null)
     }
 
+    // Global click-outside handler - Exclusive Editing Mode (Singleton Pattern)
+    // Closes all popovers (dropdowns and date pickers) when clicking outside
+    useEffect(() => {
+        const handleGlobalClick = (e) => {
+            // Check if click is inside an editable cell or popover
+            const isInsideEditable = e.target.closest('.list-cell-editable')
+            const isInsideDropdown = e.target.closest('.searchable-dropdown')
+            const isInsideDatePicker = e.target.closest('.date-picker')
+            const isInsideCalendar = e.target.closest('.react-calendar')
+
+            // If clicking outside all interactive elements, close everything
+            if (!isInsideEditable && !isInsideDropdown && !isInsideDatePicker && !isInsideCalendar) {
+                setActiveDropdown(null)
+                setActiveDatePicker(null)
+            }
+        }
+
+        document.addEventListener('click', handleGlobalClick)
+        return () => document.removeEventListener('click', handleGlobalClick)
+    }, [])
+
     // Handle header column drag and drop reordering (for table header)
     const [draggingHeader, setDraggingHeader] = useState(null)
 

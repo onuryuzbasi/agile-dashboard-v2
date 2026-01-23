@@ -5467,6 +5467,16 @@ h4 {
   z-index: 1000;
 }
 
+.delete-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
 .delete-confirm-modal {
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
@@ -5474,6 +5484,53 @@ h4 {
   max-width: 400px;
   width: 90%;
   box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-primary);
+}
+
+.delete-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.delete-confirm-icon {
+  color: var(--danger);
+}
+
+.delete-confirm-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.delete-confirm-body {
+  margin-bottom: var(--space-5);
+}
+
+.delete-confirm-body p {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.delete-confirm-body p:last-child {
+  margin-bottom: 0;
+}
+
+.delete-warning {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger) !important;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.delete-note {
+  font-size: var(--font-size-xs) !important;
+  color: var(--text-tertiary) !important;
 }
 
 .delete-confirm-modal h3 {

@@ -149,6 +149,9 @@ export default function IssueModal({ issue, onClose }) {
     // Activity log state
     const [activityLogExpanded, setActivityLogExpanded] = useState(false)
 
+    // Delete confirmation state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
     // Helper function for relative time display
     const getRelativeTime = (timestamp) => {
         const now = new Date()
@@ -180,10 +183,13 @@ export default function IssueModal({ issue, onClose }) {
     }
 
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this issue?')) {
-            deleteIssue(issue.id)
-            onClose()
-        }
+        setShowDeleteConfirm(true)
+    }
+
+    const confirmDelete = () => {
+        deleteIssue(issue.id)
+        setShowDeleteConfirm(false)
+        onClose()
     }
 
     const handleAddChild = async () => {
@@ -949,6 +955,36 @@ export default function IssueModal({ issue, onClose }) {
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="delete-confirm-overlay" onClick={() => setShowDeleteConfirm(false)}>
+                    <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="delete-confirm-header">
+                            <Trash2 size={24} className="delete-confirm-icon" />
+                            <h3>Delete {issue.type === 'epic' ? 'Epic' : 'Issue'}?</h3>
+                        </div>
+                        <div className="delete-confirm-body">
+                            <p>Are you sure you want to delete <strong>{issue.key}</strong>?</p>
+                            {issue.type === 'epic' && childIssues.length > 0 && (
+                                <p className="delete-warning">
+                                    ⚠️ This epic has {childIssues.length} child issue(s). They will become orphaned.
+                                </p>
+                            )}
+                            <p className="delete-note">This action will move the issue to trash. You can restore it from Settings {'>'} Trash.</p>
+                        </div>
+                        <div className="delete-confirm-actions">
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-danger" onClick={confirmDelete}>
+                                <Trash2 size={14} />
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

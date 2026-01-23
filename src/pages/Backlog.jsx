@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
+import useViewportPosition from '../hooks/useViewportPosition'
 import ViewSettingsMenu from '../components/common/ViewSettingsMenu'
 import {
     DndContext,
@@ -66,6 +67,50 @@ const formatDate = (dateString) => {
 const formatDateRange = (startDate, endDate) => {
     if (!startDate || !endDate) return 'Add dates'
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
+}
+
+// Context Menu with Smart Viewport Positioning
+const ContextMenuWithPosition = ({ triggerCoords, onClose, sprints, onMoveToSprint }) => {
+    const { menuRef, position } = useViewportPosition(
+        { x: triggerCoords.x, y: triggerCoords.y },
+        true,
+        { estimatedHeight: 200, estimatedWidth: 180 }
+    )
+
+    return (
+        <div
+            ref={menuRef}
+            className="issue-context-menu"
+            style={{
+                position: 'fixed',
+                left: position.left,
+                top: position.top,
+                zIndex: 1000
+            }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="context-menu-header">
+                <MoveRight size={14} />
+                Move to Sprint
+            </div>
+            <button
+                className="context-menu-item"
+                onClick={() => onMoveToSprint(null)}
+            >
+                Backlog
+            </button>
+            {sprints.filter(s => s.state !== 'closed').map(sprint => (
+                <button
+                    key={sprint.id}
+                    className="context-menu-item"
+                    onClick={() => onMoveToSprint(sprint.id)}
+                >
+                    {sprint.name}
+                    {sprint.state === 'active' && <span className="sprint-badge active">Active</span>}
+                </button>
+            ))}
+        </div>
+    )
 }
 
 export default function Backlog() {
@@ -1403,39 +1448,14 @@ export default function Backlog() {
                 </div>
             )}
 
-            {/* Issue Context Menu (right-click) */}
+            {/* Issue Context Menu (right-click) with Smart Viewport Positioning */}
             {issueContextMenu && (
-                <div
-                    className="issue-context-menu"
-                    style={{
-                        position: 'fixed',
-                        left: issueContextMenu.x,
-                        top: issueContextMenu.y,
-                        zIndex: 1000
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="context-menu-header">
-                        <MoveRight size={14} />
-                        Move to Sprint
-                    </div>
-                    <button
-                        className="context-menu-item"
-                        onClick={() => handleMoveToSprint(issueContextMenu.issueId, null)}
-                    >
-                        Backlog
-                    </button>
-                    {sprints.filter(s => s.state !== 'closed').map(sprint => (
-                        <button
-                            key={sprint.id}
-                            className="context-menu-item"
-                            onClick={() => handleMoveToSprint(issueContextMenu.issueId, sprint.id)}
-                        >
-                            {sprint.name}
-                            {sprint.state === 'active' && <span className="sprint-badge active">Active</span>}
-                        </button>
-                    ))}
-                </div>
+                <ContextMenuWithPosition
+                    triggerCoords={issueContextMenu}
+                    onClose={() => setIssueContextMenu(null)}
+                    sprints={sprints}
+                    onMoveToSprint={(sprintId) => handleMoveToSprint(issueContextMenu.issueId, sprintId)}
+                />
             )}
         </div>
     )

@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS issues (
   due_date DATE,
   work_logs JSONB DEFAULT '[]',
   history JSONB DEFAULT '[]',
+  checklist JSONB DEFAULT '[]',
   is_deleted BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

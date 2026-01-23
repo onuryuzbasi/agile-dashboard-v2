@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
-import { X, Zap, BookOpen, Bug, CheckSquare, Layers } from 'lucide-react'
+import { X, Zap, BookOpen, Bug, CheckSquare, Layers, Plus } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 
 // Fallback options if fieldConfig not loaded yet
@@ -18,6 +18,13 @@ const fallbackPriorityOptions = [
     { value: 'medium', label: 'Medium' },
     { value: 'low', label: 'Low' },
     { value: 'lowest', label: 'Lowest' }
+]
+
+// Child issue type options for batch creation
+const childTypeOptions = [
+    { value: 'story', label: 'Story' },
+    { value: 'task', label: 'Task' },
+    { value: 'bug', label: 'Bug' }
 ]
 
 export default function CreateIssueModal() {
@@ -82,6 +89,12 @@ export default function CreateIssueModal() {
         dueDate: ''
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submittingStatus, setSubmittingStatus] = useState('')
+
+    // Draft children for batch Epic creation
+    const [draftChildren, setDraftChildren] = useState([])
+    const [newChildSummary, setNewChildSummary] = useState('')
+    const [newChildType, setNewChildType] = useState('story')
 
     // Default reporter to first user (or could be current logged-in user)
     const defaultReporterId = users?.[0]?.id || ''
@@ -110,12 +123,33 @@ export default function CreateIssueModal() {
             }
 
             setFormData(newFormData)
+            // Reset draft children when modal opens
+            setDraftChildren([])
+            setNewChildSummary('')
+            setNewChildType('story')
         }
     }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
 
     if (!createIssueModalOpen) return null
 
     const epics = issues.filter(issue => issue.type === 'epic' && !issue.isDeleted)
+
+    // Add child to draft list
+    const handleAddDraftChild = () => {
+        if (!newChildSummary.trim()) return
+
+        setDraftChildren(prev => [...prev, {
+            id: Date.now(), // Temporary ID for key
+            summary: newChildSummary.trim(),
+            type: newChildType
+        }])
+        setNewChildSummary('')
+    }
+
+    // Remove child from draft list
+    const handleRemoveDraftChild = (id) => {
+        setDraftChildren(prev => prev.filter(child => child.id !== id))
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -124,6 +158,14 @@ export default function CreateIssueModal() {
         setIsSubmitting(true)
 
         try {
+            // Step 1: Create the parent issue
+            const isEpic = formData.type === 'epic'
+            const hasChildren = isEpic && draftChildren.length > 0
+
+            if (hasChildren) {
+                setSubmittingStatus(`Creating Epic...`)
+            }
+
             const newIssue = {
                 type: formData.type,
                 summary: formData.summary.trim(),
@@ -141,8 +183,32 @@ export default function CreateIssueModal() {
                 dueDate: formData.dueDate || null
             }
 
-            // Await the async addIssue call
-            await addIssue(newIssue)
+            // Await the async addIssue call and get the created Epic
+            const createdIssue = await addIssue(newIssue)
+
+            // Step 2: If Epic with children, create child issues
+            if (hasChildren && createdIssue?.id) {
+                const totalChildren = draftChildren.length
+
+                for (let i = 0; i < draftChildren.length; i++) {
+                    const child = draftChildren[i]
+                    setSubmittingStatus(`Creating child ${i + 1} of ${totalChildren}...`)
+
+                    await addIssue({
+                        type: child.type,
+                        summary: child.summary,
+                        description: '',
+                        status: 'todo',
+                        priority: 'medium',
+                        parentId: createdIssue.id,
+                        sprintId: formData.sprintId || null, // Inherit from Epic
+                        assigneeId: null,
+                        reporterId: formData.reporterId || null,
+                        departmentId: formData.departmentId || null,
+                        gameId: formData.gameId || null
+                    })
+                }
+            }
 
             // Close modal after successful creation
             closeCreateIssueModal()
@@ -150,6 +216,7 @@ export default function CreateIssueModal() {
             console.error('Failed to create issue:', error)
         } finally {
             setIsSubmitting(false)
+            setSubmittingStatus('')
         }
     }
 
@@ -161,6 +228,18 @@ export default function CreateIssueModal() {
 
     const selectedType = typeOptions.find(t => t.value === formData.type)
     const TypeIcon = selectedType?.icon || BookOpen
+    const isEpic = formData.type === 'epic'
+
+    // Calculate button text
+    const getSubmitButtonText = () => {
+        if (isSubmitting) {
+            return submittingStatus || 'Creating...'
+        }
+        if (isEpic && draftChildren.length > 0) {
+            return `Create Epic + ${draftChildren.length} Child${draftChildren.length > 1 ? 'ren' : ''}`
+        }
+        return 'Create Issue'
+    }
 
     return (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && handleClose()}>
@@ -226,7 +305,7 @@ export default function CreateIssueModal() {
                         />
                     </div>
 
-                    {/* Row 1: Status */}
+                    {/* Row 1: Status & Priority */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Status</label>
@@ -321,7 +400,7 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Row 4: Game & Parent Epic */}
+                    {/* Row 4: Game & Parent Epic / Department */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Game</label>
@@ -338,7 +417,7 @@ export default function CreateIssueModal() {
                             </select>
                         </div>
 
-                        {formData.type !== 'epic' ? (
+                        {!isEpic ? (
                             <div className="form-group">
                                 <label>Parent Epic</label>
                                 <select
@@ -372,7 +451,7 @@ export default function CreateIssueModal() {
                     </div>
 
                     {/* Row 5: Department (for non-epics) */}
-                    {formData.type !== 'epic' && (
+                    {!isEpic && (
                         <div className="form-group">
                             <label>Department</label>
                             <select
@@ -414,6 +493,78 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
+                    {/* Batch Child Issues Section - Only for Epics */}
+                    {isEpic && (
+                        <div className="batch-children-section">
+                            <label className="batch-children-label">
+                                Child Issues
+                                {draftChildren.length > 0 && (
+                                    <span className="batch-children-count">{draftChildren.length}</span>
+                                )}
+                            </label>
+
+                            {/* Add child input row */}
+                            <div className="batch-children-input-row">
+                                <select
+                                    className="input batch-child-type-select"
+                                    value={newChildType}
+                                    onChange={(e) => setNewChildType(e.target.value)}
+                                    disabled={isSubmitting}
+                                >
+                                    {childTypeOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="text"
+                                    className="input batch-child-summary-input"
+                                    placeholder="Add a child issue (e.g., User Login Story)..."
+                                    value={newChildSummary}
+                                    onChange={(e) => setNewChildSummary(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            handleAddDraftChild()
+                                        }
+                                    }}
+                                    disabled={isSubmitting}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-icon btn-secondary batch-child-add-btn"
+                                    onClick={handleAddDraftChild}
+                                    disabled={isSubmitting || !newChildSummary.trim()}
+                                    title="Add child issue"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+
+                            {/* Draft children list */}
+                            {draftChildren.length > 0 && (
+                                <div className="batch-children-list">
+                                    {draftChildren.map((child) => (
+                                        <div key={child.id} className="batch-child-item">
+                                            <span className={`batch-child-type-badge ${child.type}`}>
+                                                {child.type}
+                                            </span>
+                                            <span className="batch-child-summary">{child.summary}</span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-icon btn-ghost batch-child-remove-btn"
+                                                onClick={() => handleRemoveDraftChild(child.id)}
+                                                disabled={isSubmitting}
+                                                title="Remove"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Actions */}
                     <div className="modal-actions">
                         <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={isSubmitting}>
@@ -424,7 +575,7 @@ export default function CreateIssueModal() {
                             className="btn btn-primary"
                             disabled={!formData.summary.trim() || isSubmitting}
                         >
-                            {isSubmitting ? 'Creating...' : 'Create Issue'}
+                            {getSubmitButtonText()}
                         </button>
                     </div>
                 </form>

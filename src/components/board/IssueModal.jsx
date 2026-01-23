@@ -51,6 +51,9 @@ export default function IssueModal({ issue, onClose }) {
         getUserById
     } = useProjectStore()
 
+    // Get reactive issue from store (for real-time updates like worklogs)
+    const currentIssue = issues.find(i => i.id === issue.id) || issue
+
     // Build dynamic options from fieldConfig
     const typeOptions = useMemo(() => {
         return fieldConfig?.issueTypes?.map(t => ({
@@ -695,7 +698,7 @@ export default function IssueModal({ issue, onClose }) {
                                 <Clock size={16} />
                                 <span>Work Log</span>
                                 <span className="work-log-count">
-                                    {(issue.workLogs || []).length} entries
+                                    {(currentIssue.workLogs || []).length} entries
                                 </span>
                             </div>
                             <button
@@ -794,9 +797,9 @@ export default function IssueModal({ issue, onClose }) {
                         )}
 
                         {/* Work Log List */}
-                        {(issue.workLogs || []).length > 0 && (
+                        {(currentIssue.workLogs || []).length > 0 && (
                             <div className="work-log-list">
-                                {(issue.workLogs || []).map(log => {
+                                {(currentIssue.workLogs || []).map(log => {
                                     const logUser = getUserById(log.userId)
                                     const hours = Math.floor(log.timeSpent / 60)
                                     const minutes = log.timeSpent % 60
@@ -840,10 +843,10 @@ export default function IssueModal({ issue, onClose }) {
                         )}
 
                         {/* Total Time */}
-                        {(issue.workLogs || []).length > 0 && (
+                        {(currentIssue.workLogs || []).length > 0 && (
                             <div className="work-log-total">
                                 Total logged: {(() => {
-                                    const totalMinutes = (issue.workLogs || []).reduce((sum, log) => sum + log.timeSpent, 0)
+                                    const totalMinutes = (currentIssue.workLogs || []).reduce((sum, log) => sum + log.timeSpent, 0)
                                     const hours = Math.floor(totalMinutes / 60)
                                     const minutes = totalMinutes % 60
                                     return hours > 0

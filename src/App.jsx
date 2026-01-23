@@ -7,7 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Board from './pages/Board'
 import Backlog from './pages/Backlog'
 import Sprints from './pages/Sprints'
-import List from './pages/List'
+// List page removed - using ListTemplate instead
 import ListTemplate from './pages/ListTemplate'
 import Settings from './pages/Settings'
 import Whiteboard from './pages/Whiteboard'
@@ -59,7 +59,7 @@ function App() {
                             <Route path="/board" element={<Board />} />
                             <Route path="/backlog" element={<Backlog />} />
                             <Route path="/sprints" element={<Sprints />} />
-                            <Route path="/list" element={<List />} />
+                            <Route path="/list" element={<Navigate to="/list-template" replace />} />
                             <Route path="/list-template" element={<ListTemplate />} />
                             <Route path="/timeline" element={<Timeline />} />
                             <Route path="/whiteboard" element={<Whiteboard />} />

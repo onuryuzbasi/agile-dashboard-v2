@@ -14,6 +14,7 @@ import Whiteboard from './pages/Whiteboard'
 import Timeline from './pages/Timeline'
 import IssueModal from './components/board/IssueModal'
 import CreateIssueModal from './components/board/CreateIssueModal'
+import ConfirmationModal from './components/common/ConfirmationModal'
 
 function App() {
     const {
@@ -78,6 +79,9 @@ function App() {
 
                 {/* Create Issue Modal */}
                 <CreateIssueModal />
+
+                {/* Global Confirmation Modal */}
+                <ConfirmationModal />
             </div>
         </BrowserRouter>
     )

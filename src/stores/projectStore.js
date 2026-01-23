@@ -43,6 +43,17 @@ const emptyState = {
         startDate: false   // Standard field
     },
     savedFilters: [],
+    // Global confirmation modal state
+    confirmModal: {
+        isOpen: false,
+        title: 'Confirm',
+        message: 'Are you sure?',
+        variant: 'danger',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        onConfirm: null,
+        isLoading: false
+    },
     isLoading: true,
     isInitialized: false
 }
@@ -980,6 +991,27 @@ export const useProjectStore = create(
                 createIssueDefaults: defaults
             }),
             closeCreateIssueModal: () => set({ createIssueModalOpen: false, createIssueDefaults: {} }),
+
+            // Confirmation modal actions
+            showConfirmModal: (config) => set({
+                confirmModal: {
+                    isOpen: true,
+                    title: config.title || 'Confirm',
+                    message: config.message || 'Are you sure?',
+                    variant: config.variant || 'danger',
+                    confirmText: config.confirmText || 'Confirm',
+                    cancelText: config.cancelText || 'Cancel',
+                    onConfirm: config.onConfirm || (() => { }),
+                    isLoading: false
+                }
+            }),
+            hideConfirmModal: () => set((state) => ({
+                confirmModal: {
+                    ...state.confirmModal,
+                    isOpen: false,
+                    onConfirm: null
+                }
+            })),
 
             // Card Field Visibility - local toggle (immediate UI feedback)
             setCardFieldVisibility: (field, visible) => set((state) => ({

@@ -179,7 +179,8 @@ export default function Settings() {
         reorderFieldConfigItem,
         reorderDepartments,
         restoreIssue,
-        permanentlyDeleteIssue
+        permanentlyDeleteIssue,
+        showConfirmModal
     } = useProjectStore()
 
     // DnD sensors
@@ -263,9 +264,13 @@ export default function Settings() {
     }
 
     const handleDeleteFieldItem = (fieldType, itemId, itemName) => {
-        if (confirm(`Delete "${itemName}"? Issues using this value may be affected.`)) {
-            deleteFieldConfigItem(fieldType, itemId)
-        }
+        showConfirmModal({
+            title: `Delete "${itemName}"?`,
+            message: 'Issues using this value may be affected. This action cannot be undone.',
+            variant: 'danger',
+            confirmText: 'Delete',
+            onConfirm: () => deleteFieldConfigItem(fieldType, itemId)
+        })
     }
 
     // Department handlers
@@ -954,9 +959,13 @@ export default function Settings() {
                                                             <Pencil size={14} />
                                                         </button>
                                                         <button className="btn btn-sm btn-ghost btn-danger-text" onClick={() => {
-                                                            if (confirm(`Delete department "${dept.name}"?`)) {
-                                                                deleteDepartment(dept.id)
-                                                            }
+                                                            showConfirmModal({
+                                                                title: `Delete "${dept.name}"?`,
+                                                                message: 'This department will be removed. Issues with this department will be unaffected.',
+                                                                variant: 'danger',
+                                                                confirmText: 'Delete',
+                                                                onConfirm: () => deleteDepartment(dept.id)
+                                                            })
                                                         }}>
                                                             <Trash2 size={14} />
                                                         </button>
@@ -1145,9 +1154,13 @@ export default function Settings() {
                                             <button
                                                 className="btn btn-sm btn-ghost btn-danger-text"
                                                 onClick={() => {
-                                                    if (confirm(`Delete game "${game.name}"?`)) {
-                                                        deleteGame(game.id)
-                                                    }
+                                                    showConfirmModal({
+                                                        title: `Delete "${game.name}"?`,
+                                                        message: 'This game will be removed. Issues with this game will be unaffected.',
+                                                        variant: 'danger',
+                                                        confirmText: 'Delete',
+                                                        onConfirm: () => deleteGame(game.id)
+                                                    })
                                                 }}
                                             >
                                                 <Trash2 size={14} />
@@ -1238,9 +1251,13 @@ export default function Settings() {
                                             <button
                                                 className="btn btn-sm btn-ghost btn-danger-text"
                                                 onClick={() => {
-                                                    if (confirm('Permanently delete this issue? This cannot be undone.')) {
-                                                        permanentlyDeleteIssue(issue.id)
-                                                    }
+                                                    showConfirmModal({
+                                                        title: 'Permanently Delete Issue?',
+                                                        message: `Delete "${issue.key}"? This cannot be undone.`,
+                                                        variant: 'danger',
+                                                        confirmText: 'Delete Forever',
+                                                        onConfirm: () => permanentlyDeleteIssue(issue.id)
+                                                    })
                                                 }}
                                                 title="Delete permanently"
                                             >

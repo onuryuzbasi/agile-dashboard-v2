@@ -95,6 +95,7 @@ export default function CreateIssueModal() {
     const [draftChildren, setDraftChildren] = useState([])
     const [newChildSummary, setNewChildSummary] = useState('')
     const [newChildType, setNewChildType] = useState('story')
+    const [newChildAssigneeId, setNewChildAssigneeId] = useState('')
 
     // Default reporter to first user (or could be current logged-in user)
     const defaultReporterId = users?.[0]?.id || ''
@@ -127,6 +128,7 @@ export default function CreateIssueModal() {
             setDraftChildren([])
             setNewChildSummary('')
             setNewChildType('story')
+            setNewChildAssigneeId('')
         }
     }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
 
@@ -134,21 +136,30 @@ export default function CreateIssueModal() {
 
     const epics = issues.filter(issue => issue.type === 'epic' && !issue.isDeleted)
 
-    // Add child to draft list
+    // Add child to draft list with type and assignee
     const handleAddDraftChild = () => {
         if (!newChildSummary.trim()) return
 
         setDraftChildren(prev => [...prev, {
             id: Date.now(), // Temporary ID for key
             summary: newChildSummary.trim(),
-            type: newChildType
+            type: newChildType,
+            assigneeId: newChildAssigneeId || null
         }])
         setNewChildSummary('')
+        // Keep type and assignee for quick sequential adds
     }
 
     // Remove child from draft list
     const handleRemoveDraftChild = (id) => {
         setDraftChildren(prev => prev.filter(child => child.id !== id))
+    }
+
+    // Get assignee name for display
+    const getAssigneeName = (assigneeId) => {
+        if (!assigneeId) return null
+        const user = users.find(u => u.id === assigneeId)
+        return user?.name || null
     }
 
     const handleSubmit = async (e) => {
@@ -202,7 +213,7 @@ export default function CreateIssueModal() {
                         priority: 'medium',
                         parentId: createdIssue.id,
                         sprintId: formData.sprintId || null, // Inherit from Epic
-                        assigneeId: null,
+                        assigneeId: child.assigneeId, // Use child's assignee
                         reporterId: formData.reporterId || null,
                         departmentId: formData.departmentId || null,
                         gameId: formData.gameId || null
@@ -210,18 +221,21 @@ export default function CreateIssueModal() {
                 }
             }
 
-            // Close modal after successful creation
+            // Close modal ONLY after successful creation
             closeCreateIssueModal()
         } catch (error) {
             console.error('Failed to create issue:', error)
+            // Don't close modal on error - let user retry
         } finally {
             setIsSubmitting(false)
             setSubmittingStatus('')
         }
     }
 
+    // Handle close - strictly NO state changes, just close the modal
     const handleClose = () => {
         if (!isSubmitting) {
+            // Simply close the modal - no side effects
             closeCreateIssueModal()
         }
     }
@@ -503,13 +517,14 @@ export default function CreateIssueModal() {
                                 )}
                             </label>
 
-                            {/* Add child input row */}
+                            {/* Add child input row - 3 fields: Type, Summary, Assignee */}
                             <div className="batch-children-input-row">
                                 <select
                                     className="input batch-child-type-select"
                                     value={newChildType}
                                     onChange={(e) => setNewChildType(e.target.value)}
                                     disabled={isSubmitting}
+                                    title="Issue Type"
                                 >
                                     {childTypeOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -518,7 +533,7 @@ export default function CreateIssueModal() {
                                 <input
                                     type="text"
                                     className="input batch-child-summary-input"
-                                    placeholder="Add a child issue (e.g., User Login Story)..."
+                                    placeholder="Child issue summary..."
                                     value={newChildSummary}
                                     onChange={(e) => setNewChildSummary(e.target.value)}
                                     onKeyDown={(e) => {
@@ -529,6 +544,18 @@ export default function CreateIssueModal() {
                                     }}
                                     disabled={isSubmitting}
                                 />
+                                <select
+                                    className="input batch-child-assignee-select"
+                                    value={newChildAssigneeId}
+                                    onChange={(e) => setNewChildAssigneeId(e.target.value)}
+                                    disabled={isSubmitting}
+                                    title="Assignee"
+                                >
+                                    <option value="">Unassigned</option>
+                                    {users.map(user => (
+                                        <option key={user.id} value={user.id}>{user.name}</option>
+                                    ))}
+                                </select>
                                 <button
                                     type="button"
                                     className="btn btn-icon btn-secondary batch-child-add-btn"
@@ -549,6 +576,11 @@ export default function CreateIssueModal() {
                                                 {child.type}
                                             </span>
                                             <span className="batch-child-summary">{child.summary}</span>
+                                            {getAssigneeName(child.assigneeId) && (
+                                                <span className="batch-child-assignee">
+                                                    {getAssigneeName(child.assigneeId)}
+                                                </span>
+                                            )}
                                             <button
                                                 type="button"
                                                 className="btn btn-icon btn-ghost batch-child-remove-btn"
@@ -565,7 +597,7 @@ export default function CreateIssueModal() {
                         </div>
                     )}
 
-                    {/* Actions */}
+                    {/* Actions - NO Delete button in Create mode */}
                     <div className="modal-actions">
                         <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={isSubmitting}>
                             Cancel

@@ -762,6 +762,11 @@ h4 {
   justify-content: center;
 }
 
+.batch-child-assignee-select {
+  width: 120px;
+  flex-shrink: 0;
+}
+
 .batch-children-list {
   margin-top: var(--space-3);
   display: flex;
@@ -787,6 +792,7 @@ h4 {
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   text-transform: capitalize;
+  flex-shrink: 0;
 }
 
 .batch-child-type-badge.story {
@@ -808,6 +814,20 @@ h4 {
   flex: 1;
   font-size: var(--font-size-sm);
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.batch-child-assignee {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

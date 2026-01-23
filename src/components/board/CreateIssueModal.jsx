@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { X, Zap, BookOpen, Bug, CheckSquare, Layers } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
@@ -18,18 +18,6 @@ const fallbackPriorityOptions = [
     { value: 'medium', label: 'Medium' },
     { value: 'low', label: 'Low' },
     { value: 'lowest', label: 'Lowest' }
-]
-
-// Fibonacci sequence for Story Points
-const storyPointOptions = [
-    { value: '', label: 'None' },
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
-    { value: '5', label: '5' },
-    { value: '8', label: '8' },
-    { value: '13', label: '13' },
-    { value: '21', label: '21' }
 ]
 
 export default function CreateIssueModal() {
@@ -64,19 +52,34 @@ export default function CreateIssueModal() {
         }))
         : fallbackPriorityOptions
 
+    // Status options from fieldConfig
+    const statusOptions = useMemo(() => {
+        return fieldConfig?.statuses?.map(s => ({
+            value: s.key,
+            label: s.label
+        })) || [
+                { value: 'todo', label: 'To Do' },
+                { value: 'progress', label: 'In Progress' },
+                { value: 'review', label: 'In Review' },
+                { value: 'done', label: 'Done' }
+            ]
+    }, [fieldConfig])
+
     const [formData, setFormData] = useState({
         type: 'story',
         summary: '',
         description: '',
-        priority: 'medium',
-        assigneeId: '',
-        reporterId: '',
-        sprintId: '',
-        parentId: '',
         status: 'todo',
-        departmentId: '',
+        priority: 'medium',
+        reporterId: '',
+        assigneeId: '',
+        sprintId: '',
+        originalEstimate: '',
         gameId: '',
-        storyPoints: ''  // Fibonacci: 1, 2, 3, 5, 8, 13, 21
+        parentId: '',
+        departmentId: '',
+        startDate: '',
+        dueDate: ''
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -86,34 +89,6 @@ export default function CreateIssueModal() {
     // Reset form when modal opens with default type and context defaults
     useEffect(() => {
         if (createIssueModalOpen) {
-            // COMPREHENSIVE DEBUG: Log everything to trace the issue
-            console.log('=== CREATE ISSUE MODAL DEBUG START ===')
-            console.log('📋 Raw createIssueDefaults:', createIssueDefaults)
-            console.log('📋 createIssueDefaultType:', createIssueDefaultType)
-
-            // Log available options
-            console.log('🏢 Available Departments:', (departments || []).map(d => ({ id: d.id, name: d.name })))
-            console.log('🎮 Available Games:', (games || []).map(g => ({ id: g.id, name: g.name })))
-            console.log('👥 Available Users:', (users || []).map(u => ({ id: u.id, name: u.name })))
-
-            // Log what we're trying to set
-            const targetDeptId = createIssueDefaults?.departmentId
-            const targetGameId = createIssueDefaults?.gameId
-            const targetAssigneeId = createIssueDefaults?.assigneeId
-
-            console.log('🎯 Target departmentId:', targetDeptId, '| Type:', typeof targetDeptId)
-            console.log('🎯 Target gameId:', targetGameId, '| Type:', typeof targetGameId)
-            console.log('🎯 Target assigneeId:', targetAssigneeId, '| Type:', typeof targetAssigneeId)
-
-            // Check if targets exist in options
-            const deptMatch = (departments || []).find(d => d.id === targetDeptId)
-            const gameMatch = (games || []).find(g => g.id === targetGameId)
-            const userMatch = (users || []).find(u => u.id === targetAssigneeId)
-
-            console.log('✅ Department Match:', deptMatch ? deptMatch.name : '❌ NOT FOUND')
-            console.log('✅ Game Match:', gameMatch ? gameMatch.name : '❌ NOT FOUND')
-            console.log('✅ User Match:', userMatch ? userMatch.name : '❌ NOT FOUND')
-
             // Determine type: use defaults.type if set, otherwise use createIssueDefaultType, fallback to 'story'
             const resolvedType = createIssueDefaults?.type || createIssueDefaultType || 'story'
 
@@ -121,24 +96,22 @@ export default function CreateIssueModal() {
                 type: resolvedType,
                 summary: '',
                 description: '',
-                priority: createIssueDefaults?.priority || 'medium',
-                assigneeId: createIssueDefaults?.assigneeId || '',
-                reporterId: defaultReporterId,
-                sprintId: createIssueDefaults?.sprintId || '',
-                parentId: createIssueDefaults?.epicId || '',
-                // NEW: Status from filters (for inline create status alignment)
                 status: createIssueDefaults?.status || 'todo',
-                // NEW: Department and Game from filters
-                departmentId: createIssueDefaults?.departmentId || '',
+                priority: createIssueDefaults?.priority || 'medium',
+                reporterId: defaultReporterId,
+                assigneeId: createIssueDefaults?.assigneeId || '',
+                sprintId: createIssueDefaults?.sprintId || '',
+                originalEstimate: '',
                 gameId: createIssueDefaults?.gameId || '',
-                storyPoints: ''  // Story points not pre-filled from filters
+                parentId: createIssueDefaults?.epicId || '',
+                departmentId: createIssueDefaults?.departmentId || '',
+                startDate: '',
+                dueDate: ''
             }
 
-            console.log('📝 Final newFormData:', newFormData)
-            console.log('=== CREATE ISSUE MODAL DEBUG END ===')
             setFormData(newFormData)
         }
-    }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId, departments, games, users])
+    }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
 
     if (!createIssueModalOpen) return null
 
@@ -155,17 +128,17 @@ export default function CreateIssueModal() {
                 type: formData.type,
                 summary: formData.summary.trim(),
                 description: formData.description.trim(),
+                status: formData.status || 'todo',
                 priority: formData.priority,
-                status: formData.status || 'todo', // Use form status from filter defaults
                 assigneeId: formData.assigneeId || null,
                 reporterId: formData.reporterId || null,
                 sprintId: formData.sprintId || null,
                 parentId: formData.type !== 'epic' && formData.parentId ? formData.parentId : null,
                 departmentId: formData.departmentId || null,
                 gameId: formData.gameId || null,
-                storyPoints: formData.storyPoints ? parseInt(formData.storyPoints) : null,
-                startDate: new Date().toISOString().split('T')[0],
-                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                originalEstimate: formData.originalEstimate ? parseInt(formData.originalEstimate) : null,
+                startDate: formData.startDate || null,
+                dueDate: formData.dueDate || null
             }
 
             // Await the async addIssue call
@@ -253,8 +226,22 @@ export default function CreateIssueModal() {
                         />
                     </div>
 
-                    {/* Two Column Layout: Priority & Reporter */}
+                    {/* Row 1: Status */}
                     <div className="form-row">
+                        <div className="form-group">
+                            <label>Status</label>
+                            <select
+                                className="input"
+                                value={formData.status}
+                                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                                disabled={isSubmitting}
+                            >
+                                {statusOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div className="form-group">
                             <label>Priority</label>
                             <select
@@ -268,7 +255,10 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
+                    </div>
 
+                    {/* Row 2: Reporter & Assignee */}
+                    <div className="form-row">
                         <div className="form-group">
                             <label>Reporter</label>
                             <select
@@ -283,9 +273,7 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
-                    </div>
 
-                    <div className="form-row">
                         <div className="form-group">
                             <label>Assignee</label>
                             <select
@@ -300,7 +288,10 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
+                    </div>
 
+                    {/* Row 3: Sprint & Original Estimate */}
+                    <div className="form-row">
                         <div className="form-group">
                             <label>Sprint</label>
                             <select
@@ -315,43 +306,23 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
+
+                        <div className="form-group">
+                            <label>Original Estimate (hours)</label>
+                            <input
+                                type="number"
+                                className="input"
+                                min="0"
+                                placeholder="0"
+                                value={formData.originalEstimate}
+                                onChange={(e) => setFormData(prev => ({ ...prev, originalEstimate: e.target.value }))}
+                                disabled={isSubmitting}
+                            />
+                        </div>
                     </div>
 
-                    {/* Parent Epic (only for non-epics) */}
-                    {formData.type !== 'epic' && (
-                        <div className="form-group">
-                            <label>Parent Epic</label>
-                            <select
-                                className="input"
-                                value={formData.parentId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
-                                disabled={isSubmitting}
-                            >
-                                <option value="">None</option>
-                                {epics.map(epic => (
-                                    <option key={epic.id} value={epic.id}>{epic.key} - {epic.summary}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    {/* Department and Game Row */}
+                    {/* Row 4: Game & Parent Epic */}
                     <div className="form-row">
-                        <div className="form-group">
-                            <label>Department</label>
-                            <select
-                                className="input"
-                                value={formData.departmentId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
-                                disabled={isSubmitting}
-                            >
-                                <option value="">No Department</option>
-                                {(departments || []).map(dept => (
-                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
                         <div className="form-group">
                             <label>Game</label>
                             <select
@@ -366,21 +337,81 @@ export default function CreateIssueModal() {
                                 ))}
                             </select>
                         </div>
+
+                        {formData.type !== 'epic' ? (
+                            <div className="form-group">
+                                <label>Parent Epic</label>
+                                <select
+                                    className="input"
+                                    value={formData.parentId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
+                                    disabled={isSubmitting}
+                                >
+                                    <option value="">None</option>
+                                    {epics.map(epic => (
+                                        <option key={epic.id} value={epic.id}>{epic.key} - {epic.summary}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="form-group">
+                                <label>Department</label>
+                                <select
+                                    className="input"
+                                    value={formData.departmentId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                                    disabled={isSubmitting}
+                                >
+                                    <option value="">No Department</option>
+                                    {(departments || []).map(dept => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Story Points */}
-                    <div className="form-group">
-                        <label>Story Points</label>
-                        <select
-                            className="input"
-                            value={formData.storyPoints}
-                            onChange={(e) => setFormData(prev => ({ ...prev, storyPoints: e.target.value }))}
-                            disabled={isSubmitting}
-                        >
-                            {storyPointOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
+                    {/* Row 5: Department (for non-epics) */}
+                    {formData.type !== 'epic' && (
+                        <div className="form-group">
+                            <label>Department</label>
+                            <select
+                                className="input"
+                                value={formData.departmentId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                                disabled={isSubmitting}
+                            >
+                                <option value="">No Department</option>
+                                {(departments || []).map(dept => (
+                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Row 6: Start Date & Due Date */}
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Start Date</label>
+                            <input
+                                type="date"
+                                className="input"
+                                value={formData.startDate}
+                                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                                disabled={isSubmitting}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Due Date</label>
+                            <input
+                                type="date"
+                                className="input"
+                                value={formData.dueDate}
+                                onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                                disabled={isSubmitting}
+                            />
+                        </div>
                     </div>
 
                     {/* Actions */}

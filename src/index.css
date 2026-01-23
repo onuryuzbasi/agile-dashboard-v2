@@ -3828,19 +3828,13 @@ h4 {
 .list-group-header {
   display: flex;
   align-items: center;
-  /* Distinct lighter gray background - separates from dark issue rows */
-  background: #1f2937;
+  background: var(--bg-secondary);
   cursor: pointer;
   min-width: max-content;
-  /* Subtle borders for section separation */
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  /* Ensure high contrast */
-  color: var(--text-primary);
 }
 
 .list-group-header:hover {
-  background: #374151;
+  background: var(--bg-tertiary);
 }
 
 /* Sticky inner content with all the group info */
@@ -6568,12 +6562,8 @@ h4 {
 }
 
 [data-theme="dark"] .list-template-group-header {
-  /* Distinct lighter gray background - separates from dark issue rows */
-  background: #1f2937;
-  border-color: rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
+  background: var(--bg-primary);
+  border-color: var(--border-primary);
 }
 
 .list-template-group-header.completed {
@@ -6587,7 +6577,7 @@ h4 {
 }
 
 [data-theme="dark"] .list-template-group-header.completed {
-  background: #1a2332;
+  background: var(--bg-secondary);
 }
 
 .list-template-group-header .pinned-columns {

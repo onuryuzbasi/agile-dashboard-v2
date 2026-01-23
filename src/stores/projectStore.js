@@ -311,7 +311,44 @@ export const useProjectStore = create(
                 const fieldLabels = {
                     summary: 'Summary', description: 'Description', type: 'Type',
                     status: 'Status', priority: 'Priority', assigneeId: 'Assignee',
-                    reporterId: 'Reporter', sprintId: 'Sprint', storyPoints: 'Story Points'
+                    reporterId: 'Reporter', sprintId: 'Sprint', storyPoints: 'Story Points',
+                    parentId: 'Parent', gameId: 'Game', departmentId: 'Department',
+                    startDate: 'Start Date', dueDate: 'Due Date', originalEstimate: 'Estimate'
+                }
+
+                // Helper to get human-readable label for a field value
+                const getReadableLabel = (field, value) => {
+                    if (value === null || value === undefined || value === '') return 'None'
+
+                    switch (field) {
+                        case 'sprintId':
+                            const sprint = state.sprints.find(s => s.id === value)
+                            return sprint?.name || 'Backlog'
+                        case 'assigneeId':
+                        case 'reporterId':
+                            const user = state.users.find(u => u.id === value)
+                            return user?.name || 'Unassigned'
+                        case 'parentId':
+                            const parent = state.issues.find(i => i.id === value)
+                            return parent?.key || 'None'
+                        case 'gameId':
+                            const game = state.games?.find(g => g.id === value)
+                            return game?.name || 'None'
+                        case 'departmentId':
+                            const dept = state.departments?.find(d => d.id === value)
+                            return dept?.name || 'None'
+                        case 'status':
+                            const statusConfig = state.fieldConfig?.statuses?.find(s => s.key === value)
+                            return statusConfig?.label || value
+                        case 'priority':
+                            const priorityConfig = state.fieldConfig?.priorities?.find(p => p.key === value)
+                            return priorityConfig?.label || value
+                        case 'type':
+                            const typeConfig = state.fieldConfig?.issueTypes?.find(t => t.key === value)
+                            return typeConfig?.label || value
+                        default:
+                            return String(value)
+                    }
                 }
 
                 const historyEntries = []
@@ -327,8 +364,8 @@ export const useProjectStore = create(
                             fieldLabel: fieldLabels[field],
                             oldValue: issue[field],
                             newValue: updates[field],
-                            oldLabel: String(issue[field] || 'None'),
-                            newLabel: String(updates[field] || 'None')
+                            oldLabel: getReadableLabel(field, issue[field]),
+                            newLabel: getReadableLabel(field, updates[field])
                         })
                     }
                 }

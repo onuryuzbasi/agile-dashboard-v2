@@ -868,20 +868,20 @@ export default function IssueModal({ issue, onClose }) {
                                 <History size={16} />
                                 <span>Activity History</span>
                                 <span className="activity-log-count">
-                                    {(issue.history || []).length} changes
+                                    {(currentIssue.history || []).length} changes
                                 </span>
                             </div>
                         </div>
 
                         {activityLogExpanded && (
                             <div className="activity-log-content">
-                                {(issue.history || []).length === 0 ? (
+                                {(currentIssue.history || []).length === 0 ? (
                                     <div className="activity-log-empty">
                                         No activity recorded yet.
                                     </div>
                                 ) : (
                                     <div className="activity-log-list">
-                                        {[...(issue.history || [])]
+                                        {[...(currentIssue.history || [])]
                                             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
                                             .map(entry => {
                                                 const entryUser = getUserById(entry.userId)

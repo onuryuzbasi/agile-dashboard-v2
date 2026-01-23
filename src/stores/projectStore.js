@@ -368,6 +368,35 @@ export const useProjectStore = create(
                 }
             },
 
+            // Soft delete multiple issues at once (bulk delete)
+            softDeleteIssues: async (issueIds) => {
+                if (!issueIds || issueIds.length === 0) return
+
+                const state = get()
+
+                // Optimistic update - remove all selected issues from local state
+                set({
+                    issues: state.issues.filter(i => !issueIds.includes(i.id))
+                })
+
+                try {
+                    // Sync to Supabase - soft delete all selected issues
+                    const { error } = await supabase
+                        .from('issues')
+                        .update({ is_deleted: true })
+                        .in('id', issueIds)
+
+                    if (error) {
+                        console.error('Failed to bulk delete issues:', error)
+                        // Rollback on error
+                        set({ issues: state.issues })
+                    }
+                } catch (error) {
+                    console.error('Failed to bulk delete issues:', error)
+                    set({ issues: state.issues })
+                }
+            },
+
             moveIssue: async (issueId, newStatus) => {
                 const state = get()
                 const issue = state.issues.find(i => i.id === issueId)

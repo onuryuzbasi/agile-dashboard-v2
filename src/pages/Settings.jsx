@@ -161,6 +161,7 @@ export default function Settings() {
         toggleTheme,
         projects,
         issues,
+        deletedIssues,
         sprints,
         users,
         games,
@@ -228,8 +229,7 @@ export default function Settings() {
     const [editingFieldItem, setEditingFieldItem] = useState(null)
     const [editFieldValue, setEditFieldValue] = useState({})
 
-    // Get deleted issues
-    const deletedIssues = issues.filter(i => i.isDeleted)
+    // deletedIssues is now imported directly from store
 
     // Field Manager handlers
     const handleAddFieldItem = (fieldType, defaults = {}) => {

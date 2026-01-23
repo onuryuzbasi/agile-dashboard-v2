@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 const emptyState = {
     projects: [],
     issues: [],
+    deletedIssues: [],
     sprints: [],
     users: [],
     games: [],
@@ -98,7 +99,8 @@ export const useProjectStore = create(
                         { data: issueTypes },
                         { data: labels },
                         { data: issues },
-                        { data: savedFilters }
+                        { data: savedFilters },
+                        { data: deletedIssues }
                     ] = await Promise.all([
                         supabase.from('projects').select('*'),
                         supabase.from('users').select('*'),
@@ -110,7 +112,8 @@ export const useProjectStore = create(
                         supabase.from('issue_types').select('*').order('sort_order'),
                         supabase.from('labels').select('*'),
                         supabase.from('issues').select('*').eq('is_deleted', false),
-                        supabase.from('saved_filters').select('*')
+                        supabase.from('saved_filters').select('*'),
+                        supabase.from('issues').select('*').eq('is_deleted', true)
                     ])
 
                     // Transform to camelCase and set state
@@ -121,6 +124,7 @@ export const useProjectStore = create(
                         games: toCamelCase(games || []),
                         sprints: toCamelCase(sprints || []),
                         issues: toCamelCase(issues || []),
+                        deletedIssues: toCamelCase(deletedIssues || []),
                         savedFilters: toCamelCase(savedFilters || []),
                         fieldConfig: {
                             priorities: toCamelCase(priorities || []).map(p => ({
@@ -351,10 +355,14 @@ export const useProjectStore = create(
 
             deleteIssue: async (issueId) => {
                 const state = get()
+                const issueToDelete = state.issues.find(i => i.id === issueId)
 
-                // Optimistic soft delete
+                // Optimistic soft delete - move to deletedIssues
                 set({
-                    issues: state.issues.filter(i => i.id !== issueId)
+                    issues: state.issues.filter(i => i.id !== issueId),
+                    deletedIssues: issueToDelete
+                        ? [...state.deletedIssues, { ...issueToDelete, isDeleted: true, deletedAt: new Date().toISOString() }]
+                        : state.deletedIssues
                 })
 
                 // Sync to Supabase (soft delete)
@@ -394,6 +402,55 @@ export const useProjectStore = create(
                 } catch (error) {
                     console.error('Failed to bulk delete issues:', error)
                     set({ issues: state.issues })
+                }
+            },
+
+            // Restore a deleted issue from trash
+            restoreIssue: async (issueId) => {
+                const state = get()
+                const issueToRestore = state.deletedIssues.find(i => i.id === issueId)
+
+                if (!issueToRestore) return
+
+                // Optimistic restore - move back to issues
+                const restoredIssue = { ...issueToRestore, isDeleted: false, deletedAt: null }
+                set({
+                    deletedIssues: state.deletedIssues.filter(i => i.id !== issueId),
+                    issues: [...state.issues, restoredIssue]
+                })
+
+                // Sync to Supabase
+                const { error } = await supabase
+                    .from('issues')
+                    .update({ is_deleted: false })
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to restore issue:', error)
+                    // Rollback on error
+                    set({ deletedIssues: state.deletedIssues, issues: state.issues })
+                }
+            },
+
+            // Permanently delete an issue from trash
+            permanentlyDeleteIssue: async (issueId) => {
+                const state = get()
+
+                // Optimistic delete
+                set({
+                    deletedIssues: state.deletedIssues.filter(i => i.id !== issueId)
+                })
+
+                // Sync to Supabase - actually delete the row
+                const { error } = await supabase
+                    .from('issues')
+                    .delete()
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to permanently delete issue:', error)
+                    // Rollback on error
+                    set({ deletedIssues: state.deletedIssues })
                 }
             },
 

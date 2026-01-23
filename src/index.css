@@ -2135,6 +2135,35 @@ h4 {
   font-weight: 500;
 }
 
+/* Issue Checklist Mini */
+.issue-checklist-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.checklist-mini-bar {
+  width: 32px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.checklist-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #4ade80);
+  border-radius: var(--radius-full);
+  transition: width 0.2s ease;
+}
+
+.checklist-mini-count {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
   position: fixed;

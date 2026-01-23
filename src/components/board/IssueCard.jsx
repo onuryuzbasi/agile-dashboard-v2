@@ -12,7 +12,8 @@ import {
     Minus,
     Gamepad2,
     Building2,
-    Calendar
+    Calendar,
+    ListChecks
 } from 'lucide-react'
 
 const typeIcons = {
@@ -175,6 +176,24 @@ export default function IssueCard({ issue, isDragging = false }) {
                             <Gamepad2 size={12} />
                             <span>{game.code || game.name.substring(0, 3)}</span>
                         </span>
+                    )}
+
+                    {/* Checklist Progress */}
+                    {cardFieldVisibility?.checklist && issue.checklist?.length > 0 && (
+                        <div className="issue-checklist-mini">
+                            <ListChecks size={12} />
+                            <div className="checklist-mini-bar">
+                                <div
+                                    className="checklist-mini-fill"
+                                    style={{
+                                        width: `${(issue.checklist.filter(i => i.checked).length / issue.checklist.length) * 100}%`
+                                    }}
+                                />
+                            </div>
+                            <span className="checklist-mini-count">
+                                {issue.checklist.filter(i => i.checked).length}/{issue.checklist.length}
+                            </span>
+                        </div>
                     )}
                 </div>
 

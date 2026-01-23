@@ -37,6 +37,7 @@ const emptyState = {
         estimate: true,
         priority: true,
         assignee: true,
+        checklist: true,  // Checklist progress
         game: false,      // Custom field from games table
         department: false, // Custom field from departments table
         reporter: false,   // Standard field
@@ -1146,7 +1147,8 @@ export const useProjectStore = create(
                     { key: 'estimate', label: 'Story Points', category: 'standard' },
                     { key: 'priority', label: 'Priority', category: 'standard' },
                     { key: 'assignee', label: 'Assignee', category: 'standard' },
-                    { key: 'reporter', label: 'Reporter', category: 'standard' }
+                    { key: 'reporter', label: 'Reporter', category: 'standard' },
+                    { key: 'checklist', label: 'Checklist', category: 'standard' }
                 ]
 
                 // Add custom fields from games/departments if they exist

@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import KanbanBoard from '../components/board/KanbanBoard'
 import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
+import StatusSettingsPopover from '../components/board/StatusSettingsPopover'
 import { useProjectStore } from '../stores/projectStore'
 import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
-import { Filter, Layers, ChevronDown, User, Building2, Zap } from 'lucide-react'
+import { Filter, Layers, ChevronDown, User, Building2, Zap, Settings } from 'lucide-react'
 
 export default function Board() {
     // Single Source of Truth: Global normalized filter options
@@ -26,6 +27,9 @@ export default function Board() {
     // Filter state
     const [filters, setFilters] = useState({})
     const [showFilterMenu, setShowFilterMenu] = useState(false)
+
+    // Settings popover state
+    const [showSettingsMenu, setShowSettingsMenu] = useState(false)
 
     // Group By state
     const [groupBy, setGroupBy] = useState('none') // 'none' | 'epic' | 'assignee' | 'department'
@@ -192,6 +196,21 @@ export default function Board() {
                             onSaveFilter={handleSaveFilter}
                             onDeleteSavedFilter={handleDeleteSavedFilter}
                             onApplySavedFilter={handleApplySavedFilter}
+                        />
+                    </div>
+
+                    {/* Status Settings Button */}
+                    <div className="board-settings-container">
+                        <button
+                            className={`btn btn-secondary ${showSettingsMenu ? 'active' : ''}`}
+                            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                            title="Manage Statuses"
+                        >
+                            <Settings size={16} />
+                        </button>
+                        <StatusSettingsPopover
+                            isOpen={showSettingsMenu}
+                            onClose={() => setShowSettingsMenu(false)}
                         />
                     </div>
                 </div>

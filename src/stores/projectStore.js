@@ -606,7 +606,42 @@ export const useProjectStore = create(
                 }
             },
 
-            // Start sprint (change state to 'active')
+            // Update sprint (name, goal, dates)
+            updateSprint: async (sprintId, updates) => {
+                const state = get()
+                const sprintToUpdate = state.sprints.find(s => s.id === sprintId)
+                if (!sprintToUpdate) {
+                    console.error('Sprint not found:', sprintId)
+                    return false
+                }
+
+                // Optimistic update
+                set({
+                    sprints: state.sprints.map(s =>
+                        s.id === sprintId ? { ...s, ...updates } : s
+                    )
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('sprints')
+                        .update({
+                            name: updates.name !== undefined ? updates.name : sprintToUpdate.name,
+                            goal: updates.goal !== undefined ? updates.goal : sprintToUpdate.goal,
+                            start_date: updates.startDate !== undefined ? updates.startDate : sprintToUpdate.startDate,
+                            end_date: updates.endDate !== undefined ? updates.endDate : sprintToUpdate.endDate
+                        })
+                        .eq('id', sprintId)
+
+                    if (error) throw error
+                    console.log('✅ Sprint updated successfully')
+                    return true
+                } catch (error) {
+                    console.error('Failed to update sprint:', error)
+                    set({ sprints: state.sprints })
+                    return false
+                }
+            },
             startSprint: async (sprintId) => {
                 const state = get()
 
@@ -637,10 +672,65 @@ export const useProjectStore = create(
             },
 
             // Complete sprint (change state to 'closed')
+            // Incomplete issues (status !== 'done') are moved to the next sprint
             completeSprint: async (sprintId) => {
                 const state = get()
+                const { issues, sprints, fieldConfig } = state
 
-                // Optimistic update
+                // Find the "done" status key (usually 'done' but could be configured differently)
+                const doneStatus = fieldConfig.statuses?.find(s =>
+                    s.key === 'done' || s.label?.toLowerCase() === 'done'
+                )
+                const doneStatusKey = doneStatus?.key || 'done'
+
+                // Find incomplete issues in this sprint
+                const incompleteIssues = issues.filter(issue =>
+                    issue.sprintId === sprintId &&
+                    issue.status !== doneStatusKey &&
+                    !issue.isDeleted
+                )
+
+                // Find the next available sprint (future or planned sprint, not the one being completed)
+                const currentSprint = sprints.find(s => s.id === sprintId)
+                const nextSprint = sprints
+                    .filter(s => s.id !== sprintId && s.state !== 'closed')
+                    .sort((a, b) => {
+                        // Prefer 'active' sprints, then by start date
+                        if (a.state === 'active' && b.state !== 'active') return -1
+                        if (b.state === 'active' && a.state !== 'active') return 1
+                        return new Date(a.startDate || 0) - new Date(b.startDate || 0)
+                    })[0]
+
+                // Move incomplete issues to next sprint (or backlog if no next sprint)
+                const targetSprintId = nextSprint?.id || null
+
+
+                if (incompleteIssues.length > 0) {
+                    console.log(`📦 Moving ${incompleteIssues.length} incomplete issues to ${nextSprint?.name || 'Backlog'}`)
+
+                    // Optimistic update for issues
+                    set({
+                        issues: issues.map(issue =>
+                            incompleteIssues.find(i => i.id === issue.id)
+                                ? { ...issue, sprintId: targetSprintId }
+                                : issue
+                        )
+                    })
+
+                    // Sync issues to Supabase
+                    for (const issue of incompleteIssues) {
+                        const { error } = await supabase
+                            .from('issues')
+                            .update({ sprint_id: targetSprintId })
+                            .eq('id', issue.id)
+
+                        if (error) {
+                            console.error('Failed to move issue to next sprint:', error)
+                        }
+                    }
+                }
+
+                // Mark sprint as closed
                 set({
                     sprints: get().sprints.map(s =>
                         s.id === sprintId ? { ...s, state: 'closed' } : s
@@ -654,9 +744,11 @@ export const useProjectStore = create(
                         .eq('id', sprintId)
 
                     if (error) throw error
+
+                    console.log(`✅ Sprint completed. ${incompleteIssues.length} issues moved to ${nextSprint?.name || 'Backlog'}`)
                 } catch (error) {
                     console.error('Failed to complete sprint:', error)
-                    set({ sprints: state.sprints })
+                    set({ sprints: state.sprints, issues: state.issues })
                 }
             },
 
@@ -830,12 +922,41 @@ export const useProjectStore = create(
                 }
             },
 
-            reorderFieldConfigItem: (fieldType, newOrder) => set((state) => ({
-                fieldConfig: {
-                    ...state.fieldConfig,
-                    [fieldType]: newOrder
+            reorderFieldConfigItem: async (fieldType, newOrder) => {
+                const tableMap = {
+                    priorities: 'priorities',
+                    statuses: 'statuses',
+                    issueTypes: 'issue_types',
+                    labels: 'labels'
                 }
-            })),
+
+                // Optimistic update with sort_order
+                const orderedItems = newOrder.map((item, index) => ({ ...item, sortOrder: index }))
+                set((state) => ({
+                    fieldConfig: {
+                        ...state.fieldConfig,
+                        [fieldType]: orderedItems
+                    }
+                }))
+
+                // Sync sort_order to Supabase
+                const tableName = tableMap[fieldType]
+                if (tableName) {
+                    for (let i = 0; i < newOrder.length; i++) {
+                        const item = newOrder[i]
+                        if (item.id && !String(item.id).startsWith('temp-')) {
+                            const { error } = await supabase
+                                .from(tableName)
+                                .update({ sort_order: i })
+                                .eq('id', item.id)
+
+                            if (error) {
+                                console.error(`Failed to update sort_order for ${fieldType}:`, error)
+                            }
+                        }
+                    }
+                }
+            },
 
             // Department actions
             addDepartment: async (dept) => {

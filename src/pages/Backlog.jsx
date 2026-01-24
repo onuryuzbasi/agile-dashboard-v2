@@ -4,6 +4,7 @@ import FacetedFilterMenu from '../components/common/FacetedFilterMenu'
 import useGlobalFilterOptions from '../hooks/useGlobalFilterOptions'
 import useViewportPosition from '../hooks/useViewportPosition'
 import ViewSettingsMenu from '../components/common/ViewSettingsMenu'
+import SprintEditModal from '../components/common/SprintEditModal'
 import {
     DndContext,
     closestCenter,
@@ -163,6 +164,7 @@ export default function Backlog() {
     const [allEpicsSearchQuery, setAllEpicsSearchQuery] = useState('')
     const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('')
     const [sprintMenuOpen, setSprintMenuOpen] = useState(null)
+    const [editingSprint, setEditingSprint] = useState(null)
 
     // Global Faceted Filter state
     const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -358,8 +360,18 @@ export default function Backlog() {
     }
 
     const backlogIssues = filterIssues(getBacklogIssues())
-    const activeSprint = sprints.find(s => s.state === 'active')
-    const futureSprints = sprints.filter(s => s.state === 'future')
+
+    // All non-closed sprints, sorted: active first, then preserve original order
+    const nonClosedSprints = sprints
+        .filter(s => s.state !== 'closed')
+        .map((s, index) => ({ ...s, _originalIndex: index })) // Track original position
+        .sort((a, b) => {
+            // Active sprints first
+            if (a.state === 'active' && b.state !== 'active') return -1
+            if (b.state === 'active' && a.state !== 'active') return 1
+            // Otherwise preserve original order from database
+            return a._originalIndex - b._originalIndex
+        })
 
     // Toggle sprint collapse
     const toggleSprintCollapse = (sprintId) => {
@@ -811,7 +823,7 @@ export default function Backlog() {
                                 {sprintMenuOpen === sprint.id && (
                                     <div className="sprint-menu">
                                         <button onClick={() => {
-                                            setSelectedIssue({ ...sprint, type: 'sprint' })
+                                            setEditingSprint(sprint)
                                             setSprintMenuOpen(null)
                                         }}>
                                             <Edit size={14} />
@@ -819,10 +831,17 @@ export default function Backlog() {
                                         </button>
                                         <button
                                             className="delete-btn"
-                                            onClick={async () => {
-                                                if (window.confirm(`Delete "${sprint.name}"? Issues will be moved to backlog.`)) {
-                                                    await deleteSprint(sprint.id)
-                                                }
+                                            onClick={() => {
+                                                const issueCount = getSprintIssues(sprint.id).length
+                                                showConfirmModal({
+                                                    title: `Delete "${sprint.name}"?`,
+                                                    message: issueCount > 0
+                                                        ? `This sprint contains ${issueCount} issue${issueCount > 1 ? 's' : ''} that will be moved to Backlog.`
+                                                        : 'This sprint will be permanently deleted.',
+                                                    variant: 'danger',
+                                                    confirmText: 'Delete Sprint',
+                                                    onConfirm: () => deleteSprint(sprint.id)
+                                                })
                                                 setSprintMenuOpen(null)
                                             }}
                                         >
@@ -1406,16 +1425,8 @@ export default function Backlog() {
 
                 {/* Sprint Sections */}
                 <div className="sprint-list">
-                    {/* Active Sprint */}
-                    {activeSprint && (
-                        <SprintSection
-                            sprint={activeSprint}
-                            issues={getSprintIssues(activeSprint.id)}
-                        />
-                    )}
-
-                    {/* Future Sprints */}
-                    {futureSprints.map(sprint => (
+                    {/* All Non-Closed Sprints */}
+                    {nonClosedSprints.map(sprint => (
                         <SprintSection
                             key={sprint.id}
                             sprint={sprint}
@@ -1491,6 +1502,14 @@ export default function Backlog() {
                     onClose={() => setIssueContextMenu(null)}
                     sprints={sprints}
                     onMoveToSprint={(sprintId) => handleMoveToSprint(issueContextMenu.issueId, sprintId)}
+                />
+            )}
+
+            {/* Sprint Edit Modal */}
+            {editingSprint && (
+                <SprintEditModal
+                    sprint={editingSprint}
+                    onClose={() => setEditingSprint(null)}
                 />
             )}
         </div>

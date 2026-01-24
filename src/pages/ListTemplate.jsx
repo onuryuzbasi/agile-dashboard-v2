@@ -596,11 +596,14 @@ export default function ListTemplate() {
             // Always show non-closed sprints first
             const activeSprints = sprints.filter(s => s.state !== 'closed')
 
-            const sortedSprints = [...activeSprints].sort((a, b) => {
-                if (a.state === 'active') return -1
-                if (b.state === 'active') return 1
-                return new Date(a.startDate || 0) - new Date(b.startDate || 0)
-            })
+            const sortedSprints = [...activeSprints]
+                .map((s, index) => ({ ...s, _originalIndex: index }))
+                .sort((a, b) => {
+                    if (a.state === 'active') return -1
+                    if (b.state === 'active') return 1
+                    // Preserve original order from database
+                    return a._originalIndex - b._originalIndex
+                })
 
             sortedSprints.forEach(sprint => {
                 const sprintIssues = topLevelIssues.filter(i => i.sprintId === sprint.id)

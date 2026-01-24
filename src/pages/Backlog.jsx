@@ -643,7 +643,7 @@ export default function Backlog() {
 
         return (
             <div
-                className={`backlog-issue-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
+                className={`backlog-issue-row hover-lift ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
                 onClick={() => setSelectedIssue(issue)}
                 onContextMenu={(e) => handleIssueContextMenu(e, issue.id)}
                 data-issue-id={issue.id}

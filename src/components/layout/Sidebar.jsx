@@ -81,7 +81,7 @@ export default function Sidebar() {
                                 to={item.path}
                                 onClick={handleNavLinkClick}
                                 className={({ isActive }) =>
-                                    `nav-item ${isActive ? 'active' : ''}`
+                                    `nav-item hover-lift press-active ${isActive ? 'active' : ''}`
                                 }
                                 title={sidebarCollapsed && !mobileSidebarOpen ? item.label : undefined}
                             >
@@ -99,7 +99,7 @@ export default function Sidebar() {
                             to={settingsItem.path}
                             onClick={handleNavLinkClick}
                             className={({ isActive }) =>
-                                `nav-item ${isActive ? 'active' : ''}`
+                                `nav-item hover-lift press-active ${isActive ? 'active' : ''}`
                             }
                             title={sidebarCollapsed && !mobileSidebarOpen ? settingsItem.label : undefined}
                         >
@@ -107,12 +107,12 @@ export default function Sidebar() {
                             {(!sidebarCollapsed || mobileSidebarOpen) && <span>{settingsItem.label}</span>}
                         </NavLink>
                     </div>
-                </nav>
+                </nav >
 
                 {/* Footer */}
-                <div className="sidebar-footer">
+                < div className="sidebar-footer" >
                     <button
-                        className="nav-item w-full"
+                        className="nav-item w-full hover-lift press-active"
                         onClick={toggleTheme}
                         title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
                     >
@@ -123,15 +123,15 @@ export default function Sidebar() {
                     </button>
 
                     <button
-                        className="nav-item w-full mt-2 hidden lg:flex"
+                        className="nav-item w-full mt-2 hidden lg:flex hover-lift press-active"
                         onClick={toggleSidebar}
                         title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
                     >
                         {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
                         {!sidebarCollapsed && <span>Collapse</span>}
                     </button>
-                </div>
-            </aside>
+                </div >
+            </aside >
         </>
     )
 }

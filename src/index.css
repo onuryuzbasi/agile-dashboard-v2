@@ -1,5 +1,60 @@
 /* Agile Dashboard - Nano Banana Design System */
 
+/* ===== Micro-Interaction Library (2025) ===== */
+
+/* The "Press" - Tactile Feedback */
+.press-active:active {
+  transform: scale(0.96);
+}
+
+/* The "Hover Lift" - Spatial Awareness */
+.hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* The "Squish" - Elasticity */
+.click-squish:active {
+  transform: scale(0.95, 0.95);
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.stagger-1 {
+  animation-delay: 50ms;
+}
+
+.stagger-2 {
+  animation-delay: 100ms;
+}
+
+.stagger-3 {
+  animation-delay: 150ms;
+}
+
+.stagger-4 {
+  animation-delay: 200ms;
+}
+
 /* ===== CSS Variables (Design Tokens) ===== */
 :root {
   /* Colors - Light Mode (Peeled Banana) */
@@ -119,10 +174,15 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 2.25rem;
 
-  /* Transitions - Snappy/Bouncy */
-  --transition-fast: 150ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  --transition-normal: 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  --transition-slow: 450ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Transitions - Physics-Based (Springs) 2025 Standard */
+  /* Snappy (Buttons, Micro-interactions) */
+  --transition-fast: 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Fluid (Drawers, Modals) */
+  --transition-normal: 400ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* Heavy (Page Transitions) */
+  --transition-slow: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* Bounce (Playful) */
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
   /* Layout */
   --sidebar-width: 280px;

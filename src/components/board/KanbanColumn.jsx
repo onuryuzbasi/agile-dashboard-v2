@@ -17,7 +17,7 @@ export default function KanbanColumn({ id, status, issues, fieldConfig, compact 
     return (
         <div
             ref={setNodeRef}
-            className={`kanban-column ${status} ${isOver ? 'drag-over' : ''} ${compact ? 'compact' : ''}`}
+            className={`kanban-column ${status} ${isOver ? 'drag-over' : ''} ${compact ? 'compact' : ''} animate-fade-in-up`}
             style={{
                 '--column-color': statusData.bgColor
             }}

@@ -30,7 +30,7 @@ export default function Confetti() {
             '#22C55E', // Green
         ]
 
-        const particleCount = 60
+        const particleCount = 150
         const arr = []
 
         for (let i = 0; i < particleCount; i++) {

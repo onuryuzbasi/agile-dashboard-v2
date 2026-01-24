@@ -28,81 +28,110 @@ const navItems = [
 const settingsItem = { path: '/settings', icon: Settings, label: 'Settings' }
 
 export default function Sidebar() {
-    const { sidebarCollapsed, toggleSidebar, theme, toggleTheme } = useProjectStore()
+    const {
+        sidebarCollapsed,
+        toggleSidebar,
+        theme,
+        toggleTheme,
+        mobileSidebarOpen,
+        setMobileSidebarOpen
+    } = useProjectStore()
     const location = useLocation()
 
-    return (
-        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-            {/* Header */}
-            <div className="sidebar-header">
-                <div className="sidebar-logo">
-                    <Kanban size={20} />
-                </div>
-                {!sidebarCollapsed && (
-                    <span className="sidebar-brand">Agile</span>
-                )}
-            </div>
+    // Close mobile sidebar on route change
+    const handleNavLinkClick = () => {
+        setMobileSidebarOpen(false)
+    }
 
-            {/* Navigation */}
-            <nav className="sidebar-nav">
-                <div className="nav-section">
-                    {!sidebarCollapsed && (
-                        <div className="nav-section-title">Menu</div>
+    return (
+        <>
+            {/* Mobile Backdrop */}
+            <div
+                className={`sidebar-backdrop ${mobileSidebarOpen ? 'open' : ''}`}
+                onClick={() => setMobileSidebarOpen(false)}
+            />
+
+            <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileSidebarOpen ? 'mobile-open' : ''}`}>
+                {/* Header */}
+                <div className="sidebar-header">
+                    <div className="sidebar-logo">
+                        <Kanban size={20} />
+                    </div>
+                    {(!sidebarCollapsed || mobileSidebarOpen) && (
+                        <span className="sidebar-brand">Agile</span>
                     )}
-                    {navItems.map((item) => (
+                    {/* Mobile Close Button */}
+                    <button
+                        className="btn-icon btn-ghost lg:hidden ml-auto"
+                        onClick={() => setMobileSidebarOpen(false)}
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                </div>
+
+                {/* Navigation */}
+                <nav className="sidebar-nav custom-scrollbar">
+                    <div className="nav-section">
+                        {(!sidebarCollapsed || mobileSidebarOpen) && (
+                            <div className="nav-section-title">Menu</div>
+                        )}
+                        {navItems.map((item) => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                onClick={handleNavLinkClick}
+                                className={({ isActive }) =>
+                                    `nav-item ${isActive ? 'active' : ''}`
+                                }
+                                title={sidebarCollapsed && !mobileSidebarOpen ? item.label : undefined}
+                            >
+                                <item.icon size={20} />
+                                {(!sidebarCollapsed || mobileSidebarOpen) && <span>{item.label}</span>}
+                            </NavLink>
+                        ))}
+                    </div>
+
+                    <div className="nav-section">
+                        {(!sidebarCollapsed || mobileSidebarOpen) && (
+                            <div className="nav-section-title">Configuration</div>
+                        )}
                         <NavLink
-                            key={item.path}
-                            to={item.path}
+                            to={settingsItem.path}
+                            onClick={handleNavLinkClick}
                             className={({ isActive }) =>
                                 `nav-item ${isActive ? 'active' : ''}`
                             }
-                            title={sidebarCollapsed ? item.label : undefined}
+                            title={sidebarCollapsed && !mobileSidebarOpen ? settingsItem.label : undefined}
                         >
-                            <item.icon size={20} />
-                            {!sidebarCollapsed && <span>{item.label}</span>}
+                            <settingsItem.icon size={20} />
+                            {(!sidebarCollapsed || mobileSidebarOpen) && <span>{settingsItem.label}</span>}
                         </NavLink>
-                    ))}
-                </div>
+                    </div>
+                </nav>
 
-                <div className="nav-section">
-                    {!sidebarCollapsed && (
-                        <div className="nav-section-title">Configuration</div>
-                    )}
-                    <NavLink
-                        to={settingsItem.path}
-                        className={({ isActive }) =>
-                            `nav-item ${isActive ? 'active' : ''}`
-                        }
-                        title={sidebarCollapsed ? settingsItem.label : undefined}
+                {/* Footer */}
+                <div className="sidebar-footer">
+                    <button
+                        className="nav-item w-full"
+                        onClick={toggleTheme}
+                        title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
                     >
-                        <settingsItem.icon size={20} />
-                        {!sidebarCollapsed && <span>{settingsItem.label}</span>}
-                    </NavLink>
+                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                        {(!sidebarCollapsed || mobileSidebarOpen) && (
+                            <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                        )}
+                    </button>
+
+                    <button
+                        className="nav-item w-full mt-2 hidden lg:flex"
+                        onClick={toggleSidebar}
+                        title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                    >
+                        {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+                        {!sidebarCollapsed && <span>Collapse</span>}
+                    </button>
                 </div>
-            </nav>
-
-            {/* Footer */}
-            <div className="sidebar-footer">
-                <button
-                    className="nav-item w-full"
-                    onClick={toggleTheme}
-                    title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-                >
-                    {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                    {!sidebarCollapsed && (
-                        <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-                    )}
-                </button>
-
-                <button
-                    className="nav-item w-full mt-2"
-                    onClick={toggleSidebar}
-                    title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-                >
-                    {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-                    {!sidebarCollapsed && <span>Collapse</span>}
-                </button>
-            </div>
-        </aside>
+            </aside>
+        </>
     )
 }

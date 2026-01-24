@@ -13,7 +13,7 @@ const pageTitles = {
 
 export default function Header() {
     const location = useLocation()
-    const { getCurrentProject, users, openCreateModal } = useProjectStore()
+    const { getCurrentProject, users, openCreateModal, toggleMobileSidebar } = useProjectStore()
     const [searchQuery, setSearchQuery] = useState('')
 
     const project = getCurrentProject()
@@ -28,7 +28,10 @@ export default function Header() {
     return (
         <header className="header">
             <div className="header-left">
-                <button className="btn btn-icon btn-ghost lg:hidden">
+                <button
+                    className="btn btn-icon btn-ghost lg:hidden"
+                    onClick={toggleMobileSidebar}
+                >
                     <Menu size={20} />
                 </button>
 

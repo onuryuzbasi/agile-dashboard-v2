@@ -10824,3 +10824,137 @@ h4 {
 .backlog-issue-row[draggable="true"]:active {
   cursor: grabbing;
 }
+/* ===== Mobile Responsiveness ===== */
+
+/* Utility Classes */
+@media (min-width: 1024px) {
+  .lg\:hidden { display: none !important; }
+  .lg\:flex { display: flex !important; }
+  .lg\:block { display: block !important; }
+}
+
+@media (max-width: 1023px) {
+  /* Hide elements on mobile */
+  .hidden { display: none !important; }
+  
+  /* Mobile Sidebar Transformation */
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px !important;
+    box-shadow: var(--shadow-xl);
+    border-right: none; /* Shadow handles separation */
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Backdrop for Mobile Sidebar */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 39; /* Just below sidebar (z-40) */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+  }
+
+  .sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Reset Main Content Margin on Mobile */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: var(--space-4); /* Less padding on mobile */
+  }
+
+  /* Header Mobile Adjustments */
+  .header {
+    padding: 0;
+    gap: var(--space-2);
+  }
+  
+  .header-left {
+    gap: var(--space-2);
+  }
+
+  .header-right {
+    gap: var(--space-2);
+  }
+  
+  .search-box {
+    display: none; /* Hide search on mobile for now, or make icon-only */
+  }
+
+  .page-title {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Hide collapse button on mobile */
+  .sidebar-footer .hidden-mobile {
+    display: none;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 20px;
+}
+
+/* ===== Mobile Grid & Kanban Enhancements ===== */
+
+/* Responsive Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Scroll Snap for Kanban on Mobile */
+@media (max-width: 1023px) {
+  .kanban-board {
+    scroll-snap-type: x mandatory;
+    padding-bottom: var(--space-4); /* Space for scrollbar */
+  }
+
+  .kanban-column {
+    scroll-snap-align: start;
+    margin-right: var(--space-4);
+    /* Make columns slightly narrower on mobile to see peek of next one */
+    flex: 0 0 85vw; 
+    min-width: 85vw;
+  }
+}

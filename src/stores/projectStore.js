@@ -21,6 +21,7 @@ const emptyState = {
     currentSprintId: null,
     theme: 'dark',
     sidebarCollapsed: false,
+    mobileSidebarOpen: false,
     selectedIssue: null,
     createIssueModalOpen: false,
     createIssueDefaultType: 'story',
@@ -1144,6 +1145,8 @@ export const useProjectStore = create(
                 theme: state.theme === 'dark' ? 'light' : 'dark'
             })),
             toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+            toggleMobileSidebar: () => set(state => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
+            setMobileSidebarOpen: (isOpen) => set({ mobileSidebarOpen: isOpen }),
             setSelectedIssue: (issue) => set({ selectedIssue: issue }),
             openCreateIssueModal: (defaultType = 'story', defaults = {}) => set({
                 createIssueModalOpen: true,

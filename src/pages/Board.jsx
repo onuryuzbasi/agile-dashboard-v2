@@ -117,13 +117,13 @@ export default function Board() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     {/* Sprint Selector */}
                     <select
                         className="input select"
                         value={currentSprintId || ''}
                         onChange={(e) => setCurrentSprint(e.target.value)}
-                        style={{ width: 'auto', minWidth: 150 }}
+                        style={{ width: 'auto', minWidth: 150, flexGrow: 1 }}
                     >
                         <option value="">All Issues</option>
                         {activeSprints.map(sprint => (
@@ -135,13 +135,15 @@ export default function Board() {
                     </select>
 
                     {/* Group By Dropdown */}
-                    <div className="board-groupby-container">
+                    <div className="board-groupby-container" style={{ flexGrow: 1 }}>
                         <button
-                            className={`btn btn-secondary ${groupBy !== 'none' ? 'active' : ''}`}
+                            className={`btn btn-secondary ${groupBy !== 'none' ? 'active' : ''} w-full justify-between`}
                             onClick={() => setShowGroupByMenu(!showGroupByMenu)}
                         >
-                            <Layers size={16} />
-                            Group: {selectedGroupBy?.label}
+                            <span className="flex items-center gap-2">
+                                <Layers size={16} />
+                                Group: {selectedGroupBy?.label}
+                            </span>
                             <ChevronDown size={14} />
                         </button>
                         {showGroupByMenu && (

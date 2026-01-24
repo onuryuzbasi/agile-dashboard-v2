@@ -74,7 +74,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Sprint Progress */}
+            {/* Active Sprint Progress - Inner Grid */}
             {currentSprint && (
                 <div className="card mb-6 animate-slide-up">
                     <div className="card-header mb-4">
@@ -85,12 +85,7 @@ export default function Dashboard() {
                         <span className="badge badge-task">{currentSprint.name}</span>
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: 'var(--space-4)',
-                        marginBottom: 'var(--space-4)'
-                    }}>
+                    <div className="dashboard-grid" style={{ marginBottom: 'var(--space-4)' }}>
                         <div>
                             <div className="text-sm text-secondary mb-2">Issues Completed</div>
                             <div className="flex items-center gap-3">
@@ -147,12 +142,7 @@ export default function Dashboard() {
             )}
 
             {/* Stats Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 'var(--space-4)',
-                marginBottom: 'var(--space-6)'
-            }}>
+            <div className="dashboard-grid">
                 <StatCard
                     icon={Clock}
                     label="To Do"

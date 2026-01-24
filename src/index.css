@@ -834,7 +834,7 @@ h4 {
 .type-option.selected {
   border-color: var(--type-color, var(--accent));
   background: color-mix(in srgb, var(--type-color, var(--accent)) 10%, transparent);
-  color: var(--type-color, var(--accent-text));
+  color: var(--text-primary);
 }
 
 .modal-actions {
@@ -10824,27 +10824,40 @@ h4 {
 .backlog-issue-row[draggable="true"]:active {
   cursor: grabbing;
 }
+
 /* ===== Mobile Responsiveness ===== */
 
 /* Utility Classes */
 @media (min-width: 1024px) {
-  .lg\:hidden { display: none !important; }
-  .lg\:flex { display: flex !important; }
-  .lg\:block { display: block !important; }
+  .lg\:hidden {
+    display: none !important;
+  }
+
+  .lg\:flex {
+    display: flex !important;
+  }
+
+  .lg\:block {
+    display: block !important;
+  }
 }
 
 @media (max-width: 1023px) {
+
   /* Hide elements on mobile */
-  .hidden { display: none !important; }
-  
+  .hidden {
+    display: none !important;
+  }
+
   /* Mobile Sidebar Transformation */
   .sidebar {
     transform: translateX(-100%);
     width: 280px !important;
     box-shadow: var(--shadow-xl);
-    border-right: none; /* Shadow handles separation */
+    border-right: none;
+    /* Shadow handles separation */
   }
-  
+
   .sidebar.mobile-open {
     transform: translateX(0);
   }
@@ -10855,7 +10868,8 @@ h4 {
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(2px);
-    z-index: 39; /* Just below sidebar (z-40) */
+    z-index: 39;
+    /* Just below sidebar (z-40) */
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition-normal);
@@ -10870,7 +10884,8 @@ h4 {
   .main-content {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: var(--space-4); /* Less padding on mobile */
+    padding: var(--space-4);
+    /* Less padding on mobile */
   }
 
   /* Header Mobile Adjustments */
@@ -10878,7 +10893,7 @@ h4 {
     padding: 0;
     gap: var(--space-2);
   }
-  
+
   .header-left {
     gap: var(--space-2);
   }
@@ -10886,9 +10901,10 @@ h4 {
   .header-right {
     gap: var(--space-2);
   }
-  
+
   .search-box {
-    display: none; /* Hide search on mobile for now, or make icon-only */
+    display: none;
+    /* Hide search on mobile for now, or make icon-only */
   }
 
   .page-title {
@@ -10947,14 +10963,49 @@ h4 {
 @media (max-width: 1023px) {
   .kanban-board {
     scroll-snap-type: x mandatory;
-    padding-bottom: var(--space-4); /* Space for scrollbar */
+    padding-bottom: var(--space-4);
+    /* Space for scrollbar */
   }
 
   .kanban-column {
     scroll-snap-align: start;
     margin-right: var(--space-4);
     /* Make columns slightly narrower on mobile to see peek of next one */
-    flex: 0 0 85vw; 
+    flex: 0 0 85vw;
     min-width: 85vw;
   }
+}
+/* ===== Mention List Popover ===== */
+.mention-list {
+  position: absolute;
+  z-index: 100;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle); /* Changed to subtle border */
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  width: 200px;
+  padding: var(--space-1);
+}
+
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  color: var(--text-primary);
+}
+
+.mention-item:hover, .mention-item.selected {
+  background: var(--bg-hover);
+}
+
+.mention-item .avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
 }

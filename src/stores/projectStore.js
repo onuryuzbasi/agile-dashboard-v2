@@ -272,7 +272,17 @@ export const useProjectStore = create(
                     start_date: issue.startDate || null,
                     due_date: issue.dueDate || null,
                     work_logs: [],
-                    history: [],
+                    history: issue.comments?.[0] ? [{
+                        id: `hist-${Date.now()}`,
+                        userId: issue.reporterId || state.users[0]?.id,
+                        timestamp: new Date().toISOString(),
+                        field: 'comment',
+                        fieldLabel: 'Comment',
+                        oldValue: null,
+                        newValue: issue.comments[0].text,
+                        oldLabel: 'None',
+                        newLabel: issue.comments[0].text
+                    }] : [],
                     checklist: []
                 }
 

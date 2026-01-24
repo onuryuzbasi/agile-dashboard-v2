@@ -100,6 +100,12 @@ export default function CreateIssueModal() {
     // Default reporter to first user (or could be current logged-in user)
     const defaultReporterId = users?.[0]?.id || ''
 
+    const [showMentionList, setShowMentionList] = useState(false)
+    const [mentionQuery, setMentionQuery] = useState('')
+    const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 })
+    const [filteredUsers, setFilteredUsers] = useState([])
+    const [mentionCursorIndex, setMentionCursorIndex] = useState(0)
+
     // Reset form when modal opens with default type and context defaults
     useEffect(() => {
         if (createIssueModalOpen) {
@@ -120,7 +126,8 @@ export default function CreateIssueModal() {
                 parentId: createIssueDefaults?.epicId || '',
                 departmentId: createIssueDefaults?.departmentId || '',
                 startDate: '',
-                dueDate: ''
+                dueDate: '',
+                initialComment: ''
             }
 
             setFormData(newFormData)
@@ -129,33 +136,105 @@ export default function CreateIssueModal() {
             setNewChildSummary('')
             setNewChildType('story')
             setNewChildAssigneeId('')
+            setShowMentionList(false)
         }
     }, [createIssueModalOpen, createIssueDefaultType, createIssueDefaults, defaultReporterId])
+
+    const handleCommentChange = (e) => {
+        const val = e.target.value
+        setFormData(prev => ({ ...prev, initialComment: val }))
+
+        const selectionStart = e.target.selectionStart
+        // Look for @ symbol before cursor
+        const textBeforeCursor = val.substring(0, selectionStart)
+        const lastAt = textBeforeCursor.lastIndexOf('@')
+
+        if (lastAt !== -1) {
+            // Check if there are spaces after @ (e.g. "@user name" is valid, but "@ user" needs check)
+            // Actually, we usually want "@query". If query contains space, standard simple mentions might break.
+            // Let's support simple single-word or name with one space if we want, but typically tight mentions.
+            // For now: match until space or end line.
+            // Actually, let's just grab everything after @ until cursor
+            const query = textBeforeCursor.substring(lastAt + 1)
+
+            // Validate query (shouldn't contain newlines, maybe limit length)
+            if (!query.includes('\n') && query.length < 20) {
+                setMentionQuery(query)
+                setFilteredUsers(users.filter(u => u.name.toLowerCase().includes(query.toLowerCase())))
+                if (users.length > 0) {
+                    setShowMentionList(true)
+                    setMentionCursorIndex(lastAt)
+                    // Rudimentary positioning (relative to textarea usually tough without library)
+                    // We'll just position it near the textarea bottom for now or use a fixed overlay.
+                    // Better: Use a ref on textarea and getCoordinates (complex).
+                    // Fallback: Show it just below the textarea wrapper.
+                }
+            } else {
+                setShowMentionList(false)
+            }
+        } else {
+            setShowMentionList(false)
+        }
+    }
+
+    const selectUser = (user) => {
+        const val = formData.initialComment
+        const before = val.substring(0, mentionCursorIndex)
+        // Ensure space after match
+        const after = val.substring(val.indexOf(' ', mentionCursorIndex + 1) !== -1 ? val.indexOf(' ', mentionCursorIndex + 1) : val.length)
+
+        // Actually, cleaner replacement:
+        // Text is: "Hello @Jo|hn" -> "Hello @John Doe "
+        // We know mentionCursorIndex is index of @
+        // current cursor is somewhere after.
+        // We replace substrings.
+
+        // Get text after cursor (to preserve)
+        // Actually simpler:
+        // Replace from lastAt to current cursor with user.name
+        // But the user might be typing inside text.
+
+        // Let's use simpler logic: Replace the text from `mentionCursorIndex` to current selection + spacing.
+        // Or just replace the whole query part.
+
+        const prefix = val.substring(0, mentionCursorIndex)
+        const queryPart = val.substring(mentionCursorIndex + 1) // "John"
+        // Find next whitespace or end
+        const nextSpace = queryPart.indexOf(' ')
+        const suffix = nextSpace === -1 ? '' : queryPart.substring(nextSpace)
+
+        // Wait, if I type "@Jo" and cursor is at end, suffix is empty.
+        // New val: prefix + "@" + user.name + " " + suffix
+        // But wait, suffix logic is flawed if I am at end.
+
+        // Let's just assume simple append mode for MVP if typing at end.
+        // Or robust: 
+        const newVal = prefix + `@${user.name} ` + val.substring(mentionCursorIndex + 1 + mentionQuery.length)
+
+        setFormData(prev => ({ ...prev, initialComment: newVal }))
+        setShowMentionList(false)
+        // Focus back to textarea usually required (can use ref)
+    }
 
     if (!createIssueModalOpen) return null
 
     const epics = issues.filter(issue => issue.type === 'epic' && !issue.isDeleted)
 
-    // Add child to draft list with type and assignee
     const handleAddDraftChild = () => {
         if (!newChildSummary.trim()) return
-
         setDraftChildren(prev => [...prev, {
-            id: Date.now(), // Temporary ID for key
+            id: Date.now(),
             summary: newChildSummary.trim(),
             type: newChildType,
             assigneeId: newChildAssigneeId || null
         }])
         setNewChildSummary('')
-        // Keep type and assignee for quick sequential adds
     }
 
-    // Remove child from draft list
     const handleRemoveDraftChild = (id) => {
         setDraftChildren(prev => prev.filter(child => child.id !== id))
     }
 
-    // Get assignee name for display
     const getAssigneeName = (assigneeId) => {
         if (!assigneeId) return null
         const user = users.find(u => u.id === assigneeId)
@@ -165,17 +244,12 @@ export default function CreateIssueModal() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!formData.summary.trim()) return
-
         setIsSubmitting(true)
 
         try {
-            // Step 1: Create the parent issue
             const isEpic = formData.type === 'epic'
             const hasChildren = isEpic && draftChildren.length > 0
-
-            if (hasChildren) {
-                setSubmittingStatus(`Creating Epic...`)
-            }
+            if (hasChildren) setSubmittingStatus(`Creating Epic...`)
 
             const newIssue = {
                 type: formData.type,
@@ -191,20 +265,23 @@ export default function CreateIssueModal() {
                 gameId: formData.gameId || null,
                 originalEstimate: formData.originalEstimate ? parseInt(formData.originalEstimate) : null,
                 startDate: formData.startDate || null,
-                dueDate: formData.dueDate || null
+                dueDate: formData.dueDate || null,
+                // Add initial comment if present as an array
+                comments: formData.initialComment ? [{
+                    id: Date.now(),
+                    text: formData.initialComment,
+                    userId: formData.reporterId || defaultReporterId,
+                    timestamp: new Date().toISOString()
+                }] : []
             }
 
-            // Await the async addIssue call and get the created Epic
             const createdIssue = await addIssue(newIssue)
 
-            // Step 2: If Epic with children, create child issues
             if (hasChildren && createdIssue?.id) {
                 const totalChildren = draftChildren.length
-
                 for (let i = 0; i < draftChildren.length; i++) {
                     const child = draftChildren[i]
                     setSubmittingStatus(`Creating child ${i + 1} of ${totalChildren}...`)
-
                     await addIssue({
                         type: child.type,
                         summary: child.summary,
@@ -212,43 +289,33 @@ export default function CreateIssueModal() {
                         status: 'todo',
                         priority: 'medium',
                         parentId: createdIssue.id,
-                        sprintId: formData.sprintId || null, // Inherit from Epic
-                        assigneeId: child.assigneeId, // Use child's assignee
+                        sprintId: formData.sprintId || null,
+                        assigneeId: child.assigneeId,
                         reporterId: formData.reporterId || null,
                         departmentId: formData.departmentId || null,
                         gameId: formData.gameId || null
                     })
                 }
             }
-
-            // Close modal ONLY after successful creation
             closeCreateIssueModal()
         } catch (error) {
             console.error('Failed to create issue:', error)
-            // Don't close modal on error - let user retry
         } finally {
             setIsSubmitting(false)
             setSubmittingStatus('')
         }
     }
 
-    // Handle close - strictly NO state changes, just close the modal
     const handleClose = () => {
-        if (!isSubmitting) {
-            // Simply close the modal - no side effects
-            closeCreateIssueModal()
-        }
+        if (!isSubmitting) closeCreateIssueModal()
     }
 
     const selectedType = typeOptions.find(t => t.value === formData.type)
     const TypeIcon = selectedType?.icon || BookOpen
     const isEpic = formData.type === 'epic'
 
-    // Calculate button text
     const getSubmitButtonText = () => {
-        if (isSubmitting) {
-            return submittingStatus || 'Creating...'
-        }
+        if (isSubmitting) return submittingStatus || 'Creating...'
         if (isEpic && draftChildren.length > 0) {
             return `Create Epic + ${draftChildren.length} Child${draftChildren.length > 1 ? 'ren' : ''}`
         }
@@ -269,7 +336,6 @@ export default function CreateIssueModal() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="create-issue-form">
-                    {/* Type Selector */}
                     <div className="form-group">
                         <label>Issue Type</label>
                         <div className="type-selector">
@@ -292,7 +358,6 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Summary */}
                     <div className="form-group">
                         <label>Summary *</label>
                         <input
@@ -306,7 +371,6 @@ export default function CreateIssueModal() {
                         />
                     </div>
 
-                    {/* Description */}
                     <div className="form-group">
                         <label>Description</label>
                         <textarea
@@ -319,7 +383,36 @@ export default function CreateIssueModal() {
                         />
                     </div>
 
-                    {/* Row 1: Status & Priority */}
+                    {/* NEW: Comment Field with Mentions */}
+                    <div className="form-group relative-container" style={{ position: 'relative' }}>
+                        <label>Comment</label>
+                        <textarea
+                            className="input"
+                            placeholder="Add a comment... (Type @ to mention)"
+                            rows={2}
+                            value={formData.initialComment}
+                            onChange={handleCommentChange}
+                            disabled={isSubmitting}
+                        />
+                        {/* Mention List Popover */}
+                        {showMentionList && filteredUsers.length > 0 && (
+                            <div className="mention-list" style={{ bottom: '100%', left: 0, marginBottom: 5 }}>
+                                {filteredUsers.map(user => (
+                                    <div
+                                        key={user.id}
+                                        className="mention-item"
+                                        onClick={() => selectUser(user)}
+                                    >
+                                        <div className="avatar xs">
+                                            {user.name.charAt(0)}
+                                        </div>
+                                        <span>{user.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="form-row">
                         <div className="form-group">
                             <label>Status</label>
@@ -350,7 +443,6 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Row 2: Reporter & Assignee */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Reporter</label>
@@ -383,7 +475,6 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Row 3: Sprint & Original Estimate */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Sprint</label>
@@ -414,7 +505,6 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Row 4: Game & Parent Epic / Department */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Game</label>
@@ -464,7 +554,6 @@ export default function CreateIssueModal() {
                         )}
                     </div>
 
-                    {/* Row 5: Department (for non-epics) */}
                     {!isEpic && (
                         <div className="form-group">
                             <label>Department</label>
@@ -482,7 +571,6 @@ export default function CreateIssueModal() {
                         </div>
                     )}
 
-                    {/* Row 6: Start Date & Due Date */}
                     <div className="form-row">
                         <div className="form-group">
                             <label>Start Date</label>
@@ -507,7 +595,6 @@ export default function CreateIssueModal() {
                         </div>
                     </div>
 
-                    {/* Batch Child Issues Section - Only for Epics */}
                     {isEpic && (
                         <div className="batch-children-section">
                             <label className="batch-children-label">
@@ -517,7 +604,6 @@ export default function CreateIssueModal() {
                                 )}
                             </label>
 
-                            {/* Add child input row - 3 fields: Type, Summary, Assignee */}
                             <div className="batch-children-input-row">
                                 <select
                                     className="input batch-child-type-select"
@@ -567,7 +653,6 @@ export default function CreateIssueModal() {
                                 </button>
                             </div>
 
-                            {/* Draft children list */}
                             {draftChildren.length > 0 && (
                                 <div className="batch-children-list">
                                     {draftChildren.map((child) => (
@@ -597,7 +682,6 @@ export default function CreateIssueModal() {
                         </div>
                     )}
 
-                    {/* Actions - NO Delete button in Create mode */}
                     <div className="modal-actions">
                         <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={isSubmitting}>
                             Cancel

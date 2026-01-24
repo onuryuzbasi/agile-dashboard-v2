@@ -133,9 +133,9 @@ export default function IssueModal({ issue, onClose }) {
         sprintId: issue.sprintId || '',
         storyPoints: issue.storyPoints || '',
         originalEstimate: issue.originalEstimate || '',
-        game: issue.game || '',
+        gameId: issue.gameId || '',
         parentId: issue.parentId || '',
-        department: issue.department || '',
+        departmentId: issue.departmentId || '',
         startDate: issue.startDate || '',
         dueDate: issue.dueDate || ''
     })
@@ -263,11 +263,22 @@ export default function IssueModal({ issue, onClose }) {
     }
 
     const handleSave = () => {
-        updateIssue(issue.id, {
+        // Sanitize formData: convert empty strings to null for UUID fields
+        const sanitizedData = {
             ...formData,
             storyPoints: formData.storyPoints ? parseInt(formData.storyPoints) : null,
-            originalEstimate: formData.originalEstimate ? parseInt(formData.originalEstimate) : null
-        })
+            originalEstimate: formData.originalEstimate ? parseInt(formData.originalEstimate) : null,
+            sprintId: formData.sprintId || null,
+            assigneeId: formData.assigneeId || null,
+            reporterId: formData.reporterId || null,
+            parentId: formData.parentId || null,
+            gameId: formData.gameId || null,
+            departmentId: formData.departmentId || null,
+            startDate: formData.startDate || null,
+            dueDate: formData.dueDate || null
+        }
+
+        updateIssue(issue.id, sanitizedData)
         setIsEditing(false)
     }
 
@@ -560,8 +571,8 @@ export default function IssueModal({ issue, onClose }) {
                             <label className="input-label">Game</label>
                             <select
                                 className="input select"
-                                value={formData.game}
-                                onChange={(e) => handleChange('game', e.target.value)}
+                                value={formData.gameId}
+                                onChange={(e) => handleChange('gameId', e.target.value)}
                             >
                                 <option value="">None</option>
                                 {games?.map(game => (
@@ -688,8 +699,8 @@ export default function IssueModal({ issue, onClose }) {
                             <label className="input-label">Department</label>
                             <select
                                 className="input select"
-                                value={formData.department}
-                                onChange={(e) => handleChange('department', e.target.value)}
+                                value={formData.departmentId}
+                                onChange={(e) => handleChange('departmentId', e.target.value)}
                             >
                                 {departmentOptions.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>

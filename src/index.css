@@ -3677,6 +3677,17 @@ h4 {
   overflow: visible;
 }
 
+/* Fix for child background bleeding */
+.sprint-section> :first-child {
+  border-top-left-radius: calc(var(--radius-lg) - 1px);
+  border-top-right-radius: calc(var(--radius-lg) - 1px);
+}
+
+.sprint-section> :last-child {
+  border-bottom-left-radius: calc(var(--radius-lg) - 1px);
+  border-bottom-right-radius: calc(var(--radius-lg) - 1px);
+}
+
 .sprint-header {
   display: flex;
   align-items: center;
@@ -10975,12 +10986,14 @@ h4 {
     min-width: 85vw;
   }
 }
+
 /* ===== Mention List Popover ===== */
 .mention-list {
   position: absolute;
   z-index: 100;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle); /* Changed to subtle border */
+  border: 1px solid var(--border-subtle);
+  /* Changed to subtle border */
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   max-height: 200px;
@@ -11000,7 +11013,8 @@ h4 {
   color: var(--text-primary);
 }
 
-.mention-item:hover, .mention-item.selected {
+.mention-item:hover,
+.mention-item.selected {
   background: var(--bg-hover);
 }
 

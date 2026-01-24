@@ -25,7 +25,8 @@ import {
     History,
     ListChecks,
     Check,
-    AlertTriangle
+    AlertTriangle,
+    Send
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 
@@ -54,7 +55,8 @@ export default function IssueModal({ issue, onClose }) {
         games,
         departments,
         fieldConfig,
-        getUserById
+        getUserById,
+        addComment
     } = useProjectStore()
 
     // Get reactive issue from store (for real-time updates like worklogs)
@@ -161,6 +163,12 @@ export default function IssueModal({ issue, onClose }) {
     // Checklist state
     const [checklistExpanded, setChecklistExpanded] = useState(true)
     const [newChecklistItem, setNewChecklistItem] = useState('')
+
+    // Comment state
+    const [newComment, setNewComment] = useState('')
+    const [showMentionList, setShowMentionList] = useState(false)
+    const [filteredUsers, setFilteredUsers] = useState([])
+    const [mentionCursorIndex, setMentionCursorIndex] = useState(0)
 
     // Helper to resolve display labels for history entries (handles missing or UUID labels)
     const resolveHistoryLabel = (entry, labelType) => {
@@ -297,6 +305,51 @@ export default function IssueModal({ issue, onClose }) {
         setShowAddChild(false)
     }
 
+    // Comment handlers
+    const handleCommentChange = (e) => {
+        const val = e.target.value
+        setNewComment(val)
+
+        const selectionStart = e.target.selectionStart
+        const textBeforeCursor = val.substring(0, selectionStart)
+        const lastAt = textBeforeCursor.lastIndexOf('@')
+
+        if (lastAt !== -1) {
+            const query = textBeforeCursor.substring(lastAt + 1)
+
+            if (!query.includes('\n') && query.length < 20) {
+                const matches = users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()))
+                setFilteredUsers(matches)
+                if (matches.length > 0) {
+                    setShowMentionList(true)
+                    setMentionCursorIndex(lastAt)
+                } else {
+                    setShowMentionList(false)
+                }
+            } else {
+                setShowMentionList(false)
+            }
+        } else {
+            setShowMentionList(false)
+        }
+    }
+
+    const selectUser = (user) => {
+        const val = newComment
+        const prefix = val.substring(0, mentionCursorIndex)
+        // Simple append for now
+        const newVal = prefix + `@${user.name} `
+        setNewComment(newVal)
+        setShowMentionList(false)
+    }
+
+    const handleAddComment = () => {
+        if (!newComment.trim()) return
+        addComment(issue.id, newComment.trim())
+        setNewComment('')
+        setActivityLogExpanded(true)
+    }
+
     // Get child issues for epics
     const childIssues = formData.type === 'epic'
         ? issues.filter(i => i.parentId === issue.id && !i.isDeleted)
@@ -355,6 +408,49 @@ export default function IssueModal({ issue, onClose }) {
                             placeholder="Add a description..."
                             style={{ resize: 'vertical' }}
                         />
+                    </div>
+
+                    {/* Comment Section */}
+                    <div className="input-group mb-4 relative-container" style={{ position: 'relative' }}>
+                        <div className="flex items-center justify-between mb-1">
+                            <label className="input-label">Comments</label>
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="flex-1 relative-container" style={{ position: 'relative' }}>
+                                <textarea
+                                    className="input"
+                                    rows={2}
+                                    value={newComment}
+                                    onChange={handleCommentChange}
+                                    placeholder="Write a comment... (Type @ to mention)"
+                                    style={{ resize: 'vertical', minHeight: '60px' }}
+                                />
+                                {showMentionList && filteredUsers.length > 0 && (
+                                    <div className="mention-list" style={{ bottom: '100%', left: 0, marginBottom: 5 }}>
+                                        {filteredUsers.map(user => (
+                                            <div
+                                                key={user.id}
+                                                className="mention-item"
+                                                onClick={() => selectUser(user)}
+                                            >
+                                                <div className="avatar xs">
+                                                    {user.name.charAt(0)}
+                                                </div>
+                                                <span>{user.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                style={{ height: 'fit-content', alignSelf: 'flex-end' }}
+                                onClick={handleAddComment}
+                                disabled={!newComment.trim()}
+                            >
+                                <Send size={16} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Grid of fields - Row 1 */}

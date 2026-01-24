@@ -515,6 +515,49 @@ export const useProjectStore = create(
                 }
             },
 
+            addComment: async (issueId, text, userId = null) => {
+                const state = get()
+                const issue = state.issues.find(i => i.id === issueId)
+                if (!issue || !text.trim()) return
+
+                const historyEntry = {
+                    id: `hist-${Date.now()}`,
+                    userId: userId || state.users[0]?.id,
+                    timestamp: new Date().toISOString(),
+                    field: 'comment',
+                    fieldLabel: 'Comment',
+                    oldValue: null,
+                    newValue: text,
+                    oldLabel: 'None',
+                    newLabel: text
+                }
+
+                const newHistory = [...(issue.history || []), historyEntry]
+
+                // Optimistic update
+                set({
+                    issues: state.issues.map(i =>
+                        i.id === issueId
+                            ? { ...i, history: newHistory, updatedAt: new Date().toISOString() }
+                            : i
+                    )
+                })
+
+                // Sync to Supabase
+                const { error } = await supabase
+                    .from('issues')
+                    .update({
+                        history: newHistory,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+
+                if (error) {
+                    console.error('Failed to add comment:', error)
+                    // Rollback? (Usually fine to just log error for simple comments unless strict)
+                }
+            },
+
             moveIssue: async (issueId, newStatus) => {
                 const state = get()
                 const issue = state.issues.find(i => i.id === issueId)

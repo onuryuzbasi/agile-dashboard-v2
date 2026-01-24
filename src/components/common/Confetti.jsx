@@ -81,7 +81,9 @@ export default function Confetti() {
                 <ConfettiParticle key={p.id} style={p.style} delay={p.delay} />
             ))}
             <div className="celebration-text">
-                🎉 Done!
+                <span className="celebration-emoji">🎉</span>
+                <span className="celebration-word">BRAVO</span>
+                <span className="celebration-emoji">🎉</span>
             </div>
         </div>
     )

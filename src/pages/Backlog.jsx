@@ -682,9 +682,18 @@ export default function Backlog() {
                 {/* Status badge - respects visibility setting */}
                 {cardFieldVisibility.status && (
                     <span className={`issue-status-badge ${issue.status}`}>
-                        {issue.status === 'todo' ? 'TO DO' :
-                            issue.status === 'progress' ? 'IN PROGRESS' :
-                                issue.status === 'review' ? 'IN REVIEW' : 'DONE'}
+                        {(() => {
+                            const statusConfig = fieldConfig?.statuses?.find(s => s.key === issue.status)
+                            if (statusConfig) return statusConfig.label
+                            // Fallback mapping
+                            const fallbackMap = {
+                                todo: 'TO DO',
+                                progress: 'IN PROGRESS',
+                                review: 'IN REVIEW',
+                                done: 'DONE'
+                            }
+                            return fallbackMap[issue.status] || issue.status?.toUpperCase() || 'UNKNOWN'
+                        })()}
                     </span>
                 )}
 

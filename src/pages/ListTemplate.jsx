@@ -1259,7 +1259,7 @@ export default function ListTemplate() {
                             setActiveDropdown({ issueId: issue.id, field: 'status' })
                         }}
                     >
-                        <StatusBadge status={issue.status} />
+                        <StatusBadge status={issue.status} statusConfig={dynamicStatusConfig} />
                         {activeDropdown?.issueId === issue.id && activeDropdown?.field === 'status' && (
                             <SearchableDropdown
                                 options={getStatusOptions()}

@@ -1455,8 +1455,14 @@ export default function ListTemplate() {
         ]
     }
 
-    // Get status options - now uses dynamic config
+    // Get status options - now uses dynamic config from Supabase
     const getStatusOptions = () => {
+        // Use statusOptions directly from fieldConfig (already computed above)
+        // This ensures ALL statuses from Supabase database are included
+        if (statusOptions.length > 0) {
+            return statusOptions
+        }
+        // Fallback only if Supabase hasn't loaded yet
         return Object.entries(dynamicStatusConfig).map(([key, val]) => ({
             value: key,
             label: val.label

@@ -18,15 +18,15 @@
   --bg-tertiary: #E5E5E5;
   --bg-hover: #FFF9C4;
 
-  /* Typography - Nano Black */
-  --text-primary: #0A0A0A;
-  --text-secondary: #333333;
-  --text-tertiary: #666666;
-  --text-inverse: #0A0A0A;
+  /* Typography - Nano Black (High Contrast) */
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --text-tertiary: #555555;
+  --text-inverse: #000000;
 
   /* Borders - Sharp & Bold */
-  --border-subtle: rgba(10, 10, 10, 0.1);
-  --border-default: #0A0A0A;
+  --border-subtle: rgba(0, 0, 0, 0.15);
+  --border-default: #000000;
   --border-strong: #000000;
   --border-primary: var(--border-default);
   --border-secondary: var(--border-strong);
@@ -36,6 +36,8 @@
   --accent-hover: #FBC02D;
   --accent-light: #FFF9C4;
   --accent-glow: rgba(255, 234, 0, 0.4);
+  /* Accent Text - Dark for Light Mode Readability */
+  --accent-text: #000000;
 
   /* Secondary Accent - Nano Cyan */
   --accent-secondary: #00E5FF;
@@ -147,7 +149,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid var(--border-primary);
-  border-top-color: var(--accent);
+  border-top-color: var(--accent-text);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -193,6 +195,8 @@
   --accent-hover: #FFD600;
   --accent-light: #332F00;
   --accent-glow: rgba(255, 234, 0, 0.4);
+  /* Yellow accent text is readable on black background */
+  --accent-text: #FFEA00;
   --accent-rgb: 255, 234, 0;
 
   /* Secondary accent - Neon Cyan */
@@ -245,12 +249,17 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-text);
+  /* Use accent-text instead of accent for readability */
   text-decoration: none;
+  font-weight: 600;
+  /* Added weight for readability */
 }
 
 a:hover {
-  color: var(--accent-hover);
+  text-decoration: underline;
+  /* Standard link decoration on hover */
+  color: var(--text-primary);
 }
 
 img {
@@ -543,7 +552,7 @@ h4 {
   height: 32px;
   border-radius: var(--radius-full);
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -585,7 +594,7 @@ h4 {
 
 .input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
@@ -825,7 +834,7 @@ h4 {
 .type-option.selected {
   border-color: var(--type-color, var(--accent));
   background: color-mix(in srgb, var(--type-color, var(--accent)) 10%, transparent);
-  color: var(--type-color, var(--accent));
+  color: var(--type-color, var(--accent-text));
 }
 
 .modal-actions {
@@ -1088,7 +1097,7 @@ h4 {
 }
 
 .child-item-key {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 500;
   flex-shrink: 0;
 }
@@ -1230,7 +1239,7 @@ h4 {
 
 .parent-dropdown-item.selected {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .parent-dropdown-divider {
@@ -1240,7 +1249,7 @@ h4 {
 }
 
 .parent-dropdown-item.create-epic-btn {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 500;
 }
 
@@ -1260,12 +1269,12 @@ h4 {
   height: 16px;
   cursor: pointer;
   flex-shrink: 0;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
 }
 
 .backlog-issue-row.selected {
   background: var(--accent-light);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 /* Work Log Section */
@@ -1364,7 +1373,7 @@ h4 {
 
 .work-log-time {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
@@ -1489,7 +1498,7 @@ h4 {
 }
 
 .checklist-checkbox:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: var(--accent-light);
 }
 
@@ -1630,7 +1639,7 @@ h4 {
 
 .activity-log-field {
   font-weight: 500;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .activity-log-value {
@@ -1853,8 +1862,8 @@ h4 {
 
 .btn.active {
   background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 
 /* Board Settings Container */
@@ -1923,7 +1932,7 @@ h4 {
 .sprint-edit-modal-body .form-input:focus,
 .sprint-edit-modal-body .form-textarea:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .sprint-edit-modal-body .form-textarea {
@@ -2132,7 +2141,7 @@ h4 {
 
 .board-groupby-option.selected {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ===== Kanban Swimlanes ===== */
@@ -2200,7 +2209,7 @@ h4 {
 }
 
 .kanban-swimlane-icon {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .kanban-swimlane-label {
@@ -2249,7 +2258,7 @@ h4 {
 
 .issue-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .issue-card.dragging {
@@ -2352,7 +2361,7 @@ h4 {
   font-weight: 600;
   padding: 2px 6px;
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   text-transform: uppercase;
 }
@@ -2413,7 +2422,7 @@ h4 {
   align-items: center;
   gap: 3px;
   font-size: 10px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-light);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
@@ -2578,7 +2587,7 @@ h4 {
 /* Active state with copper accent */
 .nav-item.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .nav-item.active::before {
@@ -2941,7 +2950,7 @@ h4 {
 
 .toolbar-btn.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .toolbar-btn.danger:hover {
@@ -3184,7 +3193,7 @@ h4 {
 
 .epic-item.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .epic-color {
@@ -3372,7 +3381,7 @@ h4 {
 .show-all-epics-btn:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 /* Epic Modal */
@@ -3511,7 +3520,7 @@ h4 {
 .epic-filter-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
 }
 
 .epic-filter-info {
@@ -3818,7 +3827,7 @@ h4 {
   font-size: 10px;
   font-weight: 500;
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   white-space: nowrap;
 }
@@ -4513,7 +4522,7 @@ h4 {
 .column-menu-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
 }
 
 .column-menu-item input[type="checkbox"]:disabled {
@@ -4695,7 +4704,7 @@ h4 {
 
 /* List Key Link */
 .list-key-link {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 500;
   cursor: pointer;
 }
@@ -4903,7 +4912,7 @@ h4 {
 
 .searchable-dropdown-option.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .searchable-dropdown-option .opt-icon {
@@ -4933,7 +4942,7 @@ h4 {
   border: none;
   background: transparent;
   font-size: var(--font-size-sm);
-  color: var(--accent);
+  color: var(--accent-text);
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -5134,7 +5143,7 @@ h4 {
 /* Clickable parent icon (Zap) to open dropdown */
 .parent-icon-clickable {
   cursor: pointer;
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
@@ -5152,7 +5161,7 @@ h4 {
   border: none;
   padding: 2px;
   cursor: pointer;
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
   border-radius: var(--radius-sm);
 }
@@ -5414,7 +5423,7 @@ h4 {
 
 .group-by-menu button.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Filter Dropdown */
@@ -5487,7 +5496,7 @@ h4 {
 .filter-option input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
 }
 
 /* Clickable Avatar */
@@ -5507,7 +5516,7 @@ h4 {
 
 .btn.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ============================================================ */
@@ -5568,7 +5577,7 @@ h4 {
 .faceted-clear-btn {
   padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-xs);
-  color: var(--accent);
+  color: var(--accent-text);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -5694,7 +5703,7 @@ h4 {
 
 .faceted-checkbox.checked {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: white;
 }
 
@@ -5824,7 +5833,7 @@ h4 {
 
 .faceted-save-modal-body input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .faceted-save-confirm-btn {
@@ -5849,7 +5858,7 @@ h4 {
 }
 
 .faceted-saved-icon {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: var(--space-1);
 }
 
@@ -5888,11 +5897,11 @@ h4 {
 }
 
 .faceted-saved-name:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .faceted-saved-name svg {
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
@@ -5953,7 +5962,7 @@ h4 {
 .save-filter-count {
   margin-left: 4px;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Screen reader only */
@@ -6133,7 +6142,7 @@ h4 {
 
 .delete-confirm-modal input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
@@ -6171,7 +6180,7 @@ h4 {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-lg);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .epic-create-modal p {
@@ -6193,7 +6202,7 @@ h4 {
 
 .epic-create-modal input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
@@ -6335,7 +6344,7 @@ h4 {
 .trash-item-key {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
@@ -6395,8 +6404,8 @@ h4 {
 }
 
 .list-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: var(--accent-text);
+  border-bottom-color: var(--accent-text);
 }
 
 .list-tab-badge {
@@ -6475,7 +6484,7 @@ h4 {
 }
 
 .list-create-type-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .list-create-type-menu {
@@ -6522,7 +6531,7 @@ h4 {
 }
 
 .list-create-input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
@@ -6670,7 +6679,7 @@ h4 {
 
 [data-theme="dark"] .jira-search-box:focus-within {
   background: var(--bg-primary);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .jira-search-box svg {
@@ -6856,7 +6865,7 @@ h4 {
 
 [data-theme="dark"] .jira-group-menu button.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Icon Buttons */
@@ -7050,7 +7059,7 @@ h4 {
 
 [data-theme="dark"] .header-menu-btn:hover {
   background: rgba(76, 154, 255, 0.2);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Header menu dropdown */
@@ -7124,7 +7133,7 @@ h4 {
 
 [data-theme="dark"] .parent-key-link,
 [data-theme="dark"] .issue-key-link {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .key-separator {
@@ -7178,7 +7187,7 @@ h4 {
 }
 
 [data-theme="dark"] .parent-link {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Type cell dropdown positioning */
@@ -7439,7 +7448,7 @@ h4 {
 
 [data-theme="dark"] .group-add-btn:hover {
   background: var(--bg-tertiary);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .completed-count {
@@ -8125,7 +8134,7 @@ h4 {
 }
 
 [data-theme="dark"] .jira-dropdown-option.create-epic {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Epic Option Styling */
@@ -8356,7 +8365,7 @@ h4 {
 }
 
 [data-theme="dark"] .jira-date-picker-footer button {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 [data-theme="dark"] .jira-date-picker-footer button:hover {
@@ -8405,7 +8414,7 @@ h4 {
 [data-theme="dark"] .summary-edit-input {
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 /* ===== FLOATING ACTION BAR ===== */
@@ -8695,7 +8704,7 @@ h4 {
 .game-code {
   padding: 4px 10px;
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
@@ -8791,7 +8800,7 @@ h4 {
 
 .field-item .drag-handle:active {
   cursor: grabbing;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .field-item:hover {
@@ -8914,7 +8923,7 @@ h4 {
 
 .chip-drag-handle:active {
   cursor: grabbing;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .label-chip {
@@ -8947,7 +8956,7 @@ h4 {
 
 .chip-edit:hover {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .chip-delete:hover {
@@ -9183,14 +9192,14 @@ h4 {
 }
 
 .timeline-filter-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: var(--text-primary);
 }
 
 .timeline-filter-btn.active {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .timeline-filter-btn .filter-count {
@@ -9254,12 +9263,12 @@ h4 {
   height: 16px;
   border: 1.5px solid var(--border-secondary);
   border-radius: 3px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .timeline-filter-option.selected .filter-option-check {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: white;
 }
 
@@ -9357,7 +9366,7 @@ h4 {
 
 .timeline-date-cell.today {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -9540,7 +9549,7 @@ h4 {
 }
 
 .timeline-summary:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Swimlane label */
@@ -9935,7 +9944,7 @@ h4 {
 }
 
 .timeline-search:focus-within {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 
 .timeline-search svg {
@@ -10075,14 +10084,14 @@ h4 {
 }
 
 .timeline-filter-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: var(--text-primary);
 }
 
 .timeline-filter-btn.active {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .timeline-filter-btn .filter-count {
@@ -10146,12 +10155,12 @@ h4 {
   height: 16px;
   border: 1.5px solid var(--border-secondary);
   border-radius: 3px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .timeline-filter-option.selected .filter-option-check {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: white;
 }
 
@@ -10244,7 +10253,7 @@ h4 {
 
 .timeline-date-cell.today {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -10641,7 +10650,7 @@ h4 {
 
 .view-settings-option.active .option-checkbox {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   color: white;
 }
 
@@ -10654,7 +10663,7 @@ h4 {
   font-weight: 600;
   padding: 2px 6px;
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   text-transform: uppercase;
 }
@@ -10703,8 +10712,8 @@ h4 {
 }
 
 .view-settings-save-btn.team:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 
 .view-settings-save-btn.team.confirm {

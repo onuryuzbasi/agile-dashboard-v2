@@ -15,6 +15,7 @@ import Timeline from './pages/Timeline'
 import IssueModal from './components/board/IssueModal'
 import CreateIssueModal from './components/board/CreateIssueModal'
 import ConfirmationModal from './components/common/ConfirmationModal'
+import Confetti from './components/common/Confetti'
 
 function App() {
     const {
@@ -82,6 +83,9 @@ function App() {
 
                 {/* Global Confirmation Modal */}
                 <ConfirmationModal />
+
+                {/* Celebration Animation */}
+                <Confetti />
             </div>
         </BrowserRouter>
     )

@@ -45,7 +45,6 @@ const emptyState = {
         startDate: false   // Standard field
     },
     savedFilters: [],
-    // Global confirmation modal state
     confirmModal: {
         isOpen: false,
         title: 'Confirm',
@@ -56,6 +55,8 @@ const emptyState = {
         onConfirm: null,
         isLoading: false
     },
+    // Celebration animation state (triggered when issue moves to Done)
+    showCelebration: false,
     isLoading: true,
     isInitialized: false
 }
@@ -599,6 +600,11 @@ export const useProjectStore = create(
 
                 if (error) {
                     console.error('Failed to move issue:', error)
+                }
+
+                // Trigger celebration animation when issue moves to Done
+                if (newStatus === 'done') {
+                    get().triggerCelebration(true)
                 }
             },
 
@@ -1207,6 +1213,9 @@ export const useProjectStore = create(
                 createIssueDefaults: defaults
             }),
             closeCreateIssueModal: () => set({ createIssueModalOpen: false, createIssueDefaults: {} }),
+
+            // Celebration animation trigger
+            triggerCelebration: (show = true) => set({ showCelebration: show }),
 
             // Confirmation modal actions
             showConfirmModal: (config) => set({

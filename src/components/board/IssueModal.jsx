@@ -56,7 +56,8 @@ export default function IssueModal({ issue, onClose }) {
         departments,
         fieldConfig,
         getUserById,
-        addComment
+        addComment,
+        triggerCelebration
     } = useProjectStore()
 
     // Get reactive issue from store (for real-time updates like worklogs)
@@ -280,6 +281,11 @@ export default function IssueModal({ issue, onClose }) {
 
         updateIssue(issue.id, sanitizedData)
         setIsEditing(false)
+
+        // Trigger celebration if status changed to Done
+        if (sanitizedData.status === 'done' && issue.status !== 'done') {
+            triggerCelebration(true)
+        }
     }
 
     const handleDelete = () => {
@@ -547,9 +553,13 @@ export default function IssueModal({ issue, onClose }) {
                                 onChange={(e) => handleChange('sprintId', e.target.value)}
                             >
                                 <option value="">Backlog</option>
-                                {sprints.map(sprint => (
-                                    <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
-                                ))}
+                                {sprints
+                                    .filter(sprint => sprint.state !== 'closed')
+                                    .map(sprint => (
+                                        <option key={sprint.id} value={sprint.id}>
+                                            {sprint.name}{sprint.state === 'active' ? ' (Active)' : ''}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
 

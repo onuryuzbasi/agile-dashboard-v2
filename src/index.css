@@ -55,6 +55,93 @@
   animation-delay: 200ms;
 }
 
+/* ===== Celebration Confetti Animation ===== */
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(-100vh) translateX(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-50vh) translateX(calc(var(--horizontal-drift) * 0.5)) rotate(180deg);
+  }
+
+  50% {
+    transform: translateY(0) translateX(var(--horizontal-drift)) rotate(360deg);
+  }
+
+  75% {
+    transform: translateY(50vh) translateX(calc(var(--horizontal-drift) * 0.75)) rotate(540deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) translateX(var(--horizontal-drift)) rotate(720deg);
+  }
+}
+
+@keyframes celebrationPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2) translateY(-10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes celebrationFadeOut {
+  0% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99999;
+  overflow: hidden;
+  animation: celebrationFadeOut 3s ease-out forwards;
+}
+
+.confetti-particle {
+  position: absolute;
+  top: 0;
+  animation: confettiFall var(--fall-duration, 2.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: transform, opacity;
+}
+
+.celebration-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-shadow:
+    0 0 10px rgba(255, 234, 0, 0.8),
+    0 2px 20px rgba(0, 0, 0, 0.3);
+  animation: celebrationPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  white-space: nowrap;
+}
+
 /* ===== CSS Variables (Design Tokens) ===== */
 :root {
   /* Colors - Light Mode (Peeled Banana) */

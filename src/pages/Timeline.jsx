@@ -79,7 +79,7 @@ export default function Timeline() {
     const [showFilterMenu, setShowFilterMenu] = useState(false)
     const [showGroupByMenu, setShowGroupByMenu] = useState(false)
     const [showBarFieldsMenu, setShowBarFieldsMenu] = useState(false)
-    const [barFields, setBarFields] = useState(new Set(['key', 'summary'])) // Default: show key and summary
+    const [barFields, setBarFields] = useState(['key', 'summary']) // Array of selected field keys
     const [collapsedGroups, setCollapsedGroups] = useState({})
     const [timelineOffset, setTimelineOffset] = useState(0) // days from today
     const [dragState, setDragState] = useState(null)
@@ -456,70 +456,55 @@ export default function Timeline() {
         }
     }, [showBarFieldsMenu])
 
-    // Available bar label fields from fieldConfig
-    const availableBarFields = useMemo(() => {
-        const defaultFields = [
-            { key: 'key', label: 'Key' },
-            { key: 'summary', label: 'Summary' },
-            { key: 'type', label: 'Type' },
-            { key: 'status', label: 'Status' },
-            { key: 'priority', label: 'Priority' },
-            { key: 'assignee', label: 'Assignee' },
-            { key: 'sprint', label: 'Sprint' },
-            { key: 'dueDate', label: 'Due Date' }
-        ]
-
-        // Add custom fields from fieldConfig
-        const customFields = fieldConfig
-            ?.filter(f => f.isActive && !defaultFields.some(df => df.key === f.key))
-            ?.map(f => ({ key: f.key, label: f.label })) || []
-
-        return [...defaultFields, ...customFields]
-    }, [fieldConfig])
+    // Available bar label fields
+    const availableBarFields = [
+        { key: 'key', label: 'Key' },
+        { key: 'summary', label: 'Summary' },
+        { key: 'type', label: 'Type' },
+        { key: 'status', label: 'Status' },
+        { key: 'priority', label: 'Priority' },
+        { key: 'assignee', label: 'Assignee' },
+        { key: 'sprint', label: 'Sprint' },
+        { key: 'dueDate', label: 'Due Date' }
+    ]
 
     // Toggle bar field selection
     const toggleBarField = (fieldKey) => {
         setBarFields(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(fieldKey)) {
-                newSet.delete(fieldKey)
+            if (prev.includes(fieldKey)) {
+                return prev.filter(k => k !== fieldKey)
             } else {
-                newSet.add(fieldKey)
+                return [...prev, fieldKey]
             }
-            return newSet
         })
     }
 
     // Get bar label text from selected fields
-    const getBarLabel = useCallback((issue) => {
+    const getBarLabel = (issue) => {
+        if (!issue) return ''
         const labels = []
 
-        if (barFields.has('key')) labels.push(issue.key)
-        if (barFields.has('summary')) labels.push(issue.summary)
-        if (barFields.has('type')) labels.push(issue.type?.toUpperCase())
-        if (barFields.has('status')) labels.push(statusConfig[issue.status]?.label || issue.status)
-        if (barFields.has('priority')) labels.push(issue.priority?.toUpperCase())
-        if (barFields.has('assignee')) {
+        if (barFields.includes('key')) labels.push(issue.key)
+        if (barFields.includes('summary')) labels.push(issue.summary)
+        if (barFields.includes('type') && issue.type) labels.push(issue.type.toUpperCase())
+        if (barFields.includes('status') && issue.status) {
+            labels.push(statusConfig[issue.status]?.label || issue.status)
+        }
+        if (barFields.includes('priority') && issue.priority) labels.push(issue.priority.toUpperCase())
+        if (barFields.includes('assignee') && issue.assigneeId && users) {
             const user = users.find(u => u.id === issue.assigneeId)
             if (user) labels.push(user.name)
         }
-        if (barFields.has('sprint')) {
+        if (barFields.includes('sprint') && issue.sprintId && sprints) {
             const sprint = sprints.find(s => s.id === issue.sprintId)
             if (sprint) labels.push(sprint.name)
         }
-        if (barFields.has('dueDate') && issue.dueDate) {
+        if (barFields.includes('dueDate') && issue.dueDate) {
             labels.push(formatDate(issue.dueDate))
         }
 
-        // Custom fields
-        fieldConfig?.forEach(field => {
-            if (barFields.has(field.key) && issue[field.key]) {
-                labels.push(issue[field.key])
-            }
-        })
-
         return labels.filter(Boolean).join(' - ')
-    }, [barFields, users, sprints, fieldConfig])
+    }
 
     // Sync scroll between header, sprints, and body
     const handleBodyScroll = useCallback(() => {
@@ -812,7 +797,7 @@ export default function Timeline() {
                 <div className="toolbar-dropdown" ref={barFieldsRef}>
                     <button onClick={() => setShowBarFieldsMenu(!showBarFieldsMenu)}>
                         <Tag size={14} />
-                        Show: {barFields.size} field{barFields.size !== 1 ? 's' : ''}
+                        Show: {barFields.length} field{barFields.length !== 1 ? 's' : ''}
                         <ChevronDown size={14} />
                     </button>
                     {showBarFieldsMenu && (
@@ -821,11 +806,11 @@ export default function Timeline() {
                             {availableBarFields.map(field => (
                                 <button
                                     key={field.key}
-                                    className={barFields.has(field.key) ? 'active' : ''}
+                                    className={barFields.includes(field.key) ? 'active' : ''}
                                     onClick={() => toggleBarField(field.key)}
                                 >
                                     <div className="bar-field-check">
-                                        {barFields.has(field.key) && <Check size={14} />}
+                                        {barFields.includes(field.key) && <Check size={14} />}
                                     </div>
                                     {field.label}
                                 </button>

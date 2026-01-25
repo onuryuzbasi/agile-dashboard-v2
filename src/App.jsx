@@ -15,6 +15,7 @@ import Timeline from './pages/Timeline'
 import IssueModal from './components/board/IssueModal'
 import CreateIssueModal from './components/board/CreateIssueModal'
 import ConfirmationModal from './components/common/ConfirmationModal'
+import TemplateEditorModal from './components/common/TemplateEditorModal'
 import Confetti from './components/common/Confetti'
 
 function App() {
@@ -25,7 +26,8 @@ function App() {
         setSelectedIssue,
         isLoading,
         isInitialized,
-        initFromSupabase
+        initFromSupabase,
+        templateEditorOpen
     } = useProjectStore()
 
     // Initialize from Supabase on mount
@@ -83,6 +85,9 @@ function App() {
 
                 {/* Global Confirmation Modal */}
                 <ConfirmationModal />
+
+                {/* Template Editor Modal */}
+                {templateEditorOpen && <TemplateEditorModal />}
 
                 {/* Celebration Animation */}
                 <Confetti />

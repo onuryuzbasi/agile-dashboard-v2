@@ -57,6 +57,10 @@ const emptyState = {
     },
     // Celebration animation state (triggered when issue moves to Done)
     showCelebration: false,
+    // Issue Templates (fetched from Supabase issue_templates table)
+    issueTemplates: [],
+    templateSelectorOpen: false,
+    templateEditorOpen: false,
     isLoading: true,
     isInitialized: false
 }
@@ -114,7 +118,8 @@ export const useProjectStore = create(
                         { data: labels },
                         { data: issues },
                         { data: savedFilters },
-                        { data: deletedIssues }
+                        { data: deletedIssues },
+                        { data: issueTemplates }
                     ] = await Promise.all([
                         supabase.from('projects').select('*'),
                         supabase.from('users').select('*'),
@@ -127,7 +132,8 @@ export const useProjectStore = create(
                         supabase.from('labels').select('*'),
                         supabase.from('issues').select('*').eq('is_deleted', false),
                         supabase.from('saved_filters').select('*'),
-                        supabase.from('issues').select('*').eq('is_deleted', true)
+                        supabase.from('issues').select('*').eq('is_deleted', true),
+                        supabase.from('issue_templates').select('*').order('name')
                     ])
 
                     // Transform to camelCase and set state
@@ -172,6 +178,7 @@ export const useProjectStore = create(
                         },
                         currentProjectId: projects?.[0]?.id || null,
                         currentSprintId: sprints?.find(s => s.state === 'active')?.id || sprints?.[0]?.id || null,
+                        issueTemplates: toCamelCase(issueTemplates || []),
                         isLoading: false,
                         isInitialized: true
                     })
@@ -1216,6 +1223,75 @@ export const useProjectStore = create(
 
             // Celebration animation trigger
             triggerCelebration: (show = true) => set({ showCelebration: show }),
+
+            // Issue Template actions
+            openTemplateSelector: () => set({ templateSelectorOpen: true }),
+            closeTemplateSelector: () => set({ templateSelectorOpen: false }),
+            openTemplateEditor: () => set({ templateEditorOpen: true }),
+            closeTemplateEditor: () => set({ templateEditorOpen: false }),
+
+            addIssueTemplate: async (template) => {
+                const state = get()
+                const newTemplate = {
+                    name: template.name,
+                    icon: template.icon,
+                    prefilled_data: template.prefilledData,
+                    is_global: template.isGlobal ?? true
+                }
+
+                // Optimistic update
+                const tempId = `temp-${Date.now()}`
+                const optimisticTemplate = { ...toCamelCase(newTemplate), id: tempId }
+                set({ issueTemplates: [...state.issueTemplates, optimisticTemplate] })
+
+                // Sync to Supabase
+                const { data, error } = await supabase
+                    .from('issue_templates')
+                    .insert([newTemplate])
+                    .select()
+                    .single()
+
+                if (error) {
+                    console.error('Failed to create template:', error)
+                    // Rollback
+                    set({ issueTemplates: state.issueTemplates })
+                    return null
+                }
+
+                // Replace temp with real data
+                set({
+                    issueTemplates: get().issueTemplates.map(t =>
+                        t.id === tempId ? toCamelCase(data) : t
+                    )
+                })
+
+                console.log('✅ Template created:', data.name)
+                return toCamelCase(data)
+            },
+
+            deleteIssueTemplate: async (templateId) => {
+                const state = get()
+                const originalTemplates = state.issueTemplates
+
+                // Optimistic update
+                set({ issueTemplates: state.issueTemplates.filter(t => t.id !== templateId) })
+
+                // Sync to Supabase
+                const { error } = await supabase
+                    .from('issue_templates')
+                    .delete()
+                    .eq('id', templateId)
+
+                if (error) {
+                    console.error('Failed to delete template:', error)
+                    // Rollback
+                    set({ issueTemplates: originalTemplates })
+                    return false
+                }
+
+                console.log('✅ Template deleted:', templateId)
+                return true
+            },
 
             // Confirmation modal actions
             showConfirmModal: (config) => set({

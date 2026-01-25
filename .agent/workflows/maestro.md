@@ -24,12 +24,23 @@ Then follow the 4-Step Architectural Protocol below.
 // turbo
 1. **DO NOT** write code or read files yet
 2. Identify the primary domain (frontend, backend, full-stack)
-3. List the skills needed for this task:
-   - `frontend-design` - Premium UI/UX
-   - `backend-design` - API & Database
-   - `planning-mastery` - Task breakdown
-   - `verification-mastery` - Evidence-based completion
-   - `debug-mastery` - Systematic debugging
+3. List the skills needed for this task AND **READ the relevant SKILL.md files**:
+
+**Available Skills (in `claude-maestro/skills/`):**
+
+| Skill | Path | When to Use |
+|-------|------|-------------|
+| `frontend-design` | `claude-maestro/skills/frontend-design/SKILL.md` | UI/UX, components, styling |
+| `backend-design` | `claude-maestro/skills/backend-design/SKILL.md` | API, database, server |
+| `planning-mastery` | `claude-maestro/skills/planning-mastery/SKILL.md` | RFC-Lite plans (ALWAYS) |
+| `verification-mastery` | `claude-maestro/skills/verification-mastery/SKILL.md` | Before completion claims |
+| `debug-mastery` | `claude-maestro/skills/debug-mastery/SKILL.md` | Bug fixing, diagnostics |
+| `tdd-mastery` | `claude-maestro/skills/tdd-mastery/SKILL.md` | Test-driven development |
+| `clean-code` | `claude-maestro/skills/clean-code/SKILL.md` | Code quality standards |
+| `brainstorming` | `claude-maestro/skills/brainstorming/SKILL.md` | Design exploration |
+| `optimization-mastery` | `claude-maestro/skills/optimization-mastery/SKILL.md` | Performance tuning |
+
+**MANDATORY:** Read `planning-mastery/SKILL.md` and `verification-mastery/SKILL.md` for EVERY task.
 
 **Output:** Brief strategic summary (3-5 sentences max)
 

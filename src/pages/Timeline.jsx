@@ -18,7 +18,9 @@ import {
     Layers,
     ListTree,
     ChevronLeft,
-    GripVertical
+    GripVertical,
+    Tag,
+    Check
 } from 'lucide-react'
 import { getIconByName } from '../config/fieldConfig'
 
@@ -76,12 +78,15 @@ export default function Timeline() {
     const [groupBy, setGroupBy] = useState('epic') // 'epic' | 'assignee' | 'department'
     const [showFilterMenu, setShowFilterMenu] = useState(false)
     const [showGroupByMenu, setShowGroupByMenu] = useState(false)
+    const [showBarFieldsMenu, setShowBarFieldsMenu] = useState(false)
+    const [barFields, setBarFields] = useState(new Set(['key', 'summary'])) // Default: show key and summary
     const [collapsedGroups, setCollapsedGroups] = useState({})
     const [timelineOffset, setTimelineOffset] = useState(0) // days from today
     const [dragState, setDragState] = useState(null)
 
     // Refs
     const groupByRef = useRef(null)
+    const barFieldsRef = useRef(null)
     const headerScrollRef = useRef(null)
     const sprintScrollRef = useRef(null)
     const bodyScrollRef = useRef(null)
@@ -438,6 +443,84 @@ export default function Timeline() {
         }
     }, [showGroupByMenu])
 
+    // Close bar fields menu on click outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (barFieldsRef.current && !barFieldsRef.current.contains(e.target)) {
+                setShowBarFieldsMenu(false)
+            }
+        }
+        if (showBarFieldsMenu) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showBarFieldsMenu])
+
+    // Available bar label fields from fieldConfig
+    const availableBarFields = useMemo(() => {
+        const defaultFields = [
+            { key: 'key', label: 'Key' },
+            { key: 'summary', label: 'Summary' },
+            { key: 'type', label: 'Type' },
+            { key: 'status', label: 'Status' },
+            { key: 'priority', label: 'Priority' },
+            { key: 'assignee', label: 'Assignee' },
+            { key: 'sprint', label: 'Sprint' },
+            { key: 'dueDate', label: 'Due Date' }
+        ]
+
+        // Add custom fields from fieldConfig
+        const customFields = fieldConfig
+            ?.filter(f => f.isActive && !defaultFields.some(df => df.key === f.key))
+            ?.map(f => ({ key: f.key, label: f.label })) || []
+
+        return [...defaultFields, ...customFields]
+    }, [fieldConfig])
+
+    // Toggle bar field selection
+    const toggleBarField = (fieldKey) => {
+        setBarFields(prev => {
+            const newSet = new Set(prev)
+            if (newSet.has(fieldKey)) {
+                newSet.delete(fieldKey)
+            } else {
+                newSet.add(fieldKey)
+            }
+            return newSet
+        })
+    }
+
+    // Get bar label text from selected fields
+    const getBarLabel = useCallback((issue) => {
+        const labels = []
+
+        if (barFields.has('key')) labels.push(issue.key)
+        if (barFields.has('summary')) labels.push(issue.summary)
+        if (barFields.has('type')) labels.push(issue.type?.toUpperCase())
+        if (barFields.has('status')) labels.push(statusConfig[issue.status]?.label || issue.status)
+        if (barFields.has('priority')) labels.push(issue.priority?.toUpperCase())
+        if (barFields.has('assignee')) {
+            const user = users.find(u => u.id === issue.assigneeId)
+            if (user) labels.push(user.name)
+        }
+        if (barFields.has('sprint')) {
+            const sprint = sprints.find(s => s.id === issue.sprintId)
+            if (sprint) labels.push(sprint.name)
+        }
+        if (barFields.has('dueDate') && issue.dueDate) {
+            labels.push(formatDate(issue.dueDate))
+        }
+
+        // Custom fields
+        fieldConfig?.forEach(field => {
+            if (barFields.has(field.key) && issue[field.key]) {
+                labels.push(issue[field.key])
+            }
+        })
+
+        return labels.filter(Boolean).join(' - ')
+    }, [barFields, users, sprints, fieldConfig])
+
     // Sync scroll between header, sprints, and body
     const handleBodyScroll = useCallback(() => {
         if (bodyScrollRef.current) {
@@ -544,12 +627,14 @@ export default function Timeline() {
                     className="gantt-bar-handle left"
                     onMouseDown={(e) => handleBarMouseDown(e, issue, 'left')}
                 />
-                {/* Move handle (center) */}
+                {/* Move handle (center) with label */}
                 <div
                     className="gantt-bar-content"
                     onMouseDown={(e) => handleBarMouseDown(e, issue, 'move')}
                     onClick={() => handleIssueClick(issue)}
-                />
+                >
+                    <span className="gantt-bar-label">{getBarLabel(issue)}</span>
+                </div>
                 {/* Right resize handle */}
                 <div
                     className="gantt-bar-handle right"
@@ -719,6 +804,32 @@ export default function Timeline() {
                             <button className={groupBy === 'department' ? 'active' : ''} onClick={() => { setGroupBy('department'); setShowGroupByMenu(false) }}>
                                 <Building2 size={14} /> Department
                             </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Show Fields on Bars */}
+                <div className="toolbar-dropdown" ref={barFieldsRef}>
+                    <button onClick={() => setShowBarFieldsMenu(!showBarFieldsMenu)}>
+                        <Tag size={14} />
+                        Show: {barFields.size} field{barFields.size !== 1 ? 's' : ''}
+                        <ChevronDown size={14} />
+                    </button>
+                    {showBarFieldsMenu && (
+                        <div className="toolbar-dropdown-menu bar-fields-menu">
+                            <div className="bar-fields-header">Show fields on bars</div>
+                            {availableBarFields.map(field => (
+                                <button
+                                    key={field.key}
+                                    className={barFields.has(field.key) ? 'active' : ''}
+                                    onClick={() => toggleBarField(field.key)}
+                                >
+                                    <div className="bar-field-check">
+                                        {barFields.has(field.key) && <Check size={14} />}
+                                    </div>
+                                    {field.label}
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>

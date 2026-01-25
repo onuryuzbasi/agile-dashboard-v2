@@ -178,6 +178,36 @@ export default function Timeline() {
     const activeIssues = useMemo(() => issues.filter(issue => !issue.isDeleted), [issues])
     const epics = useMemo(() => activeIssues.filter(issue => issue.type === 'epic'), [activeIssues])
 
+    // Calculate sprint rows to avoid overlaps (stack vertically when dates overlap)
+    const sprintRows = useMemo(() => {
+        const rows = []
+        const sortedSprints = [...sprints]
+            .filter(s => s.startDate && s.endDate)
+            .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+
+        sortedSprints.forEach(sprint => {
+            const start = new Date(sprint.startDate)
+            const end = new Date(sprint.endDate)
+
+            // Find first row where sprint doesn't overlap with existing sprints
+            let rowIndex = rows.findIndex(row =>
+                row.every(s => {
+                    const sEnd = new Date(s.endDate)
+                    const sStart = new Date(s.startDate)
+                    return end < sStart || start > sEnd
+                })
+            )
+
+            if (rowIndex === -1) {
+                // Need a new row
+                rows.push([sprint])
+            } else {
+                rows[rowIndex].push(sprint)
+            }
+        })
+        return rows
+    }, [sprints])
+
     // Dynamic filter options from fieldConfig
     const epicOptions = useMemo(() => epics.map(epic => ({ value: epic.id, label: `${epic.key} ${epic.summary}` })), [epics])
 
@@ -233,14 +263,15 @@ export default function Timeline() {
         return { epicGroups: Array.from(epicMap.values()), noEpicIssues }
     }, [filteredIssues])
 
-    // Timeline range
+    // Timeline range - Extended for near-infinite scrolling
     const timelineRange = useMemo(() => {
         const today = new Date()
-        const baseDays = zoomLevel === 'today' ? 60 : zoomLevel === 'weeks' ? 120 : zoomLevel === 'months' ? 180 : 365
+        // Increased range: 180 days for day view, 360 for weeks, 540 for months, 720+ for quarters
+        const baseDays = zoomLevel === 'today' ? 180 : zoomLevel === 'weeks' ? 360 : zoomLevel === 'months' ? 540 : 720
         const start = new Date(today)
-        start.setDate(start.getDate() - baseDays / 2 + timelineOffset)
+        start.setDate(start.getDate() - baseDays / 3 + timelineOffset) // 1/3 past, 2/3 future
         const end = new Date(today)
-        end.setDate(end.getDate() + baseDays / 2 + timelineOffset)
+        end.setDate(end.getDate() + (baseDays * 2 / 3) + timelineOffset)
         return { start, end }
     }, [zoomLevel, timelineOffset])
 
@@ -677,12 +708,22 @@ export default function Timeline() {
                 <div className="timeline-body">
                     {/* Left Pane - FIXED WIDTH, NO SCROLL */}
                     <div className="timeline-left-pane">
-                        {/* Sprints Header Row */}
-                        <div className="timeline-row swimlane-row">
-                            <div className="timeline-row-left">
-                                <span className="timeline-swimlane-label">Sprints</span>
+                        {/* Sprints Header Rows - One row per sprint layer */}
+                        {sprintRows.map((row, rowIndex) => (
+                            <div key={`sprint-row-${rowIndex}`} className="timeline-row swimlane-row">
+                                <div className="timeline-row-left">
+                                    {rowIndex === 0 && <span className="timeline-swimlane-label">Sprints</span>}
+                                </div>
                             </div>
-                        </div>
+                        ))}
+                        {/* Fallback if no sprints */}
+                        {sprintRows.length === 0 && (
+                            <div className="timeline-row swimlane-row">
+                                <div className="timeline-row-left">
+                                    <span className="timeline-swimlane-label">Sprints</span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Epic Groups */}
                         {groupedIssues.epicGroups.map(({ epic, children }) => (
@@ -726,10 +767,16 @@ export default function Timeline() {
                                 </div>
                             )}
 
-                            {/* Sprint Swimlane - TOP ROW */}
-                            <div className="timeline-row-bar-container swimlane-row sprint-swimlane">
-                                {sprints.map(sprint => renderSprintBar(sprint))}
-                            </div>
+                            {/* Sprint Swimlane - Multiple rows for overlapping sprints */}
+                            {sprintRows.map((row, rowIndex) => (
+                                <div key={`sprint-row-bars-${rowIndex}`} className="timeline-row-bar-container swimlane-row sprint-swimlane">
+                                    {row.map(sprint => renderSprintBar(sprint))}
+                                </div>
+                            ))}
+                            {/* Fallback empty row if no sprints */}
+                            {sprintRows.length === 0 && (
+                                <div className="timeline-row-bar-container swimlane-row sprint-swimlane" />
+                            )}
 
                             {/* Issue Bars */}
                             {groupedIssues.epicGroups.map(({ epic, children }) => (

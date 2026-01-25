@@ -9997,6 +9997,8 @@ h4 {
   border-radius: 4px;
   cursor: pointer;
   transition: all var(--transition-fast);
+  display: flex;
+  align-items: stretch;
 }
 
 .timeline-bar:hover {
@@ -10020,6 +10022,56 @@ h4 {
 
 .timeline-bar.todo {
   background: #ef4444;
+}
+
+/* Bar Drag Handles for resizing */
+.timeline-bar-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 10;
+}
+
+.timeline-bar-handle.left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.timeline-bar-handle.right {
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.timeline-bar:hover .timeline-bar-handle {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.timeline-bar-handle:hover {
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Bar content (middle draggable area) */
+.timeline-bar-content {
+  flex: 1;
+  height: 100%;
+  cursor: grab;
+}
+
+.timeline-bar-content:active {
+  cursor: grabbing;
+}
+
+/* Dragging state visual feedback */
+.timeline-bar.dragging {
+  opacity: 0.8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100 !important;
 }
 
 /* Epic Group */

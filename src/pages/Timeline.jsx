@@ -215,15 +215,15 @@ export default function Timeline() {
 
         switch (viewMode) {
             case 'days':
-                return { cellWidth: 40, daysPerCell: 1, visibleDays: 60, headerFormat: 'day' }
+                return { cellWidth: 40, daysPerCell: 1, visibleDays: 365, headerFormat: 'day' }
             case 'weeks':
-                return { cellWidth: 100, daysPerCell: 7, visibleDays: 140, headerFormat: 'week' }
+                return { cellWidth: 100, daysPerCell: 7, visibleDays: 730, headerFormat: 'week' }
             case 'months':
-                return { cellWidth: 120, daysPerCell: 30, visibleDays: 365, headerFormat: 'month' }
+                return { cellWidth: 120, daysPerCell: 30, visibleDays: 1095, headerFormat: 'month' }
             case 'quarters':
-                return { cellWidth: 150, daysPerCell: 91, visibleDays: 730, headerFormat: 'quarter' }
+                return { cellWidth: 150, daysPerCell: 91, visibleDays: 1825, headerFormat: 'quarter' }
             default:
-                return { cellWidth: 100, daysPerCell: 7, visibleDays: 140, headerFormat: 'week' }
+                return { cellWidth: 100, daysPerCell: 7, visibleDays: 730, headerFormat: 'week' }
         }
     }, [viewMode])
 
@@ -457,8 +457,21 @@ export default function Timeline() {
         setTimelineOffset(prev => direction === 'left' ? prev - step : prev + step)
     }
 
-    // Scroll to today
-    const scrollToToday = () => setTimelineOffset(0)
+    // Scroll to today - center the view on today
+    const scrollToToday = useCallback(() => {
+        setTimelineOffset(0)
+        // After state update, scroll to center
+        setTimeout(() => {
+            if (bodyScrollRef.current && headerScrollRef.current) {
+                const scrollPosition = todayPosition - (bodyScrollRef.current.clientWidth / 2)
+                bodyScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                headerScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                if (sprintScrollRef.current) {
+                    sprintScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                }
+            }
+        }, 50)
+    }, [todayPosition])
 
     // Handle filter change
     const handleFilterChange = useCallback((field, values) => {
@@ -792,8 +805,8 @@ export default function Timeline() {
                             {/* Bars */}
                             {groupedData.map(({ group, issues: groupIssues, type, isEpic }) => (
                                 <div key={group.id} className="gantt-bars-group">
-                                    {/* Group header row space */}
-                                    <div className="gantt-bar-row header">
+                                    {/* Group header row - render epic bar inline with others */}
+                                    <div className="gantt-bar-row">
                                         {type === 'epic' && isEpic && renderBar(group)}
                                     </div>
                                     {/* Issue rows */}

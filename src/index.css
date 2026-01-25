@@ -10334,9 +10334,9 @@ h4 {
 }
 
 .gantt-header-cell.today {
-  background: var(--accent-light);
-  color: var(--accent-text);
-  font-weight: 600;
+  background: #f59e0b;
+  color: #000;
+  font-weight: 700;
 }
 
 .gantt-header-cell.weekend {
@@ -10548,26 +10548,23 @@ h4 {
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* Today Line */
+/* Today Line - Dashed Yellow */
 .gantt-today-line {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--accent);
+  background: repeating-linear-gradient(to bottom,
+      #f59e0b 0px,
+      #f59e0b 8px,
+      transparent 8px,
+      transparent 16px);
   z-index: 10;
   pointer-events: none;
 }
 
 .gantt-today-line::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  width: 10px;
-  height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
+  display: none;
 }
 
 /* Bar Rows */
@@ -10578,10 +10575,6 @@ h4 {
 .gantt-bar-row {
   position: relative;
   height: 40px;
-}
-
-.gantt-bar-row.header {
-  background: var(--bg-secondary);
 }
 
 /* Gantt Bar */

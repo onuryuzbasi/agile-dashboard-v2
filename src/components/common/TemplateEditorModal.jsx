@@ -69,7 +69,7 @@ export default function TemplateEditorModal({ onClose, onSave }) {
         [sprints]
     )
 
-    // Prefilled data state - ALL system fields
+    // Prefilled data state - ALL system fields (matching CreateIssueModal)
     const [prefilledData, setPrefilledData] = useState({
         type: '',
         status: '',
@@ -81,7 +81,9 @@ export default function TemplateEditorModal({ onClose, onSave }) {
         gameId: '',
         departmentId: '',
         parentId: '',
-        originalEstimate: ''
+        originalEstimate: '',
+        startDate: '',
+        dueDate: ''
     })
 
     // Child issues template (for Epic templates)
@@ -219,6 +221,7 @@ export default function TemplateEditorModal({ onClose, onSave }) {
                                         title={label}
                                     >
                                         <Icon size={18} />
+                                        <span className="icon-label">{label}</span>
                                     </button>
                                 ))}
                             </div>
@@ -480,6 +483,26 @@ export default function TemplateEditorModal({ onClose, onSave }) {
                                     placeholder="e.g., 4"
                                     className="template-input"
                                     min="0"
+                                />
+                            </div>
+
+                            <div className="template-field">
+                                <label>Start Date</label>
+                                <input
+                                    type="date"
+                                    value={prefilledData.startDate}
+                                    onChange={(e) => handleFieldChange('startDate', e.target.value)}
+                                    className="template-input"
+                                />
+                            </div>
+
+                            <div className="template-field">
+                                <label>Due Date</label>
+                                <input
+                                    type="date"
+                                    value={prefilledData.dueDate}
+                                    onChange={(e) => handleFieldChange('dueDate', e.target.value)}
+                                    className="template-input"
                                 />
                             </div>
                         </div>

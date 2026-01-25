@@ -347,7 +347,9 @@ export default function ListTemplate() {
         addIssue,
         updateIssue,
         addSavedFilter,
-        removeSavedFilter
+        removeSavedFilter,
+        openCreateModal,
+        setActiveFilterDefaults
     } = useProjectStore()
 
     // Build dynamic configs from fieldConfig
@@ -816,22 +818,58 @@ export default function ListTemplate() {
         setActiveDatePicker(null)
     }
 
-    // Handle inline create
+    // Helper: Safely extract FIRST value from Set or Array, returns STRING or null
+    const getFirstValue = (collection, excludeValues = []) => {
+        if (!collection) return null
+        const arr = collection instanceof Set ? [...collection] : Array.isArray(collection) ? collection : []
+        const filtered = arr.filter(v => v && !excludeValues.includes(v))
+        return filtered.length > 0 ? String(filtered[0]) : null
+    }
+
+    // Build defaults from current filter state for context-aware issue creation
+    const getCreateDefaults = () => {
+        return {
+            type: getFirstValue(filterTypes),
+            status: getFirstValue(filterStatuses),
+            priority: getFirstValue(filterPriorities),
+            assigneeId: getFirstValue(filterAssignees, ['unassigned']),
+            epicId: getFirstValue(filterEpics, ['no-epic']),
+            departmentId: getFirstValue(filterDepartments, ['no-department']),
+            gameId: getFirstValue(filterGames, ['no-game']),
+            sprintId: getFirstValue(filterSprints, ['backlog'])
+        }
+    }
+
+    // Sync filter defaults to global store for Header create button
+    useEffect(() => {
+        const defaults = getCreateDefaults()
+        const hasDefaults = Object.values(defaults).some(v => v !== null)
+        setActiveFilterDefaults(hasDefaults ? defaults : {})
+    }, [filterTypes, filterStatuses, filterPriorities, filterAssignees,
+        filterEpics, filterDepartments, filterGames, filterSprints, setActiveFilterDefaults])
+
+    // Handle inline create with context-aware defaults from active filters
     const handleCreateIssue = (groupId) => {
         if (!newIssueSummary.trim()) return
 
+        // Get defaults from active filters
+        const defaults = getCreateDefaults()
+
         addIssue({
-            type: 'story',
-            status: 'todo',
-            priority: 'medium',
+            type: defaults.type || 'story',
+            status: defaults.status || 'todo',
+            priority: defaults.priority || 'medium',
             summary: newIssueSummary.trim(),
             description: '',
-            sprintId: groupBy === 'sprint' && groupId !== 'backlog' ? groupId : null,
-            assigneeId: quickCreateAssignee || null,
+            sprintId: groupBy === 'sprint' && groupId !== 'backlog' ? groupId : (defaults.sprintId || null),
+            assigneeId: quickCreateAssignee || defaults.assigneeId || null,
             dueDate: quickCreateDueDate || null,
             storyPoints: null,
             labels: [],
-            reporterId: users[0]?.id || null
+            reporterId: users[0]?.id || null,
+            parentId: defaults.epicId || null,
+            departmentId: defaults.departmentId || null,
+            gameId: defaults.gameId || null
         })
 
         setNewIssueSummary('')

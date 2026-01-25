@@ -83,6 +83,7 @@ export default function Timeline() {
     // Refs
     const groupByRef = useRef(null)
     const headerScrollRef = useRef(null)
+    const sprintScrollRef = useRef(null)
     const bodyScrollRef = useRef(null)
 
     // Faceted filter state
@@ -437,10 +438,16 @@ export default function Timeline() {
         }
     }, [showGroupByMenu])
 
-    // Sync scroll between header and body
+    // Sync scroll between header, sprints, and body
     const handleBodyScroll = useCallback(() => {
-        if (headerScrollRef.current && bodyScrollRef.current) {
-            headerScrollRef.current.scrollLeft = bodyScrollRef.current.scrollLeft
+        if (bodyScrollRef.current) {
+            const scrollLeft = bodyScrollRef.current.scrollLeft
+            if (headerScrollRef.current) {
+                headerScrollRef.current.scrollLeft = scrollLeft
+            }
+            if (sprintScrollRef.current) {
+                sprintScrollRef.current.scrollLeft = scrollLeft
+            }
         }
     }, [])
 
@@ -730,7 +737,7 @@ export default function Timeline() {
                 {sprintBars.length > 0 && (
                     <div className="gantt-sprints-row">
                         <div className="gantt-sprints-label">Sprints</div>
-                        <div className="gantt-sprints-track" ref={headerScrollRef}>
+                        <div className="gantt-sprints-track" ref={sprintScrollRef}>
                             <div className="gantt-sprints-content" style={{ width: timelineWidth }}>
                                 {sprintBars.map(sprint => (
                                     <div

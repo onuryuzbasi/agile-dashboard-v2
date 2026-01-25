@@ -6,30 +6,39 @@ import {
     Bug,
     CheckSquare,
     Layers,
-    ListTree,
     Zap,
-    Target,
-    Sparkles,
     Save,
-    BookOpen,
+    Plus,
+    Trash2,
+    Clock,
+    Target,
     GitBranch,
-    Clock
+    Sparkles
 } from 'lucide-react'
 import './TemplateEditorModal.css'
 
-// Available icons for templates
+// Reduced icons - only essential ones
 const availableIcons = [
-    { name: 'FileText', icon: FileText, label: 'Document' },
+    { name: 'Layers', icon: Layers, label: 'Epic' },
+    { name: 'FileText', icon: FileText, label: 'Story' },
     { name: 'Bug', icon: Bug, label: 'Bug' },
     { name: 'CheckSquare', icon: CheckSquare, label: 'Task' },
-    { name: 'Layers', icon: Layers, label: 'Epic' },
-    { name: 'ListTree', icon: ListTree, label: 'Subtask' },
-    { name: 'Zap', icon: Zap, label: 'Quick' },
-    { name: 'Target', icon: Target, label: 'Goal' },
-    { name: 'Sparkles', icon: Sparkles, label: 'Feature' },
-    { name: 'BookOpen', icon: BookOpen, label: 'Story' },
-    { name: 'GitBranch', icon: GitBranch, label: 'Branch' },
-    { name: 'Clock', icon: Clock, label: 'Scheduled' }
+    { name: 'Zap', icon: Zap, label: 'Feature' }
+]
+
+// Child issue type options
+const childTypeOptions = [
+    { value: 'story', label: 'Story' },
+    { value: 'task', label: 'Task' },
+    { value: 'bug', label: 'Bug' }
+]
+
+// Child naming modes
+const childNamingModes = [
+    { value: 'custom', label: 'Custom Name' },
+    { value: 'full', label: 'Use Epic Name' },
+    { value: 'prefix', label: 'Epic Name + Custom Suffix' },
+    { value: 'suffix', label: 'Custom Prefix + Epic Name' }
 ]
 
 export default function TemplateEditorModal({ onClose, onSave }) {
@@ -45,7 +54,7 @@ export default function TemplateEditorModal({ onClose, onSave }) {
     } = useProjectStore()
 
     const [templateName, setTemplateName] = useState('')
-    const [selectedIcon, setSelectedIcon] = useState('FileText')
+    const [selectedIcon, setSelectedIcon] = useState('Layers')
     const [isSaving, setIsSaving] = useState(false)
 
     // Epics for parent selection
@@ -75,11 +84,52 @@ export default function TemplateEditorModal({ onClose, onSave }) {
         originalEstimate: ''
     })
 
+    // Child issues template (for Epic templates)
+    const [childTemplates, setChildTemplates] = useState([])
+    const [newChildType, setNewChildType] = useState('story')
+    const [newChildNamingMode, setNewChildNamingMode] = useState('custom')
+    const [newChildName, setNewChildName] = useState('')
+
+    const isEpicTemplate = prefilledData.type === 'epic'
+
     const handleFieldChange = (field, value) => {
         setPrefilledData(prev => ({
             ...prev,
             [field]: value
         }))
+    }
+
+    const handleAddChildTemplate = () => {
+        if (newChildNamingMode === 'custom' && !newChildName.trim()) return
+
+        setChildTemplates(prev => [...prev, {
+            id: Date.now(),
+            type: newChildType,
+            namingMode: newChildNamingMode,
+            customName: newChildNamingMode === 'custom' ? newChildName.trim() : '',
+            suffix: newChildNamingMode === 'prefix' ? newChildName.trim() : '',
+            prefix: newChildNamingMode === 'suffix' ? newChildName.trim() : ''
+        }])
+        setNewChildName('')
+    }
+
+    const handleRemoveChildTemplate = (id) => {
+        setChildTemplates(prev => prev.filter(c => c.id !== id))
+    }
+
+    const getChildPreview = (child) => {
+        const epicName = '[Epic Name]'
+        switch (child.namingMode) {
+            case 'full':
+                return epicName
+            case 'prefix':
+                return `${epicName} - ${child.suffix || '...'}`
+            case 'suffix':
+                return `${child.prefix || '...'} - ${epicName}`
+            case 'custom':
+            default:
+                return child.customName || '...'
+        }
     }
 
     const handleSave = async () => {
@@ -94,6 +144,17 @@ export default function TemplateEditorModal({ onClose, onSave }) {
         const filteredData = Object.fromEntries(
             Object.entries(prefilledData).filter(([_, v]) => v !== '' && v !== null)
         )
+
+        // Include child templates if Epic
+        if (isEpicTemplate && childTemplates.length > 0) {
+            filteredData.childTemplates = childTemplates.map(c => ({
+                type: c.type,
+                namingMode: c.namingMode,
+                customName: c.customName,
+                prefix: c.prefix,
+                suffix: c.suffix
+            }))
+        }
 
         const result = await addIssueTemplate({
             name: templateName.trim(),
@@ -222,23 +283,123 @@ export default function TemplateEditorModal({ onClose, onSave }) {
                                 </select>
                             </div>
 
-                            <div className="template-field">
-                                <label>Parent Epic</label>
-                                <select
-                                    value={prefilledData.parentId}
-                                    onChange={(e) => handleFieldChange('parentId', e.target.value)}
-                                    className="template-select"
-                                >
-                                    <option value="">-- No default --</option>
-                                    {epics.map(epic => (
-                                        <option key={epic.id} value={epic.id}>
-                                            {epic.key} - {epic.summary?.slice(0, 30)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {!isEpicTemplate && (
+                                <div className="template-field">
+                                    <label>Parent Epic</label>
+                                    <select
+                                        value={prefilledData.parentId}
+                                        onChange={(e) => handleFieldChange('parentId', e.target.value)}
+                                        className="template-select"
+                                    >
+                                        <option value="">-- No default --</option>
+                                        {epics.map(epic => (
+                                            <option key={epic.id} value={epic.id}>
+                                                {epic.key} - {epic.summary?.slice(0, 30)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* ═══════════════════════════════════════════ */}
+                    {/* SECTION: Child Issues (Epic only) */}
+                    {/* ═══════════════════════════════════════════ */}
+                    {isEpicTemplate && (
+                        <div className="template-section template-section-highlight">
+                            <div className="template-section-header">
+                                <Plus size={16} />
+                                <span>Child Issues</span>
+                                {childTemplates.length > 0 && (
+                                    <span className="template-badge">{childTemplates.length}</span>
+                                )}
+                            </div>
+                            <p className="template-section-desc">
+                                Define child issues that will be auto-created with this Epic
+                            </p>
+
+                            {/* Child Issue Input Row */}
+                            <div className="child-template-input">
+                                <select
+                                    value={newChildType}
+                                    onChange={(e) => setNewChildType(e.target.value)}
+                                    className="template-select child-type-select"
+                                >
+                                    {childTypeOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    value={newChildNamingMode}
+                                    onChange={(e) => setNewChildNamingMode(e.target.value)}
+                                    className="template-select child-naming-select"
+                                >
+                                    {childNamingModes.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+
+                                {newChildNamingMode !== 'full' && (
+                                    <input
+                                        type="text"
+                                        value={newChildName}
+                                        onChange={(e) => setNewChildName(e.target.value)}
+                                        placeholder={
+                                            newChildNamingMode === 'custom' ? 'Issue name...' :
+                                                newChildNamingMode === 'prefix' ? 'Suffix text...' :
+                                                    'Prefix text...'
+                                        }
+                                        className="template-input child-name-input"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddChildTemplate()
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                <button
+                                    type="button"
+                                    className="btn btn-icon btn-primary child-add-btn"
+                                    onClick={handleAddChildTemplate}
+                                    disabled={newChildNamingMode === 'custom' && !newChildName.trim()}
+                                    title="Add child issue"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+
+                            {/* Child Templates List */}
+                            {childTemplates.length > 0 && (
+                                <div className="child-templates-list">
+                                    {childTemplates.map((child) => (
+                                        <div key={child.id} className="child-template-item">
+                                            <span className={`child-type-badge ${child.type}`}>
+                                                {child.type}
+                                            </span>
+                                            <span className="child-template-preview">
+                                                {getChildPreview(child)}
+                                            </span>
+                                            <span className="child-naming-mode">
+                                                {childNamingModes.find(m => m.value === child.namingMode)?.label}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-icon btn-ghost child-remove-btn"
+                                                onClick={() => handleRemoveChildTemplate(child.id)}
+                                                title="Remove"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* ═══════════════════════════════════════════ */}
                     {/* SECTION: Assignment */}

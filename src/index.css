@@ -10451,6 +10451,16 @@ h4 {
   text-overflow: ellipsis;
 }
 
+.gantt-group-name.clickable-epic {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.gantt-group-name.clickable-epic:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .gantt-group-count {
   padding: 2px 8px;
   background: var(--bg-hover);

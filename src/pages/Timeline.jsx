@@ -268,10 +268,10 @@ export default function Timeline() {
             let label = ''
             let sublabel = ''
             if (headerFormat === 'day') {
-                label = `${monthName} ${currentDate.getDate()}`
+                label = `${monthName} ${currentDate.getDate()} '${year}`
             } else if (headerFormat === 'week') {
                 const weekNum = Math.ceil((currentDate.getDate() + new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()) / 7)
-                label = `${monthName} W${weekNum}`
+                label = `${monthName} W${weekNum} '${year}`
             } else if (headerFormat === 'month') {
                 label = `${monthName} '${year}`
             } else if (headerFormat === 'quarter') {
@@ -676,6 +676,14 @@ export default function Timeline() {
         // Get epic status for badge
         const epicStatus = type === 'epic' && isEpic ? (statusConfig[group.status] || statusConfig.todo) : null
 
+        // Handle epic name click - open modal
+        const handleEpicClick = (e) => {
+            e.stopPropagation()
+            if (type === 'epic' && isEpic && group.type === 'epic') {
+                handleIssueClick(group)
+            }
+        }
+
         return (
             <div
                 className={`gantt-group-header ${type}`}
@@ -696,7 +704,11 @@ export default function Timeline() {
                     {type === 'department' && (
                         <div className="gantt-dept-badge" style={{ backgroundColor: group.color }}><Building2 size={10} /></div>
                     )}
-                    <span className="gantt-group-name">
+                    <span
+                        className={`gantt-group-name ${type === 'epic' && isEpic ? 'clickable-epic' : ''}`}
+                        onClick={type === 'epic' && isEpic ? handleEpicClick : undefined}
+                        title={type === 'epic' && isEpic ? 'Click to view epic details' : undefined}
+                    >
                         {type === 'epic' && isEpic ? `${group.key} ${group.summary}` : (group.name || group.summary)}
                     </span>
                     <span className="gantt-group-count">{groupIssues.length}</span>
@@ -706,6 +718,7 @@ export default function Timeline() {
                     <div
                         className="gantt-issue-status"
                         style={{ backgroundColor: epicStatus.barColor }}
+                        onClick={handleEpicClick}
                     >
                         {epicStatus.label}
                     </div>

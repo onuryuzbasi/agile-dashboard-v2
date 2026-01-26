@@ -24,8 +24,8 @@ export default function Dashboard() {
         inProgress: sprintIssues.filter(i => i.status === 'progress').length,
         inReview: sprintIssues.filter(i => i.status === 'review').length,
         done: sprintIssues.filter(i => i.status === 'done').length,
-        totalPoints: sprintIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0),
-        completedPoints: sprintIssues.filter(i => i.status === 'done').reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+        totalPoints: sprintIssues.reduce((sum, i) => sum + (i.originalEstimate || 0), 0),
+        completedPoints: sprintIssues.filter(i => i.status === 'done').reduce((sum, i) => sum + (i.originalEstimate || 0), 0)
     }
 
     const completionRate = stats.total > 0
@@ -106,7 +106,7 @@ export default function Dashboard() {
                         </div>
 
                         <div>
-                            <div className="text-sm text-secondary mb-2">Story Points</div>
+                            <div className="text-sm text-secondary mb-2">Estimated Hours</div>
                             <div className="flex items-center gap-3">
                                 <div style={{ flex: 1, height: 8, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)' }}>
                                     <div
@@ -121,7 +121,7 @@ export default function Dashboard() {
                                 </div>
                                 <span className="font-semibold">{pointsProgress}%</span>
                             </div>
-                            <div className="text-xs text-tertiary mt-1">{stats.completedPoints} of {stats.totalPoints} points</div>
+                            <div className="text-xs text-tertiary mt-1">{stats.completedPoints}h of {stats.totalPoints}h</div>
                         </div>
                     </div>
 

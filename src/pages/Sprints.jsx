@@ -16,8 +16,8 @@ export default function Sprints() {
         return {
             total: issues.length,
             done: issues.filter(i => i.status === 'done').length,
-            points: issues.reduce((sum, i) => sum + (i.storyPoints || 0), 0),
-            completedPoints: issues.filter(i => i.status === 'done').reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+            points: issues.reduce((sum, i) => sum + (i.originalEstimate || 0), 0),
+            completedPoints: issues.filter(i => i.status === 'done').reduce((sum, i) => sum + (i.originalEstimate || 0), 0)
         }
     }
 
@@ -63,8 +63,8 @@ export default function Sprints() {
                         <div>
                             <h3 className="font-semibold">{sprint.name}</h3>
                             <span className={`badge ${sprint.state === 'active' ? 'badge-task' :
-                                    sprint.state === 'closed' ? 'badge-story' :
-                                        'badge-subtask'
+                                sprint.state === 'closed' ? 'badge-story' :
+                                    'badge-subtask'
                                 }`}>
                                 {sprint.state === 'active' ? 'Active' :
                                     sprint.state === 'closed' ? 'Completed' :
@@ -132,7 +132,7 @@ export default function Sprints() {
                 <div>
                     <div className="flex justify-between text-sm mb-2">
                         <span className="text-secondary">Progress</span>
-                        <span className="font-medium">{stats.done}/{stats.total} issues · {stats.completedPoints}/{stats.points} points</span>
+                        <span className="font-medium">{stats.done}/{stats.total} issues · {stats.completedPoints}h/{stats.points}h</span>
                     </div>
                     <div style={{ height: 8, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)' }}>
                         <div

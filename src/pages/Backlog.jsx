@@ -626,6 +626,9 @@ export default function Backlog() {
         const PriorityIcon = priorityConfig[issue.priority]?.icon || Minus
         const priorityColor = priorityConfig[issue.priority]?.color
         const assignee = issue.assigneeId ? getUserById(issue.assigneeId) : null
+        const reporter = issue.reporterId ? getUserById(issue.reporterId) : null
+        const game = issue.gameId ? games?.find(g => g.id === issue.gameId) : null
+        const department = issue.departmentId ? departments?.find(d => d.id === issue.departmentId) : null
         const isSelected = selectedIssues.has(issue.id)
 
         const toggleSelection = (e) => {
@@ -697,6 +700,14 @@ export default function Backlog() {
                     </span>
                 )}
 
+                {/* Start date - respects visibility setting */}
+                {cardFieldVisibility.startDate && issue.startDate && (
+                    <span className="issue-start-date">
+                        <Calendar size={12} />
+                        {formatDate(issue.startDate)}
+                    </span>
+                )}
+
                 {/* Due date - respects visibility setting */}
                 {cardFieldVisibility.dueDate && issue.dueDate && (
                     <span className="issue-due-date">
@@ -705,10 +716,10 @@ export default function Backlog() {
                     </span>
                 )}
 
-                {/* Time estimate - respects visibility setting */}
-                {cardFieldVisibility.estimate && (
+                {/* Original Estimate - respects visibility setting */}
+                {cardFieldVisibility.estimate && issue.originalEstimate && (
                     <span className="issue-estimate">
-                        {issue.storyPoints ? `${issue.storyPoints}pt` : '0m'}
+                        {issue.originalEstimate}h
                     </span>
                 )}
 
@@ -719,11 +730,47 @@ export default function Backlog() {
                     </span>
                 )}
 
+                {/* Department - respects visibility setting */}
+                {cardFieldVisibility.department && department && (
+                    <span className="issue-department-badge" style={{ backgroundColor: department.color || 'var(--bg-tertiary)' }}>
+                        {department.code || department.name?.substring(0, 3)}
+                    </span>
+                )}
+
+                {/* Game - respects visibility setting */}
+                {cardFieldVisibility.game && game && (
+                    <span className="issue-game-badge">
+                        {game.code || game.name?.substring(0, 3)}
+                    </span>
+                )}
+
+                {/* Checklist progress - respects visibility setting */}
+                {cardFieldVisibility.checklist && issue.checklist && issue.checklist.length > 0 && (
+                    <span className="issue-checklist-badge">
+                        {issue.checklist.filter(i => i.checked).length}/{issue.checklist.length}
+                    </span>
+                )}
+
+                {/* Reporter - respects visibility setting */}
+                {cardFieldVisibility.reporter && reporter && (
+                    <div className="avatar sm" title={`Reporter: ${reporter.name}`}>
+                        {reporter.avatarUrl ? (
+                            <img src={reporter.avatarUrl} alt={reporter.name} />
+                        ) : (
+                            reporter.name?.charAt(0) || 'R'
+                        )}
+                    </div>
+                )}
+
                 {/* Assignee - respects visibility setting */}
                 {cardFieldVisibility.assignee && (
                     assignee ? (
                         <div className="avatar sm" title={assignee.name}>
-                            {assignee.name.charAt(0)}
+                            {assignee.avatarUrl ? (
+                                <img src={assignee.avatarUrl} alt={assignee.name} />
+                            ) : (
+                                assignee.name?.charAt(0) || 'A'
+                            )}
                         </div>
                     ) : (
                         <div className="avatar sm unassigned" title="Unassigned">?</div>
@@ -755,8 +802,8 @@ export default function Backlog() {
         const filteredIssues = filterIssues(sprintIssues)
         const totalIssues = sprintIssues.length
         const visibleIssues = filteredIssues.length
-        const totalPoints = sprintIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)
-        const visiblePoints = filteredIssues.reduce((sum, i) => sum + (i.storyPoints || 0), 0)
+        const totalPoints = sprintIssues.reduce((sum, i) => sum + (i.originalEstimate || 0), 0)
+        const visiblePoints = filteredIssues.reduce((sum, i) => sum + (i.originalEstimate || 0), 0)
 
         return (
             <div className="sprint-section">
@@ -797,7 +844,7 @@ export default function Backlog() {
                         {!isBacklog && (
                             <>
                                 <span className="sprint-estimate">
-                                    Estimate: {visiblePoints}pt of {totalPoints}pt
+                                    Estimate: {visiblePoints}h of {totalPoints}h
                                 </span>
 
                                 {sprint.state === 'active' ? (

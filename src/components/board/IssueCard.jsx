@@ -149,9 +149,9 @@ export default function IssueCard({ issue, isDragging = false }) {
                         </span>
                     )}
 
-                    {/* Story Points - Always show when set */}
-                    {issue.storyPoints && (
-                        <span className="story-points">{issue.storyPoints}</span>
+                    {/* Original Estimate - Always show when set */}
+                    {issue.originalEstimate && (
+                        <span className="story-points">{issue.originalEstimate}h</span>
                     )}
 
                     {/* Due Date */}

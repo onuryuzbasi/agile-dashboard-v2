@@ -90,6 +90,7 @@ export default function Timeline() {
     const headerScrollRef = useRef(null)
     const sprintScrollRef = useRef(null)
     const bodyScrollRef = useRef(null)
+    const sidebarScrollRef = useRef(null)
 
     // Faceted filter state
     const [filterTypes, setFilterTypes] = useState(new Set())
@@ -141,15 +142,26 @@ export default function Timeline() {
         const groups = []
 
         if (groupBy === 'epic') {
-            // Epic groups
+            // Epic groups - only include epics that match filters OR have matching child issues
             const epicMap = new Map()
-            epics.forEach(epic => epicMap.set(epic.id, { group: epic, issues: [], isEpic: true }))
+
+            // Get filtered epics (epics that match search/filter criteria)
+            const filteredEpics = filteredIssues.filter(issue => issue.type === 'epic')
+
+            // Build epic map from filtered epics
+            filteredEpics.forEach(epic => epicMap.set(epic.id, { group: epic, issues: [], isEpic: true }))
             epicMap.set('no-epic', { group: { id: 'no-epic', summary: 'Issues without Epic', key: '' }, issues: [], isEpic: false })
 
+            // Add child issues to their epics
             filteredIssues.forEach(issue => {
                 if (issue.type === 'epic') return
                 const epicId = issue.epicId || 'no-epic'
-                if (epicMap.has(epicId)) epicMap.get(epicId).issues.push(issue)
+                if (epicMap.has(epicId)) {
+                    epicMap.get(epicId).issues.push(issue)
+                } else {
+                    // If the epic wasn't filtered but parent issues are, add to no-epic group
+                    epicMap.get('no-epic').issues.push(issue)
+                }
             })
 
             epicMap.forEach(({ group, issues: groupIssues, isEpic }) => {
@@ -506,16 +518,28 @@ export default function Timeline() {
         return labels.filter(Boolean).join(' - ')
     }
 
-    // Sync scroll between header, sprints, and body
+    // Sync scroll between header, sprints, sidebar, and body
     const handleBodyScroll = useCallback(() => {
         if (bodyScrollRef.current) {
             const scrollLeft = bodyScrollRef.current.scrollLeft
+            const scrollTop = bodyScrollRef.current.scrollTop
             if (headerScrollRef.current) {
                 headerScrollRef.current.scrollLeft = scrollLeft
             }
             if (sprintScrollRef.current) {
                 sprintScrollRef.current.scrollLeft = scrollLeft
             }
+            // Sync vertical scroll with sidebar
+            if (sidebarScrollRef.current) {
+                sidebarScrollRef.current.scrollTop = scrollTop
+            }
+        }
+    }, [])
+
+    // Sync scroll from sidebar to timeline
+    const handleSidebarScroll = useCallback(() => {
+        if (sidebarScrollRef.current && bodyScrollRef.current) {
+            bodyScrollRef.current.scrollTop = sidebarScrollRef.current.scrollTop
         }
     }, [])
 
@@ -540,6 +564,22 @@ export default function Timeline() {
             }
         }, 50)
     }, [todayPosition])
+
+    // Scroll to today on initial mount
+    useEffect(() => {
+        // Small delay to ensure DOM is ready
+        const timer = setTimeout(() => {
+            if (bodyScrollRef.current && headerScrollRef.current && todayPosition > 0) {
+                const scrollPosition = todayPosition - (bodyScrollRef.current.clientWidth / 2)
+                bodyScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                headerScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                if (sprintScrollRef.current) {
+                    sprintScrollRef.current.scrollLeft = Math.max(0, scrollPosition)
+                }
+            }
+        }, 100)
+        return () => clearTimeout(timer)
+    }, []) // Empty deps = only on mount
 
     // Handle filter change
     const handleFilterChange = useCallback((field, values) => {
@@ -633,6 +673,8 @@ export default function Timeline() {
     const renderGroupHeader = ({ group, issues: groupIssues, type, isEpic }) => {
         const isCollapsed = collapsedGroups[group.id]
         const TypeIcon = type === 'epic' && isEpic ? Zap : type === 'assignee' ? User : Building2
+        // Get epic status for badge
+        const epicStatus = type === 'epic' && isEpic ? (statusConfig[group.status] || statusConfig.todo) : null
 
         return (
             <div
@@ -659,6 +701,15 @@ export default function Timeline() {
                     </span>
                     <span className="gantt-group-count">{groupIssues.length}</span>
                 </div>
+                {/* Status badge for epics */}
+                {epicStatus && (
+                    <div
+                        className="gantt-issue-status"
+                        style={{ backgroundColor: epicStatus.barColor }}
+                    >
+                        {epicStatus.label}
+                    </div>
+                )}
             </div>
         )
     }
@@ -680,6 +731,13 @@ export default function Timeline() {
                     </div>
                     <span className="gantt-issue-key">{issue.key}</span>
                     <span className="gantt-issue-summary">{issue.summary}</span>
+                </div>
+                {/* Status badge - fixed to right */}
+                <div
+                    className="gantt-issue-status"
+                    style={{ backgroundColor: status.barColor }}
+                >
+                    {status.label}
                 </div>
             </div>
         )
@@ -870,7 +928,7 @@ export default function Timeline() {
                 {/* Gantt Body */}
                 <div className="gantt-body">
                     {/* Left Sidebar */}
-                    <div className="gantt-sidebar">
+                    <div className="gantt-sidebar" ref={sidebarScrollRef} onScroll={handleSidebarScroll}>
                         {groupedData.map(({ group, issues: groupIssues, type, isEpic }) => (
                             <div key={group.id} className="gantt-group">
                                 {renderGroupHeader({ group, issues: groupIssues, type, isEpic })}

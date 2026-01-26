@@ -1406,7 +1406,7 @@ export const useProjectStore = create(
                     { key: 'status', label: 'Status', category: 'standard' },
                     { key: 'dueDate', label: 'Due Date', category: 'standard' },
                     { key: 'startDate', label: 'Start Date', category: 'standard' },
-                    { key: 'estimate', label: 'Story Points', category: 'standard' },
+                    { key: 'estimate', label: 'Original Estimate', category: 'standard' },
                     { key: 'priority', label: 'Priority', category: 'standard' },
                     { key: 'assignee', label: 'Assignee', category: 'standard' },
                     { key: 'reporter', label: 'Reporter', category: 'standard' },

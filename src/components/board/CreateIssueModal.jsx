@@ -68,6 +68,7 @@ export default function CreateIssueModal() {
                 { value: 'todo', label: 'To Do' },
                 { value: 'progress', label: 'In Progress' },
                 { value: 'review', label: 'In Review' },
+                { value: 'testing', label: 'Testing' },
                 { value: 'done', label: 'Done' }
             ]
     }, [fieldConfig])

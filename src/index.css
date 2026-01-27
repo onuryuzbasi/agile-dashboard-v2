@@ -13424,3 +13424,115 @@ h4 {
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
 }
+
+/* ===== Testing Status ===== */
+.status-testing,
+.status-badge.testing {
+  background: #f59e0b;
+  color: #000;
+}
+
+.status-pill.testing {
+  background: #f59e0b;
+  color: #000;
+}
+
+/* ===== Test Case Required Modal ===== */
+.test-case-required-modal {
+  max-width: 500px;
+  width: 90vw;
+}
+
+.test-case-required-modal .warning-text {
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  margin-bottom: var(--space-4);
+}
+
+.test-case-required-modal .warning-text strong {
+  color: var(--accent-text);
+}
+
+.mode-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mode-tab:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.mode-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+
+.select-mode,
+.create-mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.select-mode .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.select-mode .empty-state p {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* QA Assignment Notification */
+.qa-assignment-notification {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--success-light);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-3);
+}
+
+.qa-assignment-notification .notification-icon {
+  color: var(--success);
+}
+
+.qa-assignment-notification .notification-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.qa-assignment-notification .notification-text strong {
+  color: var(--success);
+}

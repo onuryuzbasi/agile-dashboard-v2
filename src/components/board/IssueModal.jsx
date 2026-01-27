@@ -30,6 +30,8 @@ import {
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
 import TISScoreInput from '../qa/TISScoreInput'
+import TestCaseRequiredModal from '../qa/TestCaseRequiredModal'
+import qaWorkflow from '../../lib/qaWorkflow'
 
 // Keep typeIcons for rendering (will use fieldConfig where applicable)
 const typeIconsDefault = {
@@ -101,6 +103,7 @@ export default function IssueModal({ issue, onClose }) {
                 { value: 'todo', label: 'To Do' },
                 { value: 'progress', label: 'In Progress' },
                 { value: 'review', label: 'In Review' },
+                { value: 'testing', label: 'Testing' },
                 { value: 'done', label: 'Done' }
             ]
     }, [fieldConfig])
@@ -221,6 +224,10 @@ export default function IssueModal({ issue, onClose }) {
     const [showChecklistWarning, setShowChecklistWarning] = useState(false)
     const [pendingStatusChange, setPendingStatusChange] = useState(null)
 
+    // Test case required modal state (for testing status transition)
+    const [showTestCaseModal, setShowTestCaseModal] = useState(false)
+    const [qaAssignmentNotification, setQaAssignmentNotification] = useState(null)
+
     // Helper function for relative time display
     const getRelativeTime = (timestamp) => {
         const now = new Date()
@@ -240,6 +247,32 @@ export default function IssueModal({ issue, onClose }) {
     const handleChange = (field, value) => {
         // Check for incomplete checklist items when status is being changed
         if (field === 'status' && value !== formData.status) {
+            // Check for testing status transition - require test case
+            if (value === 'testing' && formData.status !== 'testing') {
+                const hasTestCase = qaWorkflow.hasLinkedTestCase(issue, testCases)
+                if (!hasTestCase) {
+                    setPendingStatusChange(value)
+                    setShowTestCaseModal(true)
+                    return // Don't apply the change yet
+                }
+                // Auto-assign to QA team if valid
+                const qaUsers = qaWorkflow.getQATeamMembers(users, departments)
+                if (qaUsers.length > 0) {
+                    const workflowUpdates = qaWorkflow.processTestingWorkflow(issue, qaUsers, issues)
+                    if (workflowUpdates.assigneeId) {
+                        setFormData(prev => ({ ...prev, status: value, assigneeId: workflowUpdates.assigneeId }))
+                        const assignedUser = users.find(u => u.id === workflowUpdates.assigneeId)
+                        setQaAssignmentNotification({
+                            userName: assignedUser?.name || 'QA Team Member',
+                            reason: 'En az iş yükü olan QA ekip üyesine otomatik atandı'
+                        })
+                        setTimeout(() => setQaAssignmentNotification(null), 5000)
+                        setIsEditing(true)
+                        return
+                    }
+                }
+            }
+
             const checklist = issue.checklist || []
             const incompleteItems = checklist.filter(item => !item.checked)
 
@@ -268,6 +301,46 @@ export default function IssueModal({ issue, onClose }) {
     // Cancel the pending status change
     const cancelStatusChange = () => {
         setShowChecklistWarning(false)
+        setPendingStatusChange(null)
+    }
+
+    // Handle when test case is linked from the modal
+    const handleTestCaseLinked = (testCaseId) => {
+        setShowTestCaseModal(false)
+        if (pendingStatusChange === 'testing') {
+            // Now that we have a test case, proceed with status change and QA assignment
+            const qaUsers = qaWorkflow.getQATeamMembers(users, departments)
+            if (qaUsers.length > 0) {
+                const workflowUpdates = qaWorkflow.processTestingWorkflow(issue, qaUsers, issues)
+                if (workflowUpdates.assigneeId) {
+                    setFormData(prev => ({
+                        ...prev,
+                        status: 'testing',
+                        assigneeId: workflowUpdates.assigneeId,
+                        linkedTestCaseId: testCaseId
+                    }))
+                    const assignedUser = users.find(u => u.id === workflowUpdates.assigneeId)
+                    setQaAssignmentNotification({
+                        userName: assignedUser?.name || 'QA Team Member',
+                        reason: 'En az iş yükü olan QA ekip üyesine otomatik atandı'
+                    })
+                    setTimeout(() => setQaAssignmentNotification(null), 5000)
+                    setIsEditing(true)
+                } else {
+                    setFormData(prev => ({ ...prev, status: 'testing', linkedTestCaseId: testCaseId }))
+                    setIsEditing(true)
+                }
+            } else {
+                setFormData(prev => ({ ...prev, status: 'testing', linkedTestCaseId: testCaseId }))
+                setIsEditing(true)
+            }
+        }
+        setPendingStatusChange(null)
+    }
+
+    // Cancel test case modal
+    const cancelTestCaseModal = () => {
+        setShowTestCaseModal(false)
         setPendingStatusChange(null)
     }
 
@@ -1375,6 +1448,31 @@ export default function IssueModal({ issue, onClose }) {
                                 Devam Et
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Test Case Required Modal for Testing status */}
+            <TestCaseRequiredModal
+                isOpen={showTestCaseModal}
+                onClose={cancelTestCaseModal}
+                issue={issue}
+                onTestCaseLinked={handleTestCaseLinked}
+            />
+
+            {/* QA Assignment Notification */}
+            {qaAssignmentNotification && (
+                <div className="qa-assignment-notification" style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    zIndex: 9999
+                }}>
+                    <Check size={18} className="notification-icon" />
+                    <div className="notification-text">
+                        <strong>{qaAssignmentNotification.userName}</strong>'a atandı.
+                        <br />
+                        <small>{qaAssignmentNotification.reason}</small>
                     </div>
                 </div>
             )}

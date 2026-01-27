@@ -13102,12 +13102,13 @@ h4 {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--warning-light);
-  border: 1px solid var(--warning);
+  background: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: #000;
   font-size: var(--font-size-sm);
   margin-bottom: var(--space-4);
+  font-weight: 500;
 }
 
 .ai-error {

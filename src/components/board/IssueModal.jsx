@@ -29,6 +29,7 @@ import {
     Send
 } from 'lucide-react'
 import { getIconByName } from '../../config/fieldConfig'
+import TISScoreInput from '../qa/TISScoreInput'
 
 // Keep typeIcons for rendering (will use fieldConfig where applicable)
 const typeIconsDefault = {
@@ -138,7 +139,14 @@ export default function IssueModal({ issue, onClose }) {
         parentId: issue.parentId || '',
         departmentId: issue.departmentId || '',
         startDate: issue.startDate || '',
-        dueDate: issue.dueDate || ''
+        dueDate: issue.dueDate || '',
+        // Bug-specific TIS fields
+        tis_impact: issue.tis_impact || 1,
+        tis_size: issue.tis_size || 1,
+        tis_time: issue.tis_time || 1,
+        retest_status: issue.retest_status || 'pending',
+        found_in_build: issue.found_in_build || '',
+        fixed_in_build: issue.fixed_in_build || ''
     })
 
     const [isEditing, setIsEditing] = useState(false)
@@ -740,6 +748,68 @@ export default function IssueModal({ issue, onClose }) {
                             />
                         </div>
                     </div>
+
+                    {/* Bug-specific: TIS Score & AAB Tracking */}
+                    {formData.type === 'bug' && (
+                        <div className="bug-fields-section">
+                            <h4 className="section-title">
+                                <Bug size={16} />
+                                Bug Priority (TIS Score)
+                            </h4>
+
+                            <TISScoreInput
+                                impact={formData.tis_impact}
+                                size={formData.tis_size}
+                                time={formData.tis_time}
+                                onChange={({ impact, size, time }) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        tis_impact: impact,
+                                        tis_size: size,
+                                        tis_time: time
+                                    }))
+                                    setIsEditing(true)
+                                }}
+                            />
+
+                            {/* AAB Version Tracking */}
+                            <div className="aab-tracking-grid">
+                                <div className="input-group">
+                                    <label className="input-label">Found in Build</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="e.g., 1.2.3"
+                                        value={formData.found_in_build}
+                                        onChange={(e) => handleChange('found_in_build', e.target.value)}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Fixed in Build</label>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="e.g., 1.2.4"
+                                        value={formData.fixed_in_build}
+                                        onChange={(e) => handleChange('fixed_in_build', e.target.value)}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Retest Status</label>
+                                    <select
+                                        className="input select"
+                                        value={formData.retest_status}
+                                        onChange={(e) => handleChange('retest_status', e.target.value)}
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="passed">Passed</option>
+                                        <option value="failed">Failed</option>
+                                        <option value="blocked">Blocked</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Child Work Items - Only for Epics */}
                     {formData.type === 'epic' && (

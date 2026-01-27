@@ -11,6 +11,10 @@ const emptyState = {
     users: [],
     games: [],
     departments: [],
+    // QA System state
+    testSuites: [],
+    testCases: [],
+    bugStatuses: [],
     fieldConfig: {
         priorities: [],
         statuses: [],
@@ -119,7 +123,11 @@ export const useProjectStore = create(
                         { data: issues },
                         { data: savedFilters },
                         { data: deletedIssues },
-                        { data: issueTemplates }
+                        { data: issueTemplates },
+                        // QA System tables
+                        { data: testSuites },
+                        { data: testCases },
+                        { data: bugStatuses }
                     ] = await Promise.all([
                         supabase.from('projects').select('*'),
                         supabase.from('users').select('*'),
@@ -133,7 +141,11 @@ export const useProjectStore = create(
                         supabase.from('issues').select('*').eq('is_deleted', false),
                         supabase.from('saved_filters').select('*'),
                         supabase.from('issues').select('*').eq('is_deleted', true),
-                        supabase.from('issue_templates').select('*').order('name')
+                        supabase.from('issue_templates').select('*').order('name'),
+                        // QA System tables
+                        supabase.from('test_suites').select('*').order('created_at', { ascending: false }),
+                        supabase.from('test_cases').select('*').order('created_at', { ascending: false }),
+                        supabase.from('bug_statuses').select('*').order('sort_order')
                     ])
 
                     // Transform to camelCase and set state
@@ -146,6 +158,10 @@ export const useProjectStore = create(
                         issues: toCamelCase(issues || []),
                         deletedIssues: toCamelCase(deletedIssues || []),
                         savedFilters: toCamelCase(savedFilters || []),
+                        // QA System data
+                        testSuites: toCamelCase(testSuites || []),
+                        testCases: toCamelCase(testCases || []),
+                        bugStatuses: toCamelCase(bugStatuses || []),
                         fieldConfig: {
                             priorities: toCamelCase(priorities || []).map(p => ({
                                 id: p.id,
@@ -1203,6 +1219,227 @@ export const useProjectStore = create(
                 if (error) {
                     console.error('Failed to delete filter:', error)
                 }
+            },
+
+            // ============================================
+            // QA SYSTEM ACTIONS
+            // ============================================
+
+            // Test Suite CRUD
+            addTestSuite: async (suiteData) => {
+                const state = get()
+                const tempId = `temp-${Date.now()}`
+                const newSuite = {
+                    id: tempId,
+                    name: suiteData.name,
+                    description: suiteData.description || '',
+                    sprintId: suiteData.sprintId || null,
+                    projectId: state.currentProjectId,
+                    createdBy: suiteData.createdBy || state.users[0]?.id,
+                    createdAt: new Date().toISOString()
+                }
+
+                // Optimistic update
+                set({ testSuites: [newSuite, ...state.testSuites] })
+
+                try {
+                    const { data, error } = await supabase
+                        .from('test_suites')
+                        .insert({
+                            name: newSuite.name,
+                            description: newSuite.description,
+                            sprint_id: newSuite.sprintId,
+                            project_id: newSuite.projectId,
+                            created_by: newSuite.createdBy
+                        })
+                        .select()
+                        .single()
+
+                    if (error) throw error
+
+                    set({
+                        testSuites: get().testSuites.map(s =>
+                            s.id === tempId ? toCamelCase(data) : s
+                        )
+                    })
+                    return toCamelCase(data)
+                } catch (error) {
+                    console.error('Failed to create test suite:', error)
+                    set({ testSuites: state.testSuites })
+                    return null
+                }
+            },
+
+            updateTestSuite: async (suiteId, updates) => {
+                const state = get()
+
+                // Optimistic update
+                set({
+                    testSuites: state.testSuites.map(s =>
+                        s.id === suiteId ? { ...s, ...updates } : s
+                    )
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('test_suites')
+                        .update(toSnakeCase(updates))
+                        .eq('id', suiteId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to update test suite:', error)
+                    set({ testSuites: state.testSuites })
+                }
+            },
+
+            deleteTestSuite: async (suiteId) => {
+                const state = get()
+
+                set({
+                    testSuites: state.testSuites.filter(s => s.id !== suiteId),
+                    testCases: state.testCases.filter(tc => tc.suiteId !== suiteId)
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('test_suites')
+                        .delete()
+                        .eq('id', suiteId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to delete test suite:', error)
+                    set({ testSuites: state.testSuites, testCases: state.testCases })
+                }
+            },
+
+            // Test Case CRUD
+            addTestCase: async (caseData) => {
+                const state = get()
+                const tempId = `temp-${Date.now()}`
+                const newCase = {
+                    id: tempId,
+                    suiteId: caseData.suiteId,
+                    title: caseData.title,
+                    steps: caseData.steps || [],
+                    status: 'pending',
+                    linkedIssueIds: caseData.linkedIssueIds || [],
+                    foundBugId: null,
+                    testedBy: null,
+                    testedAt: null,
+                    notes: caseData.notes || '',
+                    createdAt: new Date().toISOString()
+                }
+
+                set({ testCases: [newCase, ...state.testCases] })
+
+                try {
+                    const { data, error } = await supabase
+                        .from('test_cases')
+                        .insert({
+                            suite_id: newCase.suiteId,
+                            title: newCase.title,
+                            steps: newCase.steps,
+                            status: newCase.status,
+                            linked_issue_ids: newCase.linkedIssueIds,
+                            notes: newCase.notes
+                        })
+                        .select()
+                        .single()
+
+                    if (error) throw error
+
+                    set({
+                        testCases: get().testCases.map(tc =>
+                            tc.id === tempId ? toCamelCase(data) : tc
+                        )
+                    })
+                    return toCamelCase(data)
+                } catch (error) {
+                    console.error('Failed to create test case:', error)
+                    set({ testCases: state.testCases })
+                    return null
+                }
+            },
+
+            updateTestCase: async (caseId, updates, userId = null) => {
+                const state = get()
+                const testCase = state.testCases.find(tc => tc.id === caseId)
+                if (!testCase) return
+
+                // If status changed to passed/failed, record who tested and when
+                const enhancedUpdates = { ...updates }
+                if (updates.status && updates.status !== testCase.status) {
+                    enhancedUpdates.testedBy = userId || state.users[0]?.id
+                    enhancedUpdates.testedAt = new Date().toISOString()
+                }
+
+                set({
+                    testCases: state.testCases.map(tc =>
+                        tc.id === caseId ? { ...tc, ...enhancedUpdates } : tc
+                    )
+                })
+
+                try {
+                    const { error } = await supabase
+                        .from('test_cases')
+                        .update(toSnakeCase(enhancedUpdates))
+                        .eq('id', caseId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to update test case:', error)
+                    set({ testCases: state.testCases })
+                }
+            },
+
+            deleteTestCase: async (caseId) => {
+                const state = get()
+
+                set({ testCases: state.testCases.filter(tc => tc.id !== caseId) })
+
+                try {
+                    const { error } = await supabase
+                        .from('test_cases')
+                        .delete()
+                        .eq('id', caseId)
+
+                    if (error) throw error
+                } catch (error) {
+                    console.error('Failed to delete test case:', error)
+                    set({ testCases: state.testCases })
+                }
+            },
+
+            // QA Helper methods
+            getTestCasesForSuite: (suiteId) => {
+                return get().testCases.filter(tc => tc.suiteId === suiteId)
+            },
+
+            getTestSuitesForSprint: (sprintId) => {
+                return get().testSuites.filter(ts => ts.sprintId === sprintId)
+            },
+
+            getBugs: () => {
+                return get().issues.filter(i => i.type === 'bug' && !i.isDeleted)
+            },
+
+            getBugsForRetest: () => {
+                return get().issues.filter(i =>
+                    i.type === 'bug' &&
+                    !i.isDeleted &&
+                    i.retestStatus === 'pending'
+                )
+            },
+
+            // Calculate TIS score for a bug
+            calculateTISScore: (bug) => {
+                if (!bug || bug.type !== 'bug') return 0
+                const impact = bug.tisImpact || 1
+                const size = bug.tisSize || 1
+                const time = bug.tisTime || 1
+                return Math.round((impact * size / time) * 10) / 10
             },
 
             // UI state

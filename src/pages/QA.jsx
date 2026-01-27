@@ -3,6 +3,7 @@ import { useProjectStore } from '../stores/projectStore'
 import TestSuitePanel from '../components/qa/TestSuitePanel'
 import BugTrackerBoard from '../components/qa/BugTrackerBoard'
 import AnalyticsPanel from '../components/qa/AnalyticsPanel'
+import AIOptimizeModal from '../components/qa/AIOptimizeModal'
 import {
     TestTube2,
     Bug,
@@ -27,6 +28,7 @@ export default function QA() {
 
     // Tab state
     const [activeTab, setActiveTab] = useState('suites') // 'suites' | 'bugs' | 'analytics'
+    const [showAIModal, setShowAIModal] = useState(false)
 
     // Sprint filter for QA
     const [selectedSprintId, setSelectedSprintId] = useState(currentSprintId || 'all')
@@ -102,6 +104,7 @@ export default function QA() {
                             <button
                                 className="btn btn-secondary"
                                 title="AI Test Case Optimizer"
+                                onClick={() => setShowAIModal(true)}
                             >
                                 <Sparkles size={16} />
                                 Optimize
@@ -158,6 +161,12 @@ export default function QA() {
                     />
                 )}
             </div>
+
+            {/* AI Optimization Modal */}
+            <AIOptimizeModal
+                isOpen={showAIModal}
+                onClose={() => setShowAIModal(false)}
+            />
         </div>
     )
 }

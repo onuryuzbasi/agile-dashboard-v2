@@ -126,48 +126,71 @@ export default function Confetti() {
         return arr
     }, [visible])
 
-    // Play train horn celebration sound
+    // Play firework celebration sound
     const playCelebrationSound = useCallback(() => {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)()
 
-            // Train horn effect - layered oscillators for rich sound
-            const playHorn = (baseFreq, startTime, duration, volume = 0.15) => {
-                const frequencies = [baseFreq, baseFreq * 1.5, baseFreq * 2, baseFreq * 2.5]
+            // Firework explosion burst using noise
+            const playExplosion = (startTime, duration, volume = 0.25) => {
+                const bufferSize = audioContext.sampleRate * duration
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate)
+                const data = buffer.getChannelData(0)
 
-                frequencies.forEach((freq, i) => {
-                    const oscillator = audioContext.createOscillator()
-                    const gainNode = audioContext.createGain()
-                    const filterNode = audioContext.createBiquadFilter()
+                // Generate noise burst with decay
+                for (let i = 0; i < bufferSize; i++) {
+                    const envelope = Math.exp(-i / (bufferSize * 0.15))
+                    data[i] = (Math.random() * 2 - 1) * envelope
+                }
 
-                    filterNode.type = 'lowpass'
-                    filterNode.frequency.setValueAtTime(2000, audioContext.currentTime)
+                const noise = audioContext.createBufferSource()
+                const gainNode = audioContext.createGain()
+                const filterNode = audioContext.createBiquadFilter()
 
-                    oscillator.connect(filterNode)
-                    filterNode.connect(gainNode)
-                    gainNode.connect(audioContext.destination)
+                filterNode.type = 'bandpass'
+                filterNode.frequency.setValueAtTime(2000, audioContext.currentTime + startTime)
+                filterNode.Q.setValueAtTime(0.5, audioContext.currentTime + startTime)
 
-                    oscillator.type = i === 0 ? 'sawtooth' : 'triangle'
-                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + startTime)
+                noise.buffer = buffer
+                noise.connect(filterNode)
+                filterNode.connect(gainNode)
+                gainNode.connect(audioContext.destination)
 
-                    // Slight frequency wobble for realism
-                    oscillator.frequency.linearRampToValueAtTime(freq * 1.02, audioContext.currentTime + startTime + 0.1)
-                    oscillator.frequency.linearRampToValueAtTime(freq, audioContext.currentTime + startTime + duration)
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime + startTime)
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration)
 
-                    const vol = volume / (i + 1)
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime)
-                    gainNode.gain.linearRampToValueAtTime(vol, audioContext.currentTime + startTime + 0.05)
-                    gainNode.gain.setValueAtTime(vol, audioContext.currentTime + startTime + duration - 0.1)
-                    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + startTime + duration)
-
-                    oscillator.start(audioContext.currentTime + startTime)
-                    oscillator.stop(audioContext.currentTime + startTime + duration)
-                })
+                noise.start(audioContext.currentTime + startTime)
             }
 
-            // Two-tone train horn pattern (typical steam train)
-            playHorn(220, 0, 0.4, 0.12)      // Low A - first blast
-            playHorn(277, 0.5, 0.6, 0.12)   // Higher - second blast (longer)
+            // High-pitched sparkle/crackle sounds
+            const playSparkle = (startTime, freq, duration = 0.1) => {
+                const oscillator = audioContext.createOscillator()
+                const gainNode = audioContext.createGain()
+
+                oscillator.connect(gainNode)
+                gainNode.connect(audioContext.destination)
+
+                oscillator.type = 'sine'
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + startTime)
+                oscillator.frequency.exponentialRampToValueAtTime(freq * 0.5, audioContext.currentTime + startTime + duration)
+
+                gainNode.gain.setValueAtTime(0.15, audioContext.currentTime + startTime)
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration)
+
+                oscillator.start(audioContext.currentTime + startTime)
+                oscillator.stop(audioContext.currentTime + startTime + duration)
+            }
+
+            // Main firework burst sequence
+            playExplosion(0, 0.5, 0.2)           // Initial explosion
+            playExplosion(0.15, 0.4, 0.15)       // Secondary burst
+
+            // Sparkle effects (like crackling fireworks)
+            for (let i = 0; i < 8; i++) {
+                const delay = 0.1 + Math.random() * 0.4
+                const freq = 2000 + Math.random() * 3000
+                playSparkle(delay, freq, 0.08 + Math.random() * 0.1)
+            }
 
         } catch (e) {
             console.log('Could not play celebration sound:', e)

@@ -10574,6 +10574,12 @@ h4 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.gantt-issue-row:hover .gantt-issue-summary {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 /* Status badge - fixed to right side */
@@ -10665,13 +10671,14 @@ h4 {
   display: flex;
   align-items: stretch;
   cursor: pointer;
-  transition: height 0.15s, filter 0.15s;
+  transition: height 0.15s, filter 0.15s, box-shadow 0.15s;
   z-index: 5;
 }
 
 .gantt-bar:hover {
   height: 28px;
   filter: brightness(1.1);
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 15;
 }
 

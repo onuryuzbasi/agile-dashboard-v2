@@ -61,9 +61,45 @@ export default function Confetti() {
         return arr
     }, [visible])
 
+    // Play celebration sound effect
+    const playCelebrationSound = () => {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+            // Create a cheerful chime sound
+            const playChime = (freq, startTime, duration) => {
+                const oscillator = audioContext.createOscillator()
+                const gainNode = audioContext.createGain()
+
+                oscillator.connect(gainNode)
+                gainNode.connect(audioContext.destination)
+
+                oscillator.type = 'sine'
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + startTime)
+
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime)
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.05)
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + startTime + duration)
+
+                oscillator.start(audioContext.currentTime + startTime)
+                oscillator.stop(audioContext.currentTime + startTime + duration)
+            }
+
+            // Play ascending celebratory chime sequence
+            playChime(523.25, 0, 0.15)      // C5
+            playChime(659.25, 0.1, 0.15)    // E5
+            playChime(783.99, 0.2, 0.15)    // G5
+            playChime(1046.50, 0.3, 0.4)    // C6 (longer)
+        } catch (e) {
+            // Audio not supported or blocked by autoplay policy
+            console.log('Could not play celebration sound:', e)
+        }
+    }
+
     useEffect(() => {
         if (showCelebration) {
             setVisible(true)
+            playCelebrationSound()
             // Auto-hide after animation completes
             const timer = setTimeout(() => {
                 setVisible(false)

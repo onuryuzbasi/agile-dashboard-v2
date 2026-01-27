@@ -12,6 +12,7 @@ import ListTemplate from './pages/ListTemplate'
 import Settings from './pages/Settings'
 import Whiteboard from './pages/Whiteboard'
 import Timeline from './pages/Timeline'
+import QA from './pages/QA'
 import IssueModal from './components/board/IssueModal'
 import CreateIssueModal from './components/board/CreateIssueModal'
 import ConfirmationModal from './components/common/ConfirmationModal'
@@ -67,6 +68,7 @@ function App() {
                             <Route path="/list-template" element={<ListTemplate />} />
                             <Route path="/timeline" element={<Timeline />} />
                             <Route path="/whiteboard" element={<Whiteboard />} />
+                            <Route path="/qa" element={<QA />} />
                             <Route path="/settings" element={<Settings />} />
                         </Routes>
                     </main>

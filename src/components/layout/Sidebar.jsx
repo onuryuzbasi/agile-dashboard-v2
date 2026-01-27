@@ -12,7 +12,8 @@ import {
     Sun,
     PenTool,
     LayoutList,
-    GanttChartSquare
+    GanttChartSquare,
+    TestTube2
 } from 'lucide-react'
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
     { path: '/list-template', icon: LayoutList, label: 'List' },
     { path: '/timeline', icon: GanttChartSquare, label: 'Timeline' },
     { path: '/whiteboard', icon: PenTool, label: 'Whiteboard' },
+    { path: '/qa', icon: TestTube2, label: 'QA' },
 ]
 
 const settingsItem = { path: '/settings', icon: Settings, label: 'Settings' }

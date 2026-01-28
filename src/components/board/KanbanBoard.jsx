@@ -14,7 +14,9 @@ import { useState, useMemo } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import KanbanColumn from './KanbanColumn'
 import IssueCard from './IssueCard'
-import { ChevronDown, ChevronRight, User, Zap, Building2, AlertTriangle, ListChecks, Check } from 'lucide-react'
+import TestCaseRequiredModal from '../qa/TestCaseRequiredModal'
+import qaWorkflow from '../../lib/qaWorkflow'
+import { ChevronDown, ChevronRight, User, Zap, Building2, AlertTriangle, ListChecks, Check, FlaskConical } from 'lucide-react'
 
 export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     const {
@@ -25,7 +27,8 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
         issues,
         fieldConfig,
         users,
-        departments
+        departments,
+        testCases
     } = useProjectStore()
 
     const [activeIssue, setActiveIssue] = useState(null)
@@ -35,9 +38,14 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     const [showChecklistWarning, setShowChecklistWarning] = useState(false)
     const [pendingDragAction, setPendingDragAction] = useState(null)
 
+    // Test case requirement state for drag-drop to Testing
+    const [showTestCaseModal, setShowTestCaseModal] = useState(false)
+    const [pendingTestingAction, setPendingTestingAction] = useState(null)
+    const [qaAssignmentNotification, setQaAssignmentNotification] = useState(null)
+
     // Get status keys dynamically from fieldConfig
     const statuses = useMemo(() => {
-        return fieldConfig?.statuses?.map(s => s.key) || ['todo', 'progress', 'review', 'done']
+        return fieldConfig?.statuses?.map(s => s.key) || ['todo', 'progress', 'testing', 'review', 'done']
     }, [fieldConfig])
 
     const sensors = useSensors(
@@ -231,6 +239,21 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
 
         // Update status if changed
         if (targetStatus && activeIssueData.status !== targetStatus) {
+            // Check for testing status transition - require test case
+            if (targetStatus === 'testing' && activeIssueData.status !== 'testing') {
+                const hasTestCase = qaWorkflow.hasLinkedTestCase(activeIssueData, testCases)
+                if (!hasTestCase) {
+                    setPendingTestingAction({
+                        issueId: active.id,
+                        targetStatus,
+                        targetSwimlane,
+                        activeIssueData
+                    })
+                    setShowTestCaseModal(true)
+                    return // Don't apply the change yet
+                }
+            }
+
             // Check for incomplete checklist items
             const checklist = activeIssueData.checklist || []
             const incompleteItems = checklist.filter(item => !item.checked)
@@ -338,6 +361,63 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
     const cancelDragAction = () => {
         setShowChecklistWarning(false)
         setPendingDragAction(null)
+    }
+
+    // Handle test case linked from modal for drag-drop
+    const handleTestCaseLinkedDrag = (testCaseId) => {
+        setShowTestCaseModal(false)
+        if (pendingTestingAction) {
+            const { issueId, targetStatus, targetSwimlane, activeIssueData } = pendingTestingAction
+            const updates = { status: targetStatus }
+
+            // Auto-assign to QA team
+            const qaUsers = qaWorkflow.getQATeamMembers(users, departments)
+            if (qaUsers.length > 0) {
+                const workflowUpdates = qaWorkflow.processTestingWorkflow(activeIssueData, qaUsers, issues)
+                if (workflowUpdates.assigneeId) {
+                    updates.assigneeId = workflowUpdates.assigneeId
+                    const assignedUser = users.find(u => u.id === workflowUpdates.assigneeId)
+                    setQaAssignmentNotification({
+                        userName: assignedUser?.name || 'QA Team Member',
+                        reason: 'En az iş yükü olan QA ekip üyesine otomatik atandı'
+                    })
+                    setTimeout(() => setQaAssignmentNotification(null), 5000)
+                }
+            }
+
+            // Handle swimlane updates if applicable
+            if (targetSwimlane && groupBy !== 'none') {
+                switch (groupBy) {
+                    case 'assignee':
+                        const currentAssignee = activeIssueData.assigneeId || 'unassigned'
+                        if (currentAssignee !== targetSwimlane) {
+                            updates.assigneeId = targetSwimlane === 'unassigned' ? null : targetSwimlane
+                        }
+                        break
+                    case 'epic':
+                        const currentEpic = activeIssueData.parentId || 'no-epic'
+                        if (currentEpic !== targetSwimlane) {
+                            updates.parentId = targetSwimlane === 'no-epic' ? null : targetSwimlane
+                        }
+                        break
+                    case 'department':
+                        const currentDept = activeIssueData.department || 'no-department'
+                        if (currentDept !== targetSwimlane) {
+                            updates.department = targetSwimlane === 'no-department' ? null : targetSwimlane
+                        }
+                        break
+                }
+            }
+
+            updateIssue(issueId, updates)
+        }
+        setPendingTestingAction(null)
+    }
+
+    // Cancel test case modal for drag-drop
+    const cancelTestCaseModalDrag = () => {
+        setShowTestCaseModal(false)
+        setPendingTestingAction(null)
     }
 
     // Render a single swimlane
@@ -480,6 +560,28 @@ export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
                     </div>
                 )
             }
+
+            {/* Test Case Required Modal for Testing status */}
+            {showTestCaseModal && pendingTestingAction && (
+                <TestCaseRequiredModal
+                    isOpen={showTestCaseModal}
+                    issue={pendingTestingAction.activeIssueData}
+                    onClose={cancelTestCaseModalDrag}
+                    onTestCaseLinked={handleTestCaseLinkedDrag}
+                />
+            )}
+
+            {/* QA Assignment Notification */}
+            {qaAssignmentNotification && (
+                <div className="qa-assignment-notification">
+                    <FlaskConical size={16} />
+                    <span>
+                        <strong>{qaAssignmentNotification.userName}</strong>'a atandı
+                        <br />
+                        <small>{qaAssignmentNotification.reason}</small>
+                    </span>
+                </div>
+            )}
         </>
     )
 }

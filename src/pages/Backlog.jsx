@@ -310,9 +310,9 @@ export default function Backlog() {
                 const includesNoEpic = selectedEpics.includes('no-epic')
                 const selectedEpicIds = selectedEpics.filter(id => id !== 'no-epic')
 
-                if (includesNoEpic && !issue.epicId) {
+                if (includesNoEpic && !issue.parentId) {
                     // Allow issues with no epic
-                } else if (selectedEpicIds.includes(issue.epicId)) {
+                } else if (selectedEpicIds.includes(issue.parentId)) {
                     // Allow issues matching selected epics
                 } else {
                     return false
@@ -454,7 +454,7 @@ export default function Backlog() {
             labels: [],
             assigneeId: defaultAssignee,
             reporterId: users[0]?.id || null,
-            epicId: defaultEpic
+            parentId: defaultEpic
         })
 
         setNewIssueSummary('')
@@ -1234,7 +1234,7 @@ export default function Backlog() {
                                             epic.key.toLowerCase().includes(allEpicsSearchQuery.toLowerCase())
                                         )
                                         .map(epic => {
-                                            const epicIssues = issues.filter(i => i.epicId === epic.id)
+                                            const epicIssues = issues.filter(i => i.parentId === epic.id)
                                             const completedCount = epicIssues.filter(i => i.status === 'done').length
                                             const totalCount = epicIssues.length
                                             const isDone = epic.status === 'done'

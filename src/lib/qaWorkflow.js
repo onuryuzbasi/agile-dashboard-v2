@@ -70,10 +70,13 @@ export function findLeastBusyQAMember(qaUsers, issues) {
  * @returns {boolean}
  */
 export function hasLinkedTestCase(issue, testCases) {
-    if (!issue || !testCases) return false
+    if (!issue) return false
 
     // Check if issue has linkedTestCaseId directly
     if (issue.linkedTestCaseId) return true
+
+    // If testCases is undefined or empty, return false (no linked test case)
+    if (!testCases || testCases.length === 0) return false
 
     // Check if any test case links to this issue
     return testCases.some(tc => tc.issueId === issue.id)

@@ -60,7 +60,8 @@ export default function IssueModal({ issue, onClose }) {
         fieldConfig,
         getUserById,
         addComment,
-        triggerCelebration
+        triggerCelebration,
+        testCases
     } = useProjectStore()
 
     // Get reactive issue from store (for real-time updates like worklogs)

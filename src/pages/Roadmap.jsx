@@ -1025,6 +1025,19 @@ export default function Roadmap() {
                                 </div>
 
                                 {/* Grid */}
+                                {(() => {
+                                    const totalPhases = projects.reduce((sum, p) => sum + (p.phases || []).length, 0)
+                                    const matchingPhases = projects.reduce((sum, p) => sum + (p.phases || []).filter(ph => ph.type === comparePhaseType).length, 0)
+                                    return totalPhases === 0 ? (
+                                        <div style={{ padding: '12px 16px', background: '#fef3c7', borderRadius: '8px', margin: '0 0 8px', fontSize: '12px', color: '#92400e' }}>
+                                            ⚠️ Hiç phase verisi yok. Timeline'da projelere phase ekleyin.
+                                        </div>
+                                    ) : matchingPhases === 0 ? (
+                                        <div style={{ padding: '12px 16px', background: '#fef3c7', borderRadius: '8px', margin: '0 0 8px', fontSize: '12px', color: '#92400e' }}>
+                                            ⚠️ "{comparePhaseType}" tipinde phase bulunamadı. (Toplam {totalPhases} phase var, tipleri: {[...new Set(projects.flatMap(p => (p.phases||[]).map(ph => ph.type)))].join(', ')})
+                                        </div>
+                                    ) : null
+                                })()}
                                 <div className="rm-bigpic-grid">
                                     <div className="rm-bigpic-corner">Year</div>
                                     {MONTHS.map((m, i) => (
@@ -1038,9 +1051,8 @@ export default function Roadmap() {
                                             </div>
                                             {MONTHS.map((_, mi) => {
                                                 const isNow = year === thisYear && mi === thisMonth
-                                                const dataYear = roadmapData.year || thisYear
                                                 const bars = []
-                                                if (year === dataYear) {
+                                                if (year === selectedYear) {
                                                     projects.forEach(proj => {
                                                         const matchPhases = (proj.phases || []).filter(p => p.type === comparePhaseType)
                                                         matchPhases.forEach(phase => {

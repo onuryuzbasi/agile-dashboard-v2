@@ -837,7 +837,6 @@ export default function Roadmap() {
                     </div>
 
                     <button className="btn btn-ghost" onClick={() => setSettingsModal(true)}><Settings size={16} /> Phases</button>
-                    <button className="btn btn-primary" onClick={() => setProjectModal(true)}><Plus size={16} /> Add Project</button>
                 </div>
             </div>
 
@@ -1328,6 +1327,15 @@ export default function Roadmap() {
                                 </React.Fragment>
                             )
                         })}
+
+                        {/* Add Project row */}
+                        <div className="rm-cell rm-cell-sidebar rm-sticky-col rm-add-project-row"
+                            onClick={() => setProjectModal(true)}>
+                            <Plus size={14} />
+                            <span>Add Project</span>
+                        </div>
+                        <div className="rm-cell rm-cell-timeline rm-add-project-row" onClick={() => setProjectModal(true)} />
+                        <div className="rm-cell rm-cell-actions rm-sticky-col-right rm-add-project-row" />
                     </div>
                     </div>
                 </div>

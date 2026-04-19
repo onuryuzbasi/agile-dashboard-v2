@@ -15420,6 +15420,46 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   opacity: 0.6;
 }
 
+/* ── Add Project Row ── */
+.rm-add-project-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 40px;
+}
+
+.rm-add-project-row.rm-cell-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: color 0.15s, background 0.15s;
+}
+
+.rm-add-project-row.rm-cell-sidebar:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.rm-add-project-row.rm-cell-sidebar svg {
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.rm-add-project-row.rm-cell-sidebar:hover svg {
+  opacity: 1;
+}
+
+.rm-add-project-row.rm-cell-timeline {
+  transition: background 0.15s;
+}
+
+.rm-add-project-row.rm-cell-timeline:hover {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
 /* ── Row Actions ── */
 .rm-row-actions {
   display: flex;

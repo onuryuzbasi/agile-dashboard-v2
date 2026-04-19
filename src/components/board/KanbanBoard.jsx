@@ -1,0 +1,536 @@
+import {
+    DndContext,
+    DragOverlay,
+    pointerWithin,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    MeasuringStrategy
+} from '@dnd-kit/core'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useProjectStore } from '../../stores/projectStore'
+import KanbanColumn from './KanbanColumn'
+import IssueCard from './IssueCard'
+import { ChevronDown, ChevronRight, User, Zap, Building2, AlertTriangle, ListChecks, Check } from 'lucide-react'
+
+export default function KanbanBoard({ filters = {}, groupBy = 'none' }) {
+    const {
+        getSprintIssues,
+        currentSprintId,
+        moveIssue,
+        updateIssue,
+        issues,
+        fieldConfig,
+        users,
+        departments
+    } = useProjectStore()
+
+    const [activeIssue, setActiveIssue] = useState(null)
+    const [collapsedSwimlanes, setCollapsedSwimlanes] = useState(new Set())
+
+    // Checklist warning state for drag-drop
+    const [showChecklistWarning, setShowChecklistWarning] = useState(false)
+    const [pendingDragAction, setPendingDragAction] = useState(null)
+
+    // Ref for board element
+    const boardRef = useRef(null)
+
+    // Get status keys dynamically from fieldConfig
+    const statuses = useMemo(() => {
+        return fieldConfig?.statuses?.map(s => s.key) || ['todo', 'progress', 'review', 'done']
+    }, [fieldConfig])
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
+
+    // Get issues for current sprint
+    const sprintIssues = useMemo(() => {
+        return currentSprintId
+            ? getSprintIssues(currentSprintId)
+            : issues.filter(i => i.projectId === 'proj-1' && !i.isDeleted)
+    }, [currentSprintId, getSprintIssues, issues])
+
+    // Apply filters to issues
+    const filteredIssues = useMemo(() => {
+        return sprintIssues.filter(issue => {
+            // Check each filter category
+            for (const [field, values] of Object.entries(filters)) {
+                if (!values || values.size === 0) continue
+
+                let issueValue
+                switch (field) {
+                    case 'type':
+                        issueValue = issue.type
+                        break
+                    case 'status':
+                        issueValue = issue.status
+                        break
+                    case 'priority':
+                        issueValue = issue.priority
+                        break
+                    case 'assignee':
+                        issueValue = issue.assigneeId || 'unassigned'
+                        break
+                    case 'reporter':
+                        issueValue = issue.reporterId
+                        break
+                    case 'sprint':
+                        issueValue = issue.sprintId || 'backlog'
+                        break
+                    case 'epic':
+                        issueValue = issue.parentId || 'no-epic'
+                        break
+                    case 'game':
+                        issueValue = issue.gameId || 'no-game'
+                        break
+                    case 'department':
+                        issueValue = issue.department || 'no-department'
+                        break
+                    case 'label':
+                        // For labels, check if any of issue's labels match filter
+                        if (issue.labels && Array.isArray(issue.labels)) {
+                            const hasMatch = issue.labels.some(l => values.has(l))
+                            if (!hasMatch) return false
+                        } else {
+                            return false
+                        }
+                        continue
+                    default:
+                        continue
+                }
+
+                if (!values.has(issueValue)) return false
+            }
+            return true
+        })
+    }, [sprintIssues, filters])
+
+    // Generate swimlanes based on groupBy
+    const swimlanes = useMemo(() => {
+        if (groupBy === 'none') {
+            return [{ key: 'all', label: null, issues: filteredIssues, icon: null }]
+        }
+
+        const lanes = {}
+        const noGroupKey = groupBy === 'epic' ? 'no-epic' : groupBy === 'assignee' ? 'unassigned' : 'no-department'
+
+        filteredIssues.forEach(issue => {
+            let laneKey, laneLabel, laneIcon
+
+            switch (groupBy) {
+                case 'epic':
+                    if (issue.type === 'epic') return // Don't show epics in swimlanes
+                    laneKey = issue.parentId || 'no-epic'
+                    const parentEpic = issues.find(i => i.id === issue.parentId && i.type === 'epic')
+                    laneLabel = parentEpic ? `${parentEpic.key}: ${parentEpic.summary}` : 'Issues without Epic'
+                    laneIcon = Zap
+                    break
+                case 'assignee':
+                    laneKey = issue.assigneeId || 'unassigned'
+                    const assignee = users?.find(u => u.id === issue.assigneeId)
+                    laneLabel = assignee ? assignee.name : 'Unassigned'
+                    laneIcon = User
+                    break
+                case 'department':
+                    laneKey = issue.department || 'no-department'
+                    const dept = departments?.find(d => d.id === issue.department)
+                    laneLabel = dept ? dept.name : 'No Department'
+                    laneIcon = Building2
+                    break
+                default:
+                    laneKey = 'all'
+                    laneLabel = null
+                    laneIcon = null
+            }
+
+            if (!lanes[laneKey]) {
+                lanes[laneKey] = { key: laneKey, label: laneLabel, issues: [], icon: laneIcon }
+            }
+            lanes[laneKey].issues.push(issue)
+        })
+
+        // Sort lanes: put "no-epic", "unassigned", "no-department" at the end
+        const laneArray = Object.values(lanes)
+        return laneArray.sort((a, b) => {
+            if (a.key === noGroupKey) return 1
+            if (b.key === noGroupKey) return -1
+            return a.label?.localeCompare(b.label) || 0
+        })
+    }, [filteredIssues, groupBy, issues, users, departments])
+
+    // Toggle swimlane collapse
+    const toggleSwimlane = (laneKey) => {
+        setCollapsedSwimlanes(prev => {
+            const next = new Set(prev)
+            if (next.has(laneKey)) {
+                next.delete(laneKey)
+            } else {
+                next.add(laneKey)
+            }
+            return next
+        })
+    }
+
+    const handleDragStart = (event) => {
+        const { active } = event
+        const issue = filteredIssues.find(i => i.id === active.id)
+        setActiveIssue(issue)
+    }
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event
+        setActiveIssue(null)
+
+        if (!over) return
+
+        const activeIssueData = filteredIssues.find(i => i.id === active.id)
+        if (!activeIssueData) return
+
+        const overId = over.id.toString()
+
+        // Parse the drop target
+        // Format: "swimlane-{laneKey}-status-{statusKey}" or just "{statusKey}" for no swimlanes
+        let targetStatus = null
+        let targetSwimlane = null
+
+        if (overId.startsWith('swimlane-')) {
+            // Cross-dimensional drop
+            const parts = overId.split('-status-')
+            if (parts.length === 2) {
+                targetSwimlane = parts[0].replace('swimlane-', '')
+                targetStatus = parts[1]
+            }
+        } else if (statuses.includes(overId)) {
+            // Direct column drop (no swimlanes or same swimlane)
+            targetStatus = overId
+        } else {
+            // Dropped on another issue
+            const overIssue = filteredIssues.find(i => i.id === overId)
+            if (overIssue) {
+                targetStatus = overIssue.status
+                // If grouped, get the swimlane from the target issue
+                if (groupBy === 'assignee') targetSwimlane = overIssue.assigneeId || 'unassigned'
+                if (groupBy === 'epic') targetSwimlane = overIssue.parentId || 'no-epic'
+                if (groupBy === 'department') targetSwimlane = overIssue.department || 'no-department'
+            }
+        }
+
+        if (!targetStatus) return
+
+        // Prepare updates
+        const updates = {}
+        let needsUpdate = false
+
+        // Update status if changed
+        if (targetStatus && activeIssueData.status !== targetStatus) {
+            // Check for incomplete checklist items
+            const checklist = activeIssueData.checklist || []
+            const incompleteItems = checklist.filter(item => !item.checked)
+
+            if (incompleteItems.length > 0) {
+                // Store the pending action and show warning
+                setPendingDragAction({
+                    issueId: active.id,
+                    targetStatus,
+                    targetSwimlane,
+                    activeIssueData
+                })
+                setShowChecklistWarning(true)
+                return // Don't apply the change yet
+            }
+
+            updates.status = targetStatus
+            needsUpdate = true
+        }
+
+        // Update swimlane grouping field if cross-dimensional drag
+        if (targetSwimlane && groupBy !== 'none') {
+            switch (groupBy) {
+                case 'assignee':
+                    const currentAssignee = activeIssueData.assigneeId || 'unassigned'
+                    if (currentAssignee !== targetSwimlane) {
+                        updates.assigneeId = targetSwimlane === 'unassigned' ? null : targetSwimlane
+                        needsUpdate = true
+                    }
+                    break
+                case 'epic':
+                    const currentEpic = activeIssueData.parentId || 'no-epic'
+                    if (currentEpic !== targetSwimlane) {
+                        updates.parentId = targetSwimlane === 'no-epic' ? null : targetSwimlane
+                        needsUpdate = true
+                    }
+                    break
+                case 'department':
+                    const currentDept = activeIssueData.department || 'no-department'
+                    if (currentDept !== targetSwimlane) {
+                        updates.department = targetSwimlane === 'no-department' ? null : targetSwimlane
+                        needsUpdate = true
+                    }
+                    break
+            }
+        }
+
+        // Apply updates
+        if (needsUpdate) {
+            if (Object.keys(updates).length === 1 && updates.status) {
+                // Only status changed - use moveIssue for history tracking
+                moveIssue(active.id, updates.status)
+            } else {
+                // Multiple fields changed - use updateIssue
+                updateIssue(active.id, updates)
+            }
+        }
+    }
+
+    const handleDragOver = (event) => {
+        // Could add hover feedback here
+    }
+
+    // Confirm drag action despite incomplete checklist
+    const confirmDragAction = () => {
+        if (pendingDragAction) {
+            const { issueId, targetStatus, targetSwimlane, activeIssueData } = pendingDragAction
+            const updates = { status: targetStatus }
+
+            // Handle swimlane updates if applicable
+            if (targetSwimlane && groupBy !== 'none') {
+                switch (groupBy) {
+                    case 'assignee':
+                        const currentAssignee = activeIssueData.assigneeId || 'unassigned'
+                        if (currentAssignee !== targetSwimlane) {
+                            updates.assigneeId = targetSwimlane === 'unassigned' ? null : targetSwimlane
+                        }
+                        break
+                    case 'epic':
+                        const currentEpic = activeIssueData.parentId || 'no-epic'
+                        if (currentEpic !== targetSwimlane) {
+                            updates.parentId = targetSwimlane === 'no-epic' ? null : targetSwimlane
+                        }
+                        break
+                    case 'department':
+                        const currentDept = activeIssueData.department || 'no-department'
+                        if (currentDept !== targetSwimlane) {
+                            updates.department = targetSwimlane === 'no-department' ? null : targetSwimlane
+                        }
+                        break
+                }
+            }
+
+            if (Object.keys(updates).length === 1 && updates.status) {
+                moveIssue(issueId, updates.status)
+            } else {
+                updateIssue(issueId, updates)
+            }
+        }
+        setShowChecklistWarning(false)
+        setPendingDragAction(null)
+    }
+
+    // Cancel drag action
+    const cancelDragAction = () => {
+        setShowChecklistWarning(false)
+        setPendingDragAction(null)
+    }
+
+    // Render a single swimlane row (with column headers inside)
+    const renderSwimlaneRow = (lane) => {
+        const isCollapsed = collapsedSwimlanes.has(lane.key)
+        const Icon = lane.icon
+
+        // Group issues by status within this swimlane
+        const issuesByStatus = statuses.reduce((acc, status) => {
+            acc[status] = lane.issues.filter(issue => issue.status === status)
+            return acc
+        }, {})
+
+        // Get unique assignees for this swimlane
+        const uniqueAssignees = [...new Set(lane.issues.map(i => i.assigneeId).filter(Boolean))]
+            .map(id => users?.find(u => u.id === id))
+            .filter(Boolean)
+            .slice(0, 5) // Show max 5 avatars
+
+        return (
+            <div key={lane.key} className={`kanban-swimlane-row ${isCollapsed ? 'collapsed' : ''}`}>
+                {/* Swimlane Header - Accordion toggle */}
+                <div className="kanban-swimlane-header" onClick={() => toggleSwimlane(lane.key)}>
+                    <div className="kanban-swimlane-toggle">
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                    {Icon && <Icon size={16} className="kanban-swimlane-icon" />}
+                    <span className="kanban-swimlane-label">{lane.label}</span>
+
+                    {/* Assignee avatars */}
+                    {uniqueAssignees.length > 0 && (
+                        <div className="swimlane-assignees">
+                            {uniqueAssignees.map(user => (
+                                <div key={user.id} className="swimlane-avatar" data-name={user.name} title={user.name}>
+                                    {user.avatar ? (
+                                        <img src={user.avatar} alt={user.name} />
+                                    ) : (
+                                        <span>{user.name?.charAt(0).toUpperCase()}</span>
+                                    )}
+                                </div>
+                            ))}
+                            {lane.issues.filter(i => i.assigneeId).length > 5 && (
+                                <div className="swimlane-avatar swimlane-avatar-more">
+                                    +{lane.issues.filter(i => i.assigneeId).length - 5}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <span className="kanban-swimlane-count">{lane.issues.length}</span>
+                </div>
+
+                {/* Swimlane Content - Horizontal scrollable area */}
+                {!isCollapsed && (
+                    <div className="kanban-swimlane-content">
+                        <div className="kanban-grid-row">
+                            {statuses.map((status) => {
+                                const statusConfig = fieldConfig?.statuses?.find(s => s.key === status)
+                                const count = issuesByStatus[status]?.length || 0
+                                return (
+                                    <div key={`${lane.key}-${status}`} className="kanban-grid-cell">
+                                        {/* Status header inside cell */}
+                                        <div className="kanban-cell-header">
+                                            <span className="status-label">{statusConfig?.label || status}</span>
+                                            <span className="status-count">{count}</span>
+                                        </div>
+                                        {/* Issues */}
+                                        <KanbanColumn
+                                            id={`swimlane-${lane.key}-status-${status}`}
+                                            status={status}
+                                            issues={issuesByStatus[status] || []}
+                                            fieldConfig={fieldConfig}
+                                            compact={true}
+                                        />
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    // CSS custom property for dynamic column count
+    const gridStyle = {
+        '--column-count': statuses.length
+    }
+
+    return (
+        <>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={pointerWithin}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                measuring={{
+                    droppable: {
+                        strategy: MeasuringStrategy.Always
+                    }
+                }}
+            >
+                <div ref={boardRef} className="kanban-board-wrapper" style={gridStyle}>
+                    {/* Global Header Row - Only visible for Group: None */}
+                    {groupBy === 'none' && (
+                        <div className="kanban-grid-header">
+                            {statuses.map(status => {
+                                const statusConfig = fieldConfig?.statuses?.find(s => s.key === status)
+                                const columnIssues = filteredIssues.filter(issue => issue.status === status)
+                                return (
+                                    <div key={status} className="kanban-header-cell">
+                                        <span
+                                            className="status-badge"
+                                            style={{ backgroundColor: statusConfig?.bgColor, color: statusConfig?.textColor }}
+                                        >
+                                            {statusConfig?.label || status}
+                                        </span>
+                                        <span className="kanban-column-count">{columnIssues.length}</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    {/* Content Area */}
+                    <div className="kanban-content-area">
+                        {groupBy === 'none' ? (
+                            // No grouping - render simple grid of columns
+                            <div className="kanban-grid-row kanban-grid-row-main">
+                                {statuses.map((status) => {
+                                    const columnIssues = filteredIssues.filter(issue => issue.status === status)
+                                    return (
+                                        <div key={status} className="kanban-grid-cell">
+                                            <KanbanColumn
+                                                id={status}
+                                                status={status}
+                                                issues={columnIssues}
+                                                fieldConfig={fieldConfig}
+                                                compact={true}
+                                            />
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            // With grouping - render swimlane rows
+                            <div className="kanban-swimlanes">
+                                {swimlanes.map(lane => renderSwimlaneRow(lane))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <DragOverlay>
+                    {activeIssue ? (
+                        <IssueCard issue={activeIssue} isDragging />
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+
+            {/* Checklist Warning Modal */}
+            {
+                showChecklistWarning && (
+                    <div className="delete-confirm-overlay" onClick={cancelDragAction}>
+                        <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="delete-confirm-header" style={{ color: 'var(--warning)' }}>
+                                <AlertTriangle size={24} style={{ color: 'var(--warning)' }} />
+                                <h3>Tamamlanmamış Maddeler</h3>
+                            </div>
+                            <div className="delete-confirm-body">
+                                <p>Checklistte tamamlanmayan maddeler var.</p>
+                                <p className="delete-note" style={{ marginTop: '8px' }}>
+                                    {pendingDragAction?.activeIssueData?.checklist?.filter(item => !item.checked).length || 0} tamamlanmamış madde bulunuyor.
+                                </p>
+                            </div>
+                            <div className="delete-confirm-actions">
+                                <button className="btn btn-secondary" onClick={cancelDragAction}>
+                                    <ListChecks size={14} />
+                                    Kontrol Et
+                                </button>
+                                <button className="btn btn-primary" onClick={confirmDragAction}>
+                                    <Check size={14} />
+                                    Devam Et
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </>
+    )
+}

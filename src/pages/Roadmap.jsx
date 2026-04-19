@@ -1044,44 +1044,49 @@ export default function Roadmap() {
                                         <div key={m} className={`rm-bigpic-mhead ${thisYear === years[1] && i === thisMonth ? 'now' : ''}`}>{m}</div>
                                     ))}
 
-                                    {years.map(year => (
+                                    {years.map(year => {
+                                        // Pre-compute fixed project slots for this year
+                                        const yearProjects = year === selectedYear ?
+                                            projects.filter(proj => (proj.phases || []).some(p => p.type === comparePhaseType)) : []
+
+                                        return (
                                         <React.Fragment key={year}>
                                             <div className={`rm-bigpic-year ${year === thisYear ? 'current' : ''}`}>
                                                 <span>{year}</span>
                                             </div>
                                             {MONTHS.map((_, mi) => {
                                                 const isNow = year === thisYear && mi === thisMonth
-                                                const bars = []
-                                                if (year === selectedYear) {
-                                                    projects.forEach(proj => {
-                                                        const matchPhases = (proj.phases || []).filter(p => p.type === comparePhaseType)
-                                                        matchPhases.forEach(phase => {
-                                                            if (mi >= phase.startMonth && mi <= phase.endMonth) {
-                                                                bars.push({ project: proj, phase, isStart: mi === phase.startMonth, isEnd: mi === phase.endMonth })
-                                                            }
-                                                        })
-                                                    })
-                                                }
 
                                                 return (
                                                     <div key={mi} className={`rm-bigpic-cell ${isNow ? 'now' : ''} ${mi % 3 === 0 ? 'q-start' : ''}`}>
-                                                        {bars.map((bar, idx) => (
-                                                            <div key={idx} className={`rm-pcal-bar ${bar.isStart ? 'bar-start' : ''} ${bar.isEnd ? 'bar-end' : ''}`}
-                                                                style={{ '--bar-color': bar.project.color }}
-                                                                title={`${bar.project.name} — ${bar.phase.label || bar.phase.name || ''} (${MONTHS[bar.phase.startMonth]}–${MONTHS[bar.phase.endMonth]})`}>
-                                                                {bar.isStart && (
-                                                                    <span className="rm-pcal-bar-label">
-                                                                        <span className="rm-pcal-bar-emoji">{bar.project.icon || '📁'}</span>
-                                                                        {bar.project.name}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ))}
+                                                        {yearProjects.map((proj, slotIdx) => {
+                                                            const matchPhases = (proj.phases || []).filter(p => p.type === comparePhaseType)
+                                                            const activePhase = matchPhases.find(p => mi >= p.startMonth && mi <= p.endMonth)
+                                                            if (!activePhase) {
+                                                                // Placeholder to keep slot position
+                                                                return <div key={slotIdx} style={{ height: 24, minHeight: 24, margin: '1px 0' }} />
+                                                            }
+                                                            const isStart = mi === activePhase.startMonth
+                                                            const isEnd = mi === activePhase.endMonth
+                                                            return (
+                                                                <div key={slotIdx} className={`rm-pcal-bar ${isStart ? 'bar-start' : ''} ${isEnd ? 'bar-end' : ''}`}
+                                                                    style={{ '--bar-color': proj.color }}
+                                                                    title={`${proj.name} — ${activePhase.label || activePhase.name || ''} (${MONTHS[activePhase.startMonth]}–${MONTHS[activePhase.endMonth]})`}>
+                                                                    {isStart && (
+                                                                        <span className="rm-pcal-bar-label">
+                                                                            <span className="rm-pcal-bar-emoji">{proj.icon || '📁'}</span>
+                                                                            {proj.name}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        })}
                                                     </div>
                                                 )
                                             })}
                                         </React.Fragment>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                                 <div className="rm-bigpic-add-year">
                                     <button className="rm-add-year-btn" onClick={() => setExtraYears(e => e + 1)}

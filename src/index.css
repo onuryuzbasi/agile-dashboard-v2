@@ -14473,7 +14473,6 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   background: var(--bar-color);
   display: flex;
   align-items: center;
-  /* Bleed equally on both sides - every bar same width */
   margin: 1px -5px;
   padding: 0;
   opacity: 0.85;
@@ -14489,23 +14488,20 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   z-index: 3;
 }
 
-/* First cell: rounded left corner + label padding */
+/* First cell: rounded left + label padding */
 .rm-pcal-bar.bar-start {
   border-radius: 6px 0 0 6px;
-  margin-left: 0;
   padding-left: 8px;
 }
 
-/* Last cell: rounded right corner */
+/* Last cell: rounded right */
 .rm-pcal-bar.bar-end {
   border-radius: 0 6px 6px 0;
-  margin-right: 0;
 }
 
 /* Single-cell bar */
 .rm-pcal-bar.bar-start.bar-end {
   border-radius: 6px;
-  margin: 1px 0;
 }
 
 .rm-pcal-bar-label {

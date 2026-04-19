@@ -570,34 +570,42 @@ export default function Roadmap() {
     const [expandedProject, setExpandedProject] = useState(null)
     const [extraYears, setExtraYears] = useState(0)
     const [comparePhaseType, setComparePhaseType] = useState(null)
+    const [supabaseLoaded, setSupabaseLoaded] = useState(false)
 
     const now = new Date()
     const currentMonth = now.getMonth()
     const isCurrentYear = selectedYear === now.getFullYear()
 
     // ─── Persist: localStorage (immediate) + Supabase (debounced) ───
+    // CRITICAL: Only save AFTER Supabase load completes to prevent overwriting cloud data
     useEffect(() => {
         const payload = { ...roadmapData, year: selectedYear }
         save(STORAGE_KEY, payload)
-        // Debounced Supabase sync
+        // Only sync to Supabase after initial cloud load is done
+        if (!supabaseLoaded) return
         clearTimeout(_debounceTimers[STORAGE_KEY])
         _debounceTimers[STORAGE_KEY] = setTimeout(() => {
             saveToSupabase(SUPABASE_SETTING_KEYS[STORAGE_KEY], payload)
+            console.log('💾 Roadmap saved to Supabase')
         }, 1500)
-    }, [roadmapData, selectedYear])
+    }, [roadmapData, selectedYear, supabaseLoaded])
 
     useEffect(() => {
         save(PHASE_TYPES_KEY, phaseTypes)
+        if (!supabaseLoaded) return
         clearTimeout(_debounceTimers[PHASE_TYPES_KEY])
         _debounceTimers[PHASE_TYPES_KEY] = setTimeout(() => {
             saveToSupabase(SUPABASE_SETTING_KEYS[PHASE_TYPES_KEY], phaseTypes)
+            console.log('💾 Phase types saved to Supabase')
         }, 1500)
-    }, [phaseTypes])
+    }, [phaseTypes, supabaseLoaded])
 
     // ─── Load from Supabase on mount (override localStorage if cloud data exists) ───
-    const [supabaseLoaded, setSupabaseLoaded] = useState(false)
     useEffect(() => {
         let cancelled = false
+        // Clear any pending save timers before loading cloud data
+        clearTimeout(_debounceTimers[STORAGE_KEY])
+        clearTimeout(_debounceTimers[PHASE_TYPES_KEY])
         ;(async () => {
             try {
                 const [cloudData, cloudTypes] = await Promise.all([
@@ -619,7 +627,12 @@ export default function Roadmap() {
             }
             if (!cancelled) setSupabaseLoaded(true)
         })()
-        return () => { cancelled = true }
+        return () => {
+            cancelled = true
+            // Cleanup timers on unmount
+            clearTimeout(_debounceTimers[STORAGE_KEY])
+            clearTimeout(_debounceTimers[PHASE_TYPES_KEY])
+        }
     }, [])
 
     const updateProject = useCallback((pid, fn) => {

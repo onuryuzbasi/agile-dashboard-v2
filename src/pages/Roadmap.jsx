@@ -967,13 +967,14 @@ export default function Roadmap() {
                                                                     document.body.style.userSelect = ''
 
                                                                     if (targetMonth !== mi) {
-                                                                        const phases = [...ms.project.phases].sort((a, b) => a.startMonth - b.startMonth)
-                                                                        if (ms.type === 'start' && phases.length) {
-                                                                            const first = phases[0]
-                                                                            handleResizePhase(ms.project.id, first.id, targetMonth, first.endMonth)
-                                                                        } else if (ms.type === 'finish' && phases.length) {
-                                                                            const last = phases[phases.length - 1]
-                                                                            handleResizePhase(ms.project.id, last.id, last.startMonth, targetMonth)
+                                                                        if (ms.type === 'start') {
+                                                                            // Find the phase with earliest startMonth
+                                                                            const first = [...ms.project.phases].sort((a, b) => a.startMonth - b.startMonth)[0]
+                                                                            if (first) handleResizePhase(ms.project.id, first.id, targetMonth, first.endMonth)
+                                                                        } else if (ms.type === 'finish') {
+                                                                            // Find the phase with latest endMonth (NOT latest startMonth!)
+                                                                            const last = [...ms.project.phases].sort((a, b) => b.endMonth - a.endMonth)[0]
+                                                                            if (last) handleResizePhase(ms.project.id, last.id, last.startMonth, targetMonth)
                                                                         }
                                                                     }
                                                                 }

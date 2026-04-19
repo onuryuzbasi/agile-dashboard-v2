@@ -748,7 +748,7 @@ export default function Roadmap() {
                         </button>
                         <button className={`rm-tab ${viewTab === 'phasecompare' ? 'active' : ''}`}
                             onClick={() => { setViewTab('phasecompare'); if (!comparePhaseType && phaseTypes.length) setComparePhaseType(phaseTypes[0].key) }}>
-                            <BarChart3 size={13} /> Phase Compare
+                            <BarChart3 size={13} /> Phase Calendar
                         </button>
                     </div>
                 </div>
@@ -992,7 +992,7 @@ export default function Roadmap() {
                 </div>
             )}
 
-            {/* ════ Phase Compare View ════ */}
+            {/* ════ Phase Calendar View ════ */}
             {viewTab === 'phasecompare' && (
                 <div className="rm-bigpic">
                     {(() => {
@@ -1038,15 +1038,18 @@ export default function Roadmap() {
                                             </div>
                                             {MONTHS.map((_, mi) => {
                                                 const isNow = year === thisYear && mi === thisMonth
+                                                const dataYear = roadmapData.year || thisYear
                                                 const bars = []
-                                                projects.forEach(proj => {
-                                                    const matchPhases = (proj.phases || []).filter(p => p.type === comparePhaseType)
-                                                    matchPhases.forEach(phase => {
-                                                        if (year === selectedYear && mi >= phase.startMonth && mi <= phase.endMonth) {
-                                                            bars.push({ project: proj, phase, isStart: mi === phase.startMonth, isEnd: mi === phase.endMonth })
-                                                        }
+                                                if (year === dataYear) {
+                                                    projects.forEach(proj => {
+                                                        const matchPhases = (proj.phases || []).filter(p => p.type === comparePhaseType)
+                                                        matchPhases.forEach(phase => {
+                                                            if (mi >= phase.startMonth && mi <= phase.endMonth) {
+                                                                bars.push({ project: proj, phase, isStart: mi === phase.startMonth, isEnd: mi === phase.endMonth })
+                                                            }
+                                                        })
                                                     })
-                                                })
+                                                }
 
                                                 return (
                                                     <div key={mi} className={`rm-bigpic-cell ${isNow ? 'now' : ''} ${mi % 3 === 0 ? 'q-start' : ''}`}>

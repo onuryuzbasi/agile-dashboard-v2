@@ -14466,39 +14466,42 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   box-shadow: 0 2px 8px color-mix(in srgb, var(--pch-color) 35%, transparent);
 }
 
-/* ── Phase Compare Bars ── */
-.rm-phase-bar {
+/* ── Phase Calendar Bars ── */
+.rm-pcal-bar {
   height: 22px;
+  min-height: 22px;
   background: var(--bar-color);
   display: flex;
   align-items: center;
-  margin: 2px -1px 2px 0;
+  margin: 1px 0;
   opacity: 0.85;
   position: relative;
   transition: opacity 0.12s;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.rm-phase-bar:hover {
+.rm-pcal-bar:hover {
   opacity: 1;
   z-index: 2;
 }
 
-.rm-phase-bar.bar-start {
+.rm-pcal-bar.bar-start {
   border-radius: 4px 0 0 4px;
   margin-left: 2px;
   padding-left: 6px;
 }
 
-.rm-phase-bar.bar-end {
+.rm-pcal-bar.bar-end {
   border-radius: 0 4px 4px 0;
   margin-right: 2px;
 }
 
-.rm-phase-bar.bar-start.bar-end {
+.rm-pcal-bar.bar-start.bar-end {
   border-radius: 4px;
 }
 
-.rm-phase-bar-label {
+.rm-pcal-bar-label {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -14511,7 +14514,7 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   text-overflow: ellipsis;
 }
 
-.rm-phase-bar-emoji {
+.rm-pcal-bar-emoji {
   font-size: 11px;
   flex-shrink: 0;
 }

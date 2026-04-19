@@ -1066,12 +1066,12 @@ export default function Roadmap() {
                                                 return (
                                                     <div key={mi} className={`rm-bigpic-cell ${isNow ? 'now' : ''} ${mi % 3 === 0 ? 'q-start' : ''}`}>
                                                         {bars.map((bar, idx) => (
-                                                            <div key={idx} className={`rm-phase-bar ${bar.isStart ? 'bar-start' : ''} ${bar.isEnd ? 'bar-end' : ''}`}
+                                                            <div key={idx} className={`rm-pcal-bar ${bar.isStart ? 'bar-start' : ''} ${bar.isEnd ? 'bar-end' : ''}`}
                                                                 style={{ '--bar-color': bar.project.color }}
                                                                 title={`${bar.project.name} — ${bar.phase.label || bar.phase.name || ''} (${MONTHS[bar.phase.startMonth]}–${MONTHS[bar.phase.endMonth]})`}>
                                                                 {bar.isStart && (
-                                                                    <span className="rm-phase-bar-label">
-                                                                        <span className="rm-phase-bar-emoji">{bar.project.icon || '📁'}</span>
+                                                                    <span className="rm-pcal-bar-label">
+                                                                        <span className="rm-pcal-bar-emoji">{bar.project.icon || '📁'}</span>
                                                                         {bar.project.name}
                                                                     </span>
                                                                 )}

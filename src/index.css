@@ -14316,13 +14316,14 @@ input[type="date"].input::-webkit-calendar-picker-indicator:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 2px 5px;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border-radius: 6px;
   background: var(--dot-color);
-  cursor: default;
+  cursor: grab;
   transition: transform 0.12s, box-shadow 0.12s;
   box-shadow: 0 1px 4px color-mix(in srgb, var(--dot-color) 40%, transparent);
-  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .rm-bigpic-dot:hover {
